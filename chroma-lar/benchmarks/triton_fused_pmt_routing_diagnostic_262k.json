@@ -1,0 +1,208 @@
+{
+  "benchmark": "reflect3wires fixed-round device scheduler ablation",
+  "command": [
+    "benchmarks/benchmark_device_scheduler.py",
+    "--nphotons",
+    "262144",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "65536",
+    "--round-batches",
+    "8",
+    "--pmt-programs-per-sm",
+    "uncapped",
+    "--fused-pmt",
+    "--fused-pmt-max-candidates",
+    "81",
+    "--fused-pmt-routing-diagnostics",
+    "--history-length",
+    "8",
+    "--block-size",
+    "128",
+    "--history-epochs",
+    "2",
+    "--json",
+    "benchmarks/triton_fused_pmt_routing_diagnostic_262k.json"
+  ],
+  "configuration": {
+    "block_size": 128,
+    "fused_pmt": true,
+    "fused_pmt_max_candidates": 81,
+    "fused_pmt_routing_diagnostics": true,
+    "history_epochs": 2,
+    "history_length": 8,
+    "nphotons": 262144,
+    "pmt_programs_per_sm": [
+      0
+    ],
+    "portal_batches": [],
+    "replicates": 2,
+    "round_batches": [
+      8
+    ],
+    "seeds": [
+      8123,
+      2654443884
+    ],
+    "warmup_photons": 65536
+  },
+  "cpu_thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "name": "NVIDIA A100-SXM4-40GB",
+    "total_memory_bytes": 42405855232
+  },
+  "host": "sdfampere001",
+  "records": [
+    {
+      "device_round_batch": 1,
+      "device_scheduler": false,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": false,
+      "fused_pmt_max_candidates": null,
+      "median_photons_per_second": 1872694.8751998525,
+      "name": "synchronized",
+      "p95_latency_photons_per_second": 1863558.5644827604,
+      "pmt_grid_mode": "not_applicable",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 1605515,
+          "detections": 11242,
+          "elapsed_seconds": 0.13921969523653388,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "a79b834a3f689d61f1807a5cd85ab55bbd4441389f11509e6d613f8173042ef4",
+          "photons_per_second": 1882951.9742491755,
+          "replicate": 0,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 77,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 1603289,
+          "detections": 11415,
+          "elapsed_seconds": 0.14074475970119238,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "08f93d8663419b17ef81114722e09953acd6d485d5f291c873f090e5a618ae78",
+          "photons_per_second": 1862548.9187415845,
+          "replicate": 1,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 83,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 1,
+      "device_scheduler": false,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_max_candidates": 81,
+      "median_photons_per_second": 1787644.1604862052,
+      "name": "synchronized_fused_pmt",
+      "p95_latency_photons_per_second": 1778577.9409441915,
+      "pmt_grid_mode": "not_applicable",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 1605515,
+          "detections": 11242,
+          "elapsed_seconds": 0.14581160200759768,
+          "fused_pmt_routing_counts": {
+            "certified_rays": 638304,
+            "fallback_rays": 0,
+            "instance_box_visits": 426683
+          },
+          "hit_signature": "a79b834a3f689d61f1807a5cd85ab55bbd4441389f11509e6d613f8173042ef4",
+          "photons_per_second": 1797826.7599469943,
+          "replicate": 0,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 77,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 1603289,
+          "detections": 11415,
+          "elapsed_seconds": 0.14747271686792374,
+          "fused_pmt_routing_counts": {
+            "certified_rays": 636325,
+            "fallback_rays": 0,
+            "instance_box_visits": 427088
+          },
+          "hit_signature": "08f93d8663419b17ef81114722e09953acd6d485d5f291c873f090e5a618ae78",
+          "photons_per_second": 1777576.256595148,
+          "replicate": 1,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 83,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_max_candidates": 81,
+      "median_photons_per_second": 2157789.7312800563,
+      "name": "device_batch_8_pmt_uncapped_fused_pmt_c81",
+      "p95_latency_photons_per_second": 1973004.828821025,
+      "pmt_grid_mode": "uncapped",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 1605515,
+          "detections": 11242,
+          "elapsed_seconds": 0.10884496197104454,
+          "fused_pmt_routing_counts": {
+            "certified_rays": 638304,
+            "fallback_rays": 0,
+            "instance_box_visits": 426683
+          },
+          "hit_signature": "a79b834a3f689d61f1807a5cd85ab55bbd4441389f11509e6d613f8173042ef4",
+          "photons_per_second": 2408416.4783826815,
+          "replicate": 0,
+          "scheduler_host_syncs": 10,
+          "scheduler_rounds": 77,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 1603289,
+          "detections": 11415,
+          "elapsed_seconds": 0.13412959314882755,
+          "fused_pmt_routing_counts": {
+            "certified_rays": 636325,
+            "fallback_rays": 0,
+            "instance_box_visits": 427088
+          },
+          "hit_signature": "08f93d8663419b17ef81114722e09953acd6d485d5f291c873f090e5a618ae78",
+          "photons_per_second": 1954408.3736176712,
+          "replicate": 1,
+          "scheduler_host_syncs": 11,
+          "scheduler_rounds": 83,
+          "seed": 2654443884
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  }
+}

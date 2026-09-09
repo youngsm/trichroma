@@ -1,0 +1,368 @@
+{
+  "benchmark": "reflect3wires fixed-round device scheduler ablation",
+  "command": [
+    "benchmarks/benchmark_device_scheduler.py",
+    "--nphotons",
+    "5000000",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "262144",
+    "--round-batches",
+    "8",
+    "--pmt-programs-per-sm",
+    "32,64,128,256,uncapped",
+    "--fused-pmt",
+    "--fused-pmt-max-candidates",
+    "81",
+    "--fused-pmt-compact-union",
+    "--history-length",
+    "8",
+    "--block-size",
+    "128",
+    "--history-epochs",
+    "2",
+    "--json",
+    "benchmarks/triton_fused_pmt_persistent_sweep_5m.json"
+  ],
+  "configuration": {
+    "block_size": 128,
+    "fused_pmt": true,
+    "fused_pmt_compact_union": true,
+    "fused_pmt_max_candidates": 81,
+    "fused_pmt_routing_diagnostics": false,
+    "fused_portal_boundary": false,
+    "history_epochs": 2,
+    "history_length": 8,
+    "nphotons": 5000000,
+    "pmt_programs_per_sm": [
+      32,
+      64,
+      128,
+      256,
+      0
+    ],
+    "portal_batches": [],
+    "replicates": 2,
+    "round_batches": [
+      8
+    ],
+    "seeds": [
+      8123,
+      2654443884
+    ],
+    "warmup_photons": 262144
+  },
+  "cpu_thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "name": "NVIDIA A100-SXM4-40GB",
+    "total_memory_bytes": 42405855232
+  },
+  "host": "sdfampere001",
+  "records": [
+    {
+      "device_round_batch": 1,
+      "device_scheduler": false,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": false,
+      "fused_pmt_compact_union": null,
+      "fused_pmt_max_candidates": null,
+      "fused_portal_boundary": false,
+      "median_photons_per_second": 15501331.28612279,
+      "name": "synchronized",
+      "p95_latency_photons_per_second": 15056114.01595412,
+      "pmt_grid_mode": "not_applicable",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.3331507872790098,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 15008219.073522884,
+          "replicate": 0,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.31195509526878595,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 16027947.854776703,
+          "replicate": 1,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 1,
+      "device_scheduler": false,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": true,
+      "fused_pmt_max_candidates": 81,
+      "fused_portal_boundary": false,
+      "median_photons_per_second": 15584661.655003361,
+      "name": "synchronized_fused_pmt",
+      "p95_latency_photons_per_second": 15568120.26171323,
+      "pmt_grid_mode": "not_applicable",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.32120702927932143,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 15566284.496383183,
+          "replicate": 0,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.3204495059326291,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 15603082.256120544,
+          "replicate": 1,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": true,
+      "fused_pmt_max_candidates": 81,
+      "fused_portal_boundary": false,
+      "median_photons_per_second": 16699668.15543171,
+      "name": "device_batch_8_pmt_32_fused_pmt_c81",
+      "p95_latency_photons_per_second": 16207851.133225417,
+      "pmt_grid_mode": "persistent",
+      "pmt_programs_per_sm": 32,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.30950194830074906,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 16154987.15743593,
+          "replicate": 0,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.2893123459070921,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 17282359.604541965,
+          "replicate": 1,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": true,
+      "fused_pmt_max_candidates": 81,
+      "fused_portal_boundary": false,
+      "median_photons_per_second": 17744737.160708405,
+      "name": "device_batch_8_pmt_64_fused_pmt_c81",
+      "p95_latency_photons_per_second": 17691184.1371321,
+      "pmt_grid_mode": "persistent",
+      "pmt_programs_per_sm": 64,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.28082595532760024,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 17804622.062683634,
+          "replicate": 0,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.28272141702473164,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 17685253.747729395,
+          "replicate": 1,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": true,
+      "fused_pmt_max_candidates": 81,
+      "fused_portal_boundary": false,
+      "median_photons_per_second": 17945485.24524965,
+      "name": "device_batch_8_pmt_128_fused_pmt_c81",
+      "p95_latency_photons_per_second": 17874406.499128822,
+      "pmt_grid_mode": "persistent",
+      "pmt_programs_per_sm": 128,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.2798526738770306,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 17866543.602142025,
+          "replicate": 0,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.2773905470967293,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 18025127.576739095,
+          "replicate": 1,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": true,
+      "fused_pmt_max_candidates": 81,
+      "fused_portal_boundary": false,
+      "median_photons_per_second": 17982662.11981118,
+      "name": "device_batch_8_pmt_256_fused_pmt_c81",
+      "p95_latency_photons_per_second": 17848680.49195874,
+      "pmt_grid_mode": "persistent",
+      "pmt_programs_per_sm": 256,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.2803646591491997,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 17833916.78242579,
+          "replicate": 0,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.2757265320979059,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 18133909.573216494,
+          "replicate": 1,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": true,
+      "fused_pmt_max_candidates": 81,
+      "fused_portal_boundary": false,
+      "median_photons_per_second": 18004087.78149772,
+      "name": "device_batch_8_pmt_uncapped_fused_pmt_c81",
+      "p95_latency_photons_per_second": 17986616.443497952,
+      "pmt_grid_mode": "uncapped",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.27801444102078676,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 17984677.27662448,
+          "replicate": 0,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.2774149770848453,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 18023540.23038485,
+          "replicate": 1,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  }
+}

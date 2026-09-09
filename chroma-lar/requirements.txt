@@ -1,0 +1,12 @@
+h5py
+matplotlib
+numpy
+pydantic
+PyYAML
+rich
+scipy
+tqdm
+trimesh
+rich
+scikit-build
+fire

@@ -1,0 +1,52 @@
+{
+  "benchmark": "DeviceQueue portal persistent-grid microbenchmark",
+  "conclusion": {
+    "default_programs_per_sm": 0,
+    "interpretation": "The uncapped grid won both A100 measurements. Empty portal-classifier CTAs are not the end-to-end portal slowdown; the extra partition and two capacity-launched boundary-physics passes remain the primary suspects. The production zero setting selects the original non-grid-stride kernel, avoiding even the loop overhead present in the measured uncapped comparison.",
+    "persistent_grid_retained": true
+  },
+  "configuration": {
+    "block_size": 128,
+    "capacity": 1048576,
+    "directions": "coherent +X; every live ray is a direct portal hit",
+    "persistent_programs_per_sm": 8,
+    "repeats_by_live_count": {
+      "8192": 30,
+      "1048576": 10
+    },
+    "timing": "CUDA events around count fill, workspace-count reset, and portal partition; one untimed warm-up per variant"
+  },
+  "correctness_before_timing": {
+    "device_queue_tensor_parity_and_stale_suffix": "passed",
+    "full_state_8192_photon_scheduler_parity": "passed"
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "multiprocessor_count": 108,
+    "name": "NVIDIA A100-SXM4-40GB"
+  },
+  "results": [
+    {
+      "live_count": 8192,
+      "persistent_8_programs_per_sm_ms": 0.18141867319742838,
+      "persistent_over_uncapped_ratio": 1.05561,
+      "uncapped_ms": 0.1718613306681315
+    },
+    {
+      "live_count": 1048576,
+      "persistent_8_programs_per_sm_ms": 0.1763327956199646,
+      "persistent_over_uncapped_ratio": 1.01773,
+      "uncapped_ms": 0.17326079607009887
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  }
+}

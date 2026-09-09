@@ -1,0 +1,980 @@
+{
+  "cases": [
+    {
+      "channels": 1,
+      "cpu_gpu_count": 512,
+      "cpu_gpu_history_mismatches": 0,
+      "elapsed_seconds": 1.3791094506159425,
+      "geometry_sha256": "089b1035f425c0ed53946bf51a1619fbed8809c1fdaf487a1be316dfa9f79505",
+      "name": "pmt",
+      "scene_fingerprint": "523c118d3b147bc8d380834d9b25533d4e4c2a7c89bfe39e340bdc27913feccf",
+      "seeds": [
+        {
+          "count": 50000,
+          "cuda_detected": 5717,
+          "cuda_max_nontransverse": 9.834766387939453e-07,
+          "cuda_nonfinite_frames": 0,
+          "detected": 5743,
+          "seed": 11,
+          "step_limit": 0
+        },
+        {
+          "count": 50000,
+          "cuda_detected": 5646,
+          "cuda_max_nontransverse": 1.6093254089355469e-06,
+          "cuda_nonfinite_frames": 0,
+          "detected": 5803,
+          "seed": 29,
+          "step_limit": 0
+        },
+        {
+          "count": 50000,
+          "cuda_detected": 5848,
+          "cuda_max_nontransverse": 7.450580596923828e-07,
+          "cuda_nonfinite_frames": 0,
+          "detected": 5829,
+          "seed": 83,
+          "step_limit": 0
+        }
+      ],
+      "source_sha256": "1fc1bcc731b06b7c651e4cde3dc4b519f4450dbd368073df2e11e6e29183edbc",
+      "triangles": 1168
+    },
+    {
+      "channels": 162,
+      "elapsed_seconds": 84.3017277312465,
+      "geometry_sha256": "c5f55b038488c7703d4e43b152712d92a41e275fd1923216fffd9c046065d5c5",
+      "name": "detector",
+      "scene_fingerprint": "12d1bea46f507ba45485ca90d96797607ba25b5782c79179ab1ec5e1f617b62b",
+      "seeds": [
+        {
+          "count": 50000,
+          "cuda_detected": 1297,
+          "cuda_max_nontransverse": 0.9999563694000244,
+          "cuda_nonfinite_frames": 0,
+          "detected": 1305,
+          "seed": 11,
+          "step_limit": 0
+        },
+        {
+          "count": 50000,
+          "cuda_detected": 1263,
+          "cuda_max_nontransverse": 0.9999178647994995,
+          "cuda_nonfinite_frames": 0,
+          "detected": 1292,
+          "seed": 29,
+          "step_limit": 0
+        },
+        {
+          "count": 50000,
+          "cuda_detected": 1322,
+          "cuda_max_nontransverse": 0.999630868434906,
+          "cuda_nonfinite_frames": 0,
+          "detected": 1285,
+          "seed": 83,
+          "step_limit": 0
+        }
+      ],
+      "source_sha256": "5ac43ca91b222606b4c2056fb3fbe7d41662bfbef0a3af56122cca2f50bae4bf",
+      "triangles": 2205488
+    }
+  ],
+  "check_count": 125,
+  "checks": [
+    {
+      "limit": 0.0,
+      "name": "pmt.11.finite_pos",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.11.finite_direction",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.11.finite_polarization",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.11.finite_times",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.11.finite_wavelengths",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.11.unit_direction",
+      "passed": true,
+      "value": 2.384185791015625e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.11.unit_polarization",
+      "passed": true,
+      "value": 2.980232238769531e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.11.transversality",
+      "passed": true,
+      "value": 1.1920928955078125e-07
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.11.step_limit",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.11.cuda_nan_abort",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.11.cuda_flag1",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.11.cuda_flag2",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.11434,
+      "limit": 0.012207690002643186,
+      "name": "pmt.11.cuda_flag4",
+      "passed": true,
+      "triton": 0.11486,
+      "value": 0.0005200000000000066
+    },
+    {
+      "cuda": 0.88566,
+      "limit": 0.012207690002643188,
+      "name": "pmt.11.cuda_flag8",
+      "passed": true,
+      "triton": 0.88514,
+      "value": 0.0005199999999999649
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.11.cuda_flag16",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.11.cuda_flag32",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0834,
+      "limit": 0.010676227446583366,
+      "name": "pmt.11.cuda_flag64",
+      "passed": true,
+      "triton": 0.08566,
+      "value": 0.002259999999999998
+    },
+    {
+      "cuda": 0.79882,
+      "limit": 0.015312008928907333,
+      "name": "pmt.11.cuda_flag128",
+      "passed": true,
+      "triton": 0.80026,
+      "value": 0.0014399999999999968
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 5717,
+      "limit": 0.07284271133895101,
+      "name": "pmt.11.cuda_times_cdf",
+      "passed": true,
+      "triton_count": 5743,
+      "value": 0.01834784928491029
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 5717,
+      "limit": 0.07284271133895101,
+      "name": "pmt.11.cuda_wavelengths_cdf",
+      "passed": true,
+      "triton_count": 5743,
+      "value": 0.012551803869132905
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.29.finite_pos",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.29.finite_direction",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.29.finite_polarization",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.29.finite_times",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.29.finite_wavelengths",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.29.unit_direction",
+      "passed": true,
+      "value": 2.384185791015625e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.29.unit_polarization",
+      "passed": true,
+      "value": 3.5762786865234375e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.29.transversality",
+      "passed": true,
+      "value": 1.1920928955078125e-07
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.29.step_limit",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.29.cuda_nan_abort",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.29.cuda_flag1",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.29.cuda_flag2",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.11292,
+      "limit": 0.012202637851727578,
+      "name": "pmt.29.cuda_flag4",
+      "passed": true,
+      "triton": 0.11606,
+      "value": 0.00313999999999999
+    },
+    {
+      "cuda": 0.88708,
+      "limit": 0.012202637851727578,
+      "name": "pmt.29.cuda_flag8",
+      "passed": true,
+      "triton": 0.88394,
+      "value": 0.0031400000000000317
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.29.cuda_flag16",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.29.cuda_flag32",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.08488,
+      "limit": 0.010703945550880353,
+      "name": "pmt.29.cuda_flag64",
+      "passed": true,
+      "triton": 0.08516,
+      "value": 0.00028000000000000247
+    },
+    {
+      "cuda": 0.79686,
+      "limit": 0.01529950194914181,
+      "name": "pmt.29.cuda_flag128",
+      "passed": true,
+      "triton": 0.8031,
+      "value": 0.006240000000000023
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 5646,
+      "limit": 0.07288269510246122,
+      "name": "pmt.29.cuda_times_cdf",
+      "passed": true,
+      "triton_count": 5803,
+      "value": 0.008582262500084703
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 5646,
+      "limit": 0.07288269510246122,
+      "name": "pmt.29.cuda_wavelengths_cdf",
+      "passed": true,
+      "triton_count": 5803,
+      "value": 0.011450402881380606
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.83.finite_pos",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.83.finite_direction",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.83.finite_polarization",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.83.finite_times",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.83.finite_wavelengths",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.83.unit_direction",
+      "passed": true,
+      "value": 2.384185791015625e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.83.unit_polarization",
+      "passed": true,
+      "value": 2.980232238769531e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "pmt.83.transversality",
+      "passed": true,
+      "value": 1.1920928955078125e-07
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.83.step_limit",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "pmt.83.cuda_nan_abort",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.83.cuda_flag1",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.83.cuda_flag2",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.11696,
+      "limit": 0.012306634671803368,
+      "name": "pmt.83.cuda_flag4",
+      "passed": true,
+      "triton": 0.11658,
+      "value": 0.00037999999999999146
+    },
+    {
+      "cuda": 0.88304,
+      "limit": 0.012306634671803368,
+      "name": "pmt.83.cuda_flag8",
+      "passed": true,
+      "triton": 0.88342,
+      "value": 0.00037999999999993594
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.83.cuda_flag16",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "pmt.83.cuda_flag32",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0859,
+      "limit": 0.010730433650704385,
+      "name": "pmt.83.cuda_flag64",
+      "passed": true,
+      "triton": 0.08508,
+      "value": 0.0008200000000000013
+    },
+    {
+      "cuda": 0.80014,
+      "limit": 0.0153261866651702,
+      "name": "pmt.83.cuda_flag128",
+      "passed": true,
+      "triton": 0.79794,
+      "value": 0.0021999999999999797
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 5848,
+      "limit": 0.07216263189083896,
+      "name": "pmt.83.cuda_times_cdf",
+      "passed": true,
+      "triton_count": 5829,
+      "value": 0.014462248172318226
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 5848,
+      "limit": 0.07216263189083896,
+      "name": "pmt.83.cuda_wavelengths_cdf",
+      "passed": true,
+      "triton_count": 5829,
+      "value": 0.020828800945505987
+    },
+    {
+      "limit": 0.005,
+      "name": "pmt.cpu_gpu_history_fraction",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.003,
+      "name": "pmt.cpu_gpu_time_p99_ns",
+      "passed": true,
+      "value": 9.5367431640625e-07
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.11.finite_pos",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.11.finite_direction",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.11.finite_polarization",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.11.finite_times",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.11.finite_wavelengths",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.11.unit_direction",
+      "passed": true,
+      "value": 5.960464477539062e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.11.unit_polarization",
+      "passed": true,
+      "value": 3.5762786865234375e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.11.transversality",
+      "passed": true,
+      "value": 8.828938007354736e-07
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.11.step_limit",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.11.cuda_nan_abort",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "detector.11.cuda_flag1",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.2038,
+      "limit": 0.01542718449669958,
+      "name": "detector.11.cuda_flag2",
+      "passed": true,
+      "triton": 0.20532,
+      "value": 0.0015199999999999936
+    },
+    {
+      "cuda": 0.02594,
+      "limit": 0.006161014966377753,
+      "name": "detector.11.cuda_flag4",
+      "passed": true,
+      "triton": 0.0261,
+      "value": 0.00016000000000000042
+    },
+    {
+      "cuda": 0.77026,
+      "limit": 0.016103570426659993,
+      "name": "detector.11.cuda_flag8",
+      "passed": true,
+      "triton": 0.76858,
+      "value": 0.0016799999999999038
+    },
+    {
+      "cuda": 0.83404,
+      "limit": 0.014242191911456236,
+      "name": "detector.11.cuda_flag16",
+      "passed": true,
+      "triton": 0.8338,
+      "value": 0.00024000000000001798
+    },
+    {
+      "cuda": 0.02648,
+      "limit": 0.006193681652506987,
+      "name": "detector.11.cuda_flag32",
+      "passed": true,
+      "triton": 0.02614,
+      "value": 0.00034
+    },
+    {
+      "cuda": 0.7383,
+      "limit": 0.016826375675890924,
+      "name": "detector.11.cuda_flag64",
+      "passed": true,
+      "triton": 0.73574,
+      "value": 0.0025600000000000067
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "detector.11.cuda_flag128",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 1297,
+      "limit": 0.1528711267463741,
+      "name": "detector.11.cuda_times_cdf",
+      "passed": true,
+      "triton_count": 1305,
+      "value": 0.02049055143463996
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 1297,
+      "limit": 0.1528711267463741,
+      "name": "detector.11.cuda_wavelengths_cdf",
+      "passed": true,
+      "triton_count": 1305,
+      "value": 0.0
+    },
+    {
+      "categories": 152,
+      "limit": 248.4252865374413,
+      "name": "detector.11.cuda_channel_chi2",
+      "p_value": 0.13670150027170466,
+      "passed": true,
+      "value": 170.12612051457864
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.29.finite_pos",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.29.finite_direction",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.29.finite_polarization",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.29.finite_times",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.29.finite_wavelengths",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.29.unit_direction",
+      "passed": true,
+      "value": 5.364418029785156e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.29.unit_polarization",
+      "passed": true,
+      "value": 4.172325134277344e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.29.transversality",
+      "passed": true,
+      "value": 6.407499313354492e-07
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.29.step_limit",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.29.cuda_nan_abort",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "detector.29.cuda_flag1",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.20792,
+      "limit": 0.01552085060300242,
+      "name": "detector.29.cuda_flag2",
+      "passed": true,
+      "triton": 0.208,
+      "value": 7.999999999999674e-05
+    },
+    {
+      "cuda": 0.02526,
+      "limit": 0.006107650991833109,
+      "name": "detector.29.cuda_flag4",
+      "passed": true,
+      "triton": 0.02584,
+      "value": 0.0005799999999999972
+    },
+    {
+      "cuda": 0.76682,
+      "limit": 0.016174146973788425,
+      "name": "detector.29.cuda_flag8",
+      "passed": true,
+      "triton": 0.76616,
+      "value": 0.0006599999999999939
+    },
+    {
+      "cuda": 0.8344,
+      "limit": 0.01426496341458683,
+      "name": "detector.29.cuda_flag16",
+      "passed": true,
+      "triton": 0.8321,
+      "value": 0.0023000000000000798
+    },
+    {
+      "cuda": 0.02548,
+      "limit": 0.006166661173242635,
+      "name": "detector.29.cuda_flag32",
+      "passed": true,
+      "triton": 0.02666,
+      "value": 0.0011800000000000005
+    },
+    {
+      "cuda": 0.73744,
+      "limit": 0.016836169205173775,
+      "name": "detector.29.cuda_flag64",
+      "passed": true,
+      "triton": 0.73564,
+      "value": 0.0018000000000000238
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "detector.29.cuda_flag128",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 1263,
+      "limit": 0.1542776814868796,
+      "name": "detector.29.cuda_times_cdf",
+      "passed": true,
+      "triton_count": 1292,
+      "value": 0.03090704965571678
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 1263,
+      "limit": 0.1542776814868796,
+      "name": "detector.29.cuda_wavelengths_cdf",
+      "passed": true,
+      "triton_count": 1292,
+      "value": 0.0
+    },
+    {
+      "categories": 154,
+      "limit": 250.96808125482178,
+      "name": "detector.29.cuda_channel_chi2",
+      "p_value": 0.7024692358038662,
+      "passed": true,
+      "value": 143.24708704408454
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.83.finite_pos",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.83.finite_direction",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.83.finite_polarization",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.83.finite_times",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.83.finite_wavelengths",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.83.unit_direction",
+      "passed": true,
+      "value": 6.556510925292969e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.83.unit_polarization",
+      "passed": true,
+      "value": 4.76837158203125e-07
+    },
+    {
+      "limit": 0.0001,
+      "name": "detector.83.transversality",
+      "passed": true,
+      "value": 4.172325134277344e-07
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.83.step_limit",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "limit": 0.0,
+      "name": "detector.83.cuda_nan_abort",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "detector.83.cuda_flag1",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "cuda": 0.20728,
+      "limit": 0.01547670327902444,
+      "name": "detector.83.cuda_flag2",
+      "passed": true,
+      "triton": 0.20542,
+      "value": 0.0018600000000000005
+    },
+    {
+      "cuda": 0.02644,
+      "limit": 0.006166661173242636,
+      "name": "detector.83.cuda_flag4",
+      "passed": true,
+      "triton": 0.0257,
+      "value": 0.0007400000000000011
+    },
+    {
+      "cuda": 0.76628,
+      "limit": 0.016148017930611384,
+      "name": "detector.83.cuda_flag8",
+      "passed": true,
+      "triton": 0.76888,
+      "value": 0.0026000000000000467
+    },
+    {
+      "cuda": 0.83318,
+      "limit": 0.014282241808979254,
+      "name": "detector.83.cuda_flag16",
+      "passed": true,
+      "triton": 0.8323,
+      "value": 0.0008799999999999919
+    },
+    {
+      "cuda": 0.02774,
+      "limit": 0.006222803498720895,
+      "name": "detector.83.cuda_flag32",
+      "passed": true,
+      "triton": 0.0254,
+      "value": 0.002340000000000002
+    },
+    {
+      "cuda": 0.7348,
+      "limit": 0.01687649928833585,
+      "name": "detector.83.cuda_flag64",
+      "passed": true,
+      "triton": 0.7343,
+      "value": 0.000500000000000056
+    },
+    {
+      "cuda": 0.0,
+      "limit": 0.00012,
+      "name": "detector.83.cuda_flag128",
+      "passed": true,
+      "triton": 0.0,
+      "value": 0.0
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 1322,
+      "limit": 0.15273545603214145,
+      "name": "detector.83.cuda_times_cdf",
+      "passed": true,
+      "triton_count": 1285,
+      "value": 0.02847059931597562
+    },
+    {
+      "coordinate_tolerance": 0.0001,
+      "cuda_count": 1322,
+      "limit": 0.15273545603214145,
+      "name": "detector.83.cuda_wavelengths_cdf",
+      "passed": true,
+      "triton_count": 1285,
+      "value": 0.0
+    },
+    {
+      "categories": 144,
+      "limit": 238.21760216928328,
+      "name": "detector.83.cuda_channel_chi2",
+      "p_value": 0.4060117262343053,
+      "passed": true,
+      "value": 146.38256280440078
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-40GB",
+  "dkw_alpha_per_check": 1e-06,
+  "passed": true,
+  "physical_calibration": "not validated; measured inputs unavailable",
+  "rng": "philox4x32-10-id64-stream32-seed64-v1",
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0"
+}

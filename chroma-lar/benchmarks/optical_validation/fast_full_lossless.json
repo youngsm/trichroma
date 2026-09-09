@@ -1,0 +1,86 @@
+{
+  "expected": "Every photon detected; zero bulk/surface absorption in a lossless enclosure with absorbing steel behind perfectly reflecting boundaries.",
+  "scene_fingerprint": "6a2dafedd8b4f9c179ec932bab854c415bfbc9d49b69b2352d02c964b8c9d2d5",
+  "cases": [
+    {
+      "seed": 11,
+      "center_mm": [
+        -1000.0,
+        0.0,
+        0.0
+      ],
+      "photons": 100000,
+      "counts": {
+        "detected": 64373,
+        "bulk_absorbed": 35627,
+        "surface_absorbed": 0,
+        "reflected": 98636
+      },
+      "diagnostics": {
+        "detected": 64373,
+        "reemitted": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "aborted": 0,
+        "unfinished": 0,
+        "nonfinite": 0
+      },
+      "maximum_interactions": 355,
+      "passed": false
+    },
+    {
+      "seed": 29,
+      "center_mm": [
+        -1990.0,
+        500.0,
+        500.0
+      ],
+      "photons": 100000,
+      "counts": {
+        "detected": 65031,
+        "bulk_absorbed": 34969,
+        "surface_absorbed": 0,
+        "reflected": 96652
+      },
+      "diagnostics": {
+        "detected": 65031,
+        "reemitted": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "aborted": 0,
+        "unfinished": 0,
+        "nonfinite": 0
+      },
+      "maximum_interactions": 322,
+      "passed": false
+    },
+    {
+      "seed": 83,
+      "center_mm": [
+        -10.0,
+        -500.0,
+        -500.0
+      ],
+      "photons": 100000,
+      "counts": {
+        "detected": 64344,
+        "bulk_absorbed": 35656,
+        "surface_absorbed": 0,
+        "reflected": 99350
+      },
+      "diagnostics": {
+        "detected": 64344,
+        "reemitted": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "aborted": 0,
+        "unfinished": 0,
+        "nonfinite": 0
+      },
+      "maximum_interactions": 320,
+      "passed": false
+    }
+  ],
+  "passed": false,
+  "diagnostic_script_sha256": "652d7be78b897da25dd87fe13b5b563119140699db91ae30ebdb7a3413849e53"
+}

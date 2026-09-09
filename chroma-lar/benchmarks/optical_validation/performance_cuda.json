@@ -1,0 +1,203 @@
+{
+  "backend": "cuda",
+  "center_mm": [
+    -1000,
+    0,
+    0
+  ],
+  "channels": 162,
+  "counts": [
+    {
+      "event_seconds_max": 6.022156095132232,
+      "event_seconds_min": 5.325830069370568,
+      "median": {
+        "download_result_seconds": 0.0009172922000288963,
+        "event_seconds": 5.623609676025808,
+        "photons_per_second": 177.82172974471047,
+        "source_seconds": 0.0006919857114553452,
+        "transport_seconds": 5.62136507127434,
+        "upload_allocation_seconds": 0.0004938999190926552
+      },
+      "photons": 1000,
+      "runs": [
+        {
+          "detected": 41,
+          "download_result_seconds": 0.0009403708390891552,
+          "event_seconds": 5.623609676025808,
+          "photons": 1000,
+          "photons_per_second": 177.82172974471047,
+          "source_seconds": 0.0008103339932858944,
+          "step_limit": 0,
+          "transport_seconds": 5.62136507127434,
+          "upload_allocation_seconds": 0.0004938999190926552
+        },
+        {
+          "detected": 46,
+          "download_result_seconds": 0.0008954922668635845,
+          "event_seconds": 5.325830069370568,
+          "photons": 1000,
+          "photons_per_second": 187.76415825790417,
+          "source_seconds": 0.0006475071422755718,
+          "step_limit": 0,
+          "transport_seconds": 5.3238076297566295,
+          "upload_allocation_seconds": 0.00047944020479917526
+        },
+        {
+          "detected": 41,
+          "download_result_seconds": 0.0009172922000288963,
+          "event_seconds": 6.022156095132232,
+          "photons": 1000,
+          "photons_per_second": 166.05348386905976,
+          "source_seconds": 0.0006919857114553452,
+          "step_limit": 0,
+          "transport_seconds": 6.019897161051631,
+          "upload_allocation_seconds": 0.000649656169116497
+        }
+      ],
+      "warmup": {
+        "detected": 38,
+        "download_result_seconds": 0.0005764290690422058,
+        "event_seconds": 6.749251169152558,
+        "photons": 1000,
+        "photons_per_second": 148.16458521657907,
+        "source_seconds": 0.0006925864145159721,
+        "step_limit": 0,
+        "transport_seconds": 6.549955058842897,
+        "upload_allocation_seconds": 0.19802709482610226
+      }
+    },
+    {
+      "event_seconds_max": 7.691695665940642,
+      "event_seconds_min": 6.790943607222289,
+      "median": {
+        "download_result_seconds": 0.0008560530841350555,
+        "event_seconds": 7.20725794415921,
+        "photons_per_second": 1387.490232412736,
+        "source_seconds": 0.001600428018718958,
+        "transport_seconds": 7.204240715131164,
+        "upload_allocation_seconds": 0.0005846880376338959
+      },
+      "photons": 10000,
+      "runs": [
+        {
+          "detected": 381,
+          "download_result_seconds": 0.0008560530841350555,
+          "event_seconds": 7.20725794415921,
+          "photons": 10000,
+          "photons_per_second": 1387.490232412736,
+          "source_seconds": 0.001600428018718958,
+          "step_limit": 0,
+          "transport_seconds": 7.204240715131164,
+          "upload_allocation_seconds": 0.0005607479251921177
+        },
+        {
+          "detected": 388,
+          "download_result_seconds": 0.0008788718841969967,
+          "event_seconds": 7.691695665940642,
+          "photons": 10000,
+          "photons_per_second": 1300.103440686127,
+          "source_seconds": 0.0015774876810610294,
+          "step_limit": 0,
+          "transport_seconds": 7.688639558386058,
+          "upload_allocation_seconds": 0.0005997479893267155
+        },
+        {
+          "detected": 386,
+          "download_result_seconds": 0.0004931101575493813,
+          "event_seconds": 6.790943607222289,
+          "photons": 10000,
+          "photons_per_second": 1472.5494096821571,
+          "source_seconds": 0.0017642448656260967,
+          "step_limit": 0,
+          "transport_seconds": 6.7881015641614795,
+          "upload_allocation_seconds": 0.0005846880376338959
+        }
+      ],
+      "warmup": {
+        "detected": 361,
+        "download_result_seconds": 0.0008569033816456795,
+        "event_seconds": 7.759059043135494,
+        "photons": 10000,
+        "photons_per_second": 1288.8160722075038,
+        "source_seconds": 0.0018207128159701824,
+        "step_limit": 0,
+        "transport_seconds": 7.755735679995269,
+        "upload_allocation_seconds": 0.0006457469426095486
+      }
+    },
+    {
+      "event_seconds_max": 14.835116886068135,
+      "event_seconds_min": 14.641815660055727,
+      "median": {
+        "download_result_seconds": 0.00157479802146554,
+        "event_seconds": 14.69891411298886,
+        "photons_per_second": 6803.22364164533,
+        "source_seconds": 0.010807910934090614,
+        "transport_seconds": 14.684879466891289,
+        "upload_allocation_seconds": 0.0016151382587850094
+      },
+      "photons": 100000,
+      "runs": [
+        {
+          "detected": 3471,
+          "download_result_seconds": 0.00157479802146554,
+          "event_seconds": 14.69891411298886,
+          "photons": 100000,
+          "photons_per_second": 6803.22364164533,
+          "source_seconds": 0.010844709817320108,
+          "step_limit": 0,
+          "transport_seconds": 14.684879466891289,
+          "upload_allocation_seconds": 0.0016151382587850094
+        },
+        {
+          "detected": 3692,
+          "download_result_seconds": 0.0015229592099785805,
+          "event_seconds": 14.835116886068135,
+          "photons": 100000,
+          "photons_per_second": 6740.762527723081,
+          "source_seconds": 0.010807910934090614,
+          "step_limit": 0,
+          "transport_seconds": 14.821193667594343,
+          "upload_allocation_seconds": 0.0015923483297228813
+        },
+        {
+          "detected": 3746,
+          "download_result_seconds": 0.0016631768085062504,
+          "event_seconds": 14.641815660055727,
+          "photons": 100000,
+          "photons_per_second": 6829.754063412338,
+          "source_seconds": 0.009992607869207859,
+          "step_limit": 0,
+          "transport_seconds": 14.628452580422163,
+          "upload_allocation_seconds": 0.0017072949558496475
+        }
+      ],
+      "warmup": {
+        "detected": 3694,
+        "download_result_seconds": 0.001619646791368723,
+        "event_seconds": 14.850437925197184,
+        "photons": 100000,
+        "photons_per_second": 6733.808154595024,
+        "source_seconds": 0.011209753341972828,
+        "step_limit": 0,
+        "transport_seconds": 14.835599576123059,
+        "upload_allocation_seconds": 0.002008948940783739
+      }
+    }
+  ],
+  "cuda_blocks": 1024,
+  "cuda_threads": 512,
+  "device": "NVIDIA A100-SXM4-40GB",
+  "disk_compiler_cache": "retained; setup and warm-ups are not cold-compile measurements",
+  "max_steps": 2048,
+  "output_contract": "full photon states",
+  "physics": "450nm legacy optical tables",
+  "scene_fingerprint": "12d1bea46f507ba45485ca90d96797607ba25b5782c79179ab1ec5e1f617b62b",
+  "scope": "source generation through host-readable output; no file writes or detector construction",
+  "setup_seconds": 3.2714248220436275,
+  "tile_size": null,
+  "transport_rng": "persistent XORWOW, setup seed 12345, advanced across warm-up and measured runs",
+  "transport_stage": "synchronized wall time including GPU kernels and host scheduling, excludes source, upload and download",
+  "triangles": 2205488,
+  "voxel_size_mm": 30
+}

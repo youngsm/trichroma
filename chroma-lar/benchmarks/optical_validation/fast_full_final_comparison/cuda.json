@@ -1,0 +1,37 @@
+{
+  "backend": "cuda",
+  "calibration_fingerprint": "5e8a6bd2a76f993242c8002d07b6f35bfaa82eaef314e59aa73952b2b4236745",
+  "photons_per_seed": 500000,
+  "runs": [
+    {
+      "seed": 11,
+      "input_sha256": "3218f38bcb96551e0faf20a12da5efd6d5bcb697546a626db4502f2b1548b3d0",
+      "detected": 1784,
+      "reemitted": 15812,
+      "nonfinite": 0,
+      "aborted": 0,
+      "escaped": 0,
+      "step_limit": 0
+    },
+    {
+      "seed": 29,
+      "input_sha256": "1745842756471d3982209df50782811494a211ac1ce5d6ccfb29de2f99267553",
+      "detected": 1806,
+      "reemitted": 15904,
+      "nonfinite": 0,
+      "aborted": 0,
+      "escaped": 0,
+      "step_limit": 0
+    },
+    {
+      "seed": 83,
+      "input_sha256": "cb4d219cbd801adf320ac8e3ad1dd8541a448ee17b10ec10f4473d3d55cc5cd4",
+      "detected": 1826,
+      "reemitted": 16196,
+      "nonfinite": 0,
+      "aborted": 0,
+      "escaped": 0,
+      "step_limit": 0
+    }
+  ]
+}

@@ -1,0 +1,513 @@
+{
+  "axes": {
+    "x": "linear",
+    "y": "linear"
+  },
+  "center_mm": [
+    -1000.0,
+    0.0,
+    0.0
+  ],
+  "external_references": [
+    {
+      "photons": 500000,
+      "photons_per_second": 3333333.3333333335,
+      "series": "Opticks 2017 compute-only (GT 750M)",
+      "source": "https://doi.org/10.1088/1742-6596/898/4/042001"
+    },
+    {
+      "photons": 1000000,
+      "photons_per_second": 3571428.571428571,
+      "series": "Opticks 2017 compute-only (GT 750M)",
+      "source": "https://doi.org/10.1088/1742-6596/898/4/042001"
+    },
+    {
+      "photons": 1000000,
+      "photons_per_second": 4000000.0,
+      "series": "Opticks 2017 compute-only (GT 750M)",
+      "source": "https://doi.org/10.1088/1742-6596/898/4/042001"
+    },
+    {
+      "photons": 100000000,
+      "photons_per_second": 9596928.982725527,
+      "series": "Opticks 2025 reported (RTX 5000 Ada)",
+      "source": "https://simoncblyth.github.io/env/presentation/opticks_20241021_krakow_chep2024.html"
+    }
+  ],
+  "metric": "photons_per_second_p95_latency",
+  "points": [
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 2718860.4058805476,
+          "minimum_run_photons_per_second": 2333350.2914954205,
+          "p95_latency_photons_per_second": 2351469.436210841,
+          "run_photons_per_second": [
+            2333350.2914954205,
+            2528156.26481569,
+            2718860.4058805476
+          ],
+          "sustained_photons_per_second": 2516958.764973512
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 2758127.6057151416,
+          "minimum_run_photons_per_second": 1274767.2553033433,
+          "p95_latency_photons_per_second": 1342376.4713852566,
+          "run_photons_per_second": [
+            2758127.6057151416,
+            2568299.362411211,
+            1274767.2553033433
+          ],
+          "sustained_photons_per_second": 1952636.2815461296
+        }
+      },
+      "photons": 500000,
+      "replicates": 3,
+      "speedup_p95": 0.5708670717610358
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 2802795.326654879,
+          "minimum_run_photons_per_second": 976040.2966897485,
+          "p95_latency_photons_per_second": 1036896.0774398403,
+          "run_photons_per_second": [
+            2362740.9131692275,
+            976040.2966897485,
+            2802795.326654879
+          ],
+          "sustained_photons_per_second": 1662444.2495011333
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 4626624.444987737,
+          "minimum_run_photons_per_second": 2557397.885345242,
+          "p95_latency_photons_per_second": 2675443.1649778625,
+          "run_photons_per_second": [
+            4626624.444987737,
+            4576733.627151568,
+            2557397.885345242
+          ],
+          "sustained_photons_per_second": 3633460.41255561
+        }
+      },
+      "photons": 1000000,
+      "replicates": 3,
+      "speedup_p95": 2.5802423436528903
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 2850597.571884512,
+          "minimum_run_photons_per_second": 1247662.1144170968,
+          "p95_latency_photons_per_second": 1298437.1414270133,
+          "run_photons_per_second": [
+            2850597.571884512,
+            2048865.2184017354,
+            1247662.1144170968
+          ],
+          "sustained_photons_per_second": 1828847.0535726307
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 7001454.929714272,
+          "minimum_run_photons_per_second": 2790794.7695803624,
+          "p95_latency_photons_per_second": 2913695.9406749755,
+          "run_photons_per_second": [
+            2790794.7695803624,
+            7001454.929714272,
+            4826736.813872852
+          ],
+          "sustained_photons_per_second": 4235328.204482311
+        }
+      },
+      "photons": 2000000,
+      "replicates": 3,
+      "speedup_p95": 2.2440023068600414
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 2305633.0545933503,
+          "minimum_run_photons_per_second": 1062283.9531509636,
+          "p95_latency_photons_per_second": 1069444.8890194083,
+          "run_photons_per_second": [
+            1138518.4329959375,
+            1062283.9531509636,
+            2305633.0545933503
+          ],
+          "sustained_photons_per_second": 1331308.1290706187
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 9337300.042805813,
+          "minimum_run_photons_per_second": 3932573.5562903006,
+          "p95_latency_photons_per_second": 4102479.9111309727,
+          "run_photons_per_second": [
+            3932573.5562903006,
+            9337300.042805813,
+            6712654.646088403
+          ],
+          "sustained_photons_per_second": 5878248.464097025
+        }
+      },
+      "photons": 3000000,
+      "replicates": 3,
+      "speedup_p95": 3.836083517022186
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 2219319.2462605573,
+          "minimum_run_photons_per_second": 1426905.3558761086,
+          "p95_latency_photons_per_second": 1473467.2304098846,
+          "run_photons_per_second": [
+            2086125.359040791,
+            2219319.2462605573,
+            1426905.3558761086
+          ],
+          "sustained_photons_per_second": 1839629.07394045
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 13220302.707480619,
+          "minimum_run_photons_per_second": 5992864.979877944,
+          "p95_latency_photons_per_second": 6229606.969938578,
+          "run_photons_per_second": [
+            5992864.979877944,
+            13220302.707480619,
+            9666334.845609438
+          ],
+          "sustained_photons_per_second": 8671568.894189512
+        }
+      },
+      "photons": 5000000,
+      "replicates": 3,
+      "speedup_p95": 4.227855795751661
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1638939.1115016325,
+          "minimum_run_photons_per_second": 1393312.838042628,
+          "p95_latency_photons_per_second": 1398842.7193492379,
+          "run_photons_per_second": [
+            1450660.0864750699,
+            1638939.1115016325,
+            1393312.838042628
+          ],
+          "sustained_photons_per_second": 1487205.5243750422
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 7915512.671863617,
+          "minimum_run_photons_per_second": 3983233.928859746,
+          "p95_latency_photons_per_second": 3987384.9829107663,
+          "run_photons_per_second": [
+            7915512.671863617,
+            4025137.4906124505,
+            3983233.928859746
+          ],
+          "sustained_photons_per_second": 4793670.716531568
+        }
+      },
+      "photons": 7500000,
+      "replicates": 3,
+      "speedup_p95": 2.8504884271519506
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 2287898.66943539,
+          "minimum_run_photons_per_second": 1243185.215136817,
+          "p95_latency_photons_per_second": 1286558.912151541,
+          "run_photons_per_second": [
+            1875457.1607647955,
+            2287898.66943539,
+            1243185.215136817
+          ],
+          "sustained_photons_per_second": 1690454.1807235498
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 10163878.256112734,
+          "minimum_run_photons_per_second": 5114960.946937694,
+          "p95_latency_photons_per_second": 5120856.754119593,
+          "run_photons_per_second": [
+            10163878.256112734,
+            5174537.057363476,
+            5114960.946937694
+          ],
+          "sustained_photons_per_second": 6158310.992541098
+        }
+      },
+      "photons": 10000000,
+      "replicates": 3,
+      "speedup_p95": 3.9802738185971367
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1763347.3724614577,
+          "minimum_run_photons_per_second": 1195348.8519260206,
+          "p95_latency_photons_per_second": 1219148.7186043966,
+          "run_photons_per_second": [
+            1763347.3724614577,
+            1485305.9615159207,
+            1195348.8519260206
+          ],
+          "sustained_photons_per_second": 1444431.9387525718
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 11897968.967690581,
+          "minimum_run_photons_per_second": 6004212.315001335,
+          "p95_latency_photons_per_second": 6025015.8280259175,
+          "run_photons_per_second": [
+            11897968.967690581,
+            6218943.4884177465,
+            6004212.315001335
+          ],
+          "sustained_photons_per_second": 7292231.288786831
+        }
+      },
+      "photons": 12500000,
+      "replicates": 3,
+      "speedup_p95": 4.941985941569926
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1856853.2339903757,
+          "minimum_run_photons_per_second": 988953.9384555072,
+          "p95_latency_photons_per_second": 1010257.573972325,
+          "run_photons_per_second": [
+            1253225.8086822014,
+            1856853.2339903757,
+            988953.9384555072
+          ],
+          "sustained_photons_per_second": 1277870.482193677
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 13466614.803692207,
+          "minimum_run_photons_per_second": 7331320.236432576,
+          "p95_latency_photons_per_second": 7333350.256561826,
+          "run_photons_per_second": [
+            13466614.803692207,
+            7351671.1536852475,
+            7331320.236432576
+          ],
+          "sustained_photons_per_second": 8653456.256065553
+        }
+      },
+      "photons": 15000000,
+      "replicates": 3,
+      "speedup_p95": 7.2588916386215745
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1641850.9345138269,
+          "minimum_run_photons_per_second": 1224064.2350951775,
+          "p95_latency_photons_per_second": 1226406.3335507354,
+          "run_photons_per_second": [
+            1224064.2350951775,
+            1247895.605584559,
+            1641850.9345138269
+          ],
+          "sustained_photons_per_second": 1346880.9408429533
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 10801725.893841676,
+          "minimum_run_photons_per_second": 8489814.324864399,
+          "p95_latency_photons_per_second": 8560786.72115849,
+          "run_photons_per_second": [
+            9257280.444144687,
+            10801725.893841676,
+            8489814.324864399
+          ],
+          "sustained_photons_per_second": 9422433.40732016
+        }
+      },
+      "photons": 30000000,
+      "replicates": 3,
+      "speedup_p95": 6.980383651781212,
+      "triton_tiles_per_run": [
+        2,
+        2,
+        2
+      ],
+      "work_batch_photons": 15000000
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1646534.4664203536,
+          "minimum_run_photons_per_second": 1406585.466400305,
+          "p95_latency_photons_per_second": 1413074.4031244686,
+          "run_photons_per_second": [
+            1474285.6992739243,
+            1646534.4664203536,
+            1406585.466400305
+          ],
+          "sustained_photons_per_second": 1502575.1867549126
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 11677875.474393802,
+          "minimum_run_photons_per_second": 8635262.388779005,
+          "p95_latency_photons_per_second": 8858713.197334364,
+          "run_photons_per_second": [
+            11677875.474393802,
+            11548149.792323826,
+            8635262.388779005
+          ],
+          "sustained_photons_per_second": 10415574.01819711
+        }
+      },
+      "photons": 60000000,
+      "replicates": 3,
+      "speedup_p95": 6.269105984615345,
+      "triton_tiles_per_run": [
+        4,
+        4,
+        4
+      ],
+      "work_batch_photons": 15000000
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1290424.4482216754,
+          "minimum_run_photons_per_second": 1156107.9977939827,
+          "p95_latency_photons_per_second": 1162642.208043376,
+          "run_photons_per_second": [
+            1156107.9977939827,
+            1224951.996718129,
+            1290424.4482216754
+          ],
+          "sustained_photons_per_second": 1221364.8787111605
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 12082717.244432328,
+          "minimum_run_photons_per_second": 9683970.099072304,
+          "p95_latency_photons_per_second": 9871774.893429704,
+          "run_photons_per_second": [
+            12082717.244432328,
+            11959124.13476566,
+            9683970.099072304
+          ],
+          "sustained_photons_per_second": 11125762.608029742
+        }
+      },
+      "photons": 120000000,
+      "replicates": 3,
+      "speedup_p95": 8.49081069406815,
+      "triton_tiles_per_run": [
+        8,
+        8,
+        8
+      ],
+      "work_batch_photons": 15000000
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1602663.9905114928,
+          "minimum_run_photons_per_second": 1317485.0809404643,
+          "p95_latency_photons_per_second": 1318944.3293527353,
+          "run_photons_per_second": [
+            1332224.4936195174,
+            1317485.0809404643,
+            1602663.9905114928
+          ],
+          "sustained_photons_per_second": 1406069.4776075801
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 11935426.186365388,
+          "minimum_run_photons_per_second": 9413010.271826979,
+          "p95_latency_photons_per_second": 9603921.281726526,
+          "run_photons_per_second": [
+            11935426.186365388,
+            11748411.693011012,
+            9413010.271826979
+          ],
+          "sustained_photons_per_second": 10903618.557427457
+        }
+      },
+      "photons": 180000000,
+      "replicates": 3,
+      "speedup_p95": 7.28152134096486,
+      "triton_tiles_per_run": [
+        12,
+        12,
+        12
+      ],
+      "work_batch_photons": 15000000
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1667413.3602371812,
+          "minimum_run_photons_per_second": 1407563.13239078,
+          "p95_latency_photons_per_second": 1421375.4488253256,
+          "run_photons_per_second": [
+            1407563.13239078,
+            1559066.5243684677,
+            1667413.3602371812
+          ],
+          "sustained_photons_per_second": 1537209.3304498715
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 11458070.117613351,
+          "minimum_run_photons_per_second": 10463374.067698793,
+          "p95_latency_photons_per_second": 10516354.658972986,
+          "run_photons_per_second": [
+            11018476.494890112,
+            11458070.117613351,
+            10463374.067698793
+          ],
+          "sustained_photons_per_second": 10964798.189600546
+        }
+      },
+      "photons": 240000000,
+      "replicates": 3,
+      "speedup_p95": 7.398716973523125,
+      "triton_tiles_per_run": [
+        16,
+        16,
+        16
+      ],
+      "work_batch_photons": 15000000
+    },
+    {
+      "backends": {
+        "chroma": {
+          "maximum_run_photons_per_second": 1562827.092994491,
+          "minimum_run_photons_per_second": 1483723.2927186762,
+          "p95_latency_photons_per_second": 1484350.295358479,
+          "run_photons_per_second": [
+            1483723.2927186762,
+            1490017.256861271,
+            1562827.092994491
+          ],
+          "sustained_photons_per_second": 1511350.7462580104
+        },
+        "triton": {
+          "maximum_run_photons_per_second": 11143120.583073873,
+          "minimum_run_photons_per_second": 10201456.47417114,
+          "p95_latency_photons_per_second": 10214868.515858399,
+          "run_photons_per_second": [
+            10337182.868838346,
+            11143120.583073873,
+            10201456.47417114
+          ],
+          "sustained_photons_per_second": 10544636.013741126
+        }
+      },
+      "photons": 300000000,
+      "replicates": 3,
+      "speedup_p95": 6.8817101649118815,
+      "triton_tiles_per_run": [
+        20,
+        20,
+        20
+      ],
+      "work_batch_photons": 15000000
+    }
+  ],
+  "replicates": 3,
+  "work_batch_photons": 15000000
+}

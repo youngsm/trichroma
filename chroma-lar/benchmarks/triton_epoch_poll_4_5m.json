@@ -1,0 +1,338 @@
+{
+  "all_configurations_physics_matched": true,
+  "benchmark": "reflect3wires Triton hotspot and launch-policy sweep",
+  "best_configuration": {
+    "block_size": 128,
+    "history_length": 8,
+    "maximum_photons_per_second": 14644502.163324153,
+    "median_cuda_end_to_end_ms": 349.32777404785156,
+    "median_photons_per_second": 14320105.696133316,
+    "minimum_photons_per_second": 13995709.228942476,
+    "p95_latency_photons_per_second": 14026780.53475259,
+    "sustained_photons_per_second": 14312757.07244583
+  },
+  "command": [
+    "/sdf/home/y/youngsam/sw/dune/.conda/envs/py310_torch/bin/python",
+    "/sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/benchmarks/profile_triton_hotspots.py",
+    "--nphotons",
+    "5000000",
+    "--history-lengths",
+    "8",
+    "--block-sizes",
+    "128",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "131072",
+    "--history-epochs-per-poll",
+    "4",
+    "--diagnostic-photons",
+    "0",
+    "--kernel-profile",
+    "off",
+    "--json",
+    "chroma-lar/benchmarks/triton_epoch_poll_4_5m.json"
+  ],
+  "configuration": {
+    "block_sizes": [
+      128
+    ],
+    "center_mm": [
+      -1000.0,
+      0.0,
+      0.0
+    ],
+    "diagnostic_photons": 0,
+    "history_epochs_per_poll": 4,
+    "history_lengths": [
+      8
+    ],
+    "max_steps": 1000,
+    "nphotons": 5000000,
+    "profile_photons": 262144,
+    "replicates": 2,
+    "reservoir_rounds": 128,
+    "seed": 8123,
+    "tile_size": null,
+    "voxel_size_mm": 30.0,
+    "warmup_photons": 131072
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "cuda_visible_devices": null,
+    "device_count_visible": 1,
+    "free_memory_bytes_at_start": 41961127936,
+    "index": 0,
+    "name": "NVIDIA A100-SXM4-40GB",
+    "properties": {
+      "major": 8,
+      "max_threads_per_multi_processor": 2048,
+      "minor": 0,
+      "multi_processor_count": 108,
+      "regs_per_multiprocessor": 65536,
+      "total_memory": 42405855232,
+      "uuid": "503baa09-51e4-3570-bd4e-02c202b862ff",
+      "warp_size": 32
+    },
+    "requested": "cuda:0",
+    "total_memory_bytes_runtime": 42405855232
+  },
+  "diagnostic_passes": [],
+  "host": "sdfampere001",
+  "kernel_profiles": [],
+  "optimization_evidence_map": {
+    "1_branch_specialization": [
+      "kernel_profiles[].families[boundary_classification|boundary_physics]",
+      "diagnostic_passes[].final_state.photons_ever_with_history_bit",
+      "records[].runs[].boundary_trace.weighted_survival_fraction"
+    ],
+    "2_collision_unroll_and_block_size": [
+      "records[].history_length",
+      "records[].block_size",
+      "kernel_profiles[].families[bulk_collision]"
+    ],
+    "3_common_path_fusion": [
+      "records[].runs[].backend_stats.boundary_rounds",
+      "records[].runs[].cuda_event_timing.phases_inclusive",
+      "kernel_profiles[].families[].calls"
+    ],
+    "4_exact_pmt_locator": [
+      "kernel_profiles[].families[pmt_grid_broadphase|pmt_tlas_traversal|pmt_blas_traversal]",
+      "diagnostic_passes[].boundary_candidates"
+    ],
+    "5_device_resident_scheduling": [
+      "kernel_profiles[].families[host_rendezvous_transfer|host_queue_bookkeeping|queue_scan_compaction]",
+      "kernel_profiles[].summed_activity_over_cuda_span",
+      "records[].runs[].cuda_event_timing.derived.collision_queue_scheduler_residual_ms"
+    ]
+  },
+  "records": [
+    {
+      "block_size": 128,
+      "history_length": 8,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612900,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213823,
+            "elapsed_seconds": 0.35584001429378986,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612900,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 446.5,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612901,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366701945911691
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 1.2083200216293335,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.08397752696156906,
+              "boundary_resolution_fraction_of_simulation_span": 0.553026566399526,
+              "collision_queue_scheduler_residual_ms": 124.69312166981399,
+              "top_level_unattributed_ms": 0.7529346384108067
+            },
+            "end_to_end_span_ms": 357.2410888671875,
+            "phases_inclusive": {
+              "boundary_physics": {
+                "calls": 114,
+                "maximum_ms": 1.4254080057144165,
+                "mean_ms": 0.2622697546980099,
+                "minimum_ms": 0.021503999829292297,
+                "total_ms": 29.898752035573125
+              },
+              "boundary_resolution": {
+                "calls": 114,
+                "maximum_ms": 12.520031929016113,
+                "mean_ms": 1.727154241842136,
+                "minimum_ms": 0.6278719902038574,
+                "total_ms": 196.8955835700035
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2165759950876236,
+                "mean_ms": 0.2165759950876236,
+                "minimum_ms": 0.2165759950876236,
+                "total_ms": 0.2165759950876236
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 351.4874572753906,
+                "mean_ms": 351.4874572753906,
+                "minimum_ms": 351.4874572753906,
+                "total_ms": 351.4874572753906
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.010239999741315842,
+                "mean_ms": 0.010239999741315842,
+                "minimum_ms": 0.010239999741315842,
+                "total_ms": 0.010239999741315842
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.565567970275879,
+                "mean_ms": 3.565567970275879,
+                "minimum_ms": 3.565567970275879,
+                "total_ms": 3.565567970275879
+              }
+            },
+            "simulation_span_ms": 356.03277587890625
+          },
+          "hits": {
+            "canonical_raw_sha256": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+            "hit_count": 213823
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1779781120,
+            "allocated_before_bytes": 47269376,
+            "peak_allocated_bytes": 2174647296,
+            "peak_reserved_bytes": 2227175424,
+            "reserved_after_bytes": 2227175424,
+            "reserved_before_bytes": 69206016
+          },
+          "photons_per_second_wall": 13995709.228942476,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.35725234914571047
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577405,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213435,
+            "elapsed_seconds": 0.340433097910136,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577405,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 395.0,
+            "boundary_queue_p95": 1753707.5,
+            "rounds": 116,
+            "surviving_events": 25577414,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364808589872162
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.8668479919433594,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.09130818550213418,
+              "boundary_resolution_fraction_of_simulation_span": 0.5274977937777756,
+              "collision_queue_scheduler_residual_ms": 127.25611796975136,
+              "top_level_unattributed_ms": 0.6421457566320896
+            },
+            "end_to_end_span_ms": 341.4144592285156,
+            "phases_inclusive": {
+              "boundary_physics": {
+                "calls": 116,
+                "maximum_ms": 1.3619199991226196,
+                "mean_ms": 0.26805848371365976,
+                "minimum_ms": 0.09318400174379349,
+                "total_ms": 31.09478411078453
+              },
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 8.431488037109375,
+                "mean_ms": 1.5486044102701648,
+                "minimum_ms": 0.9039360284805298,
+                "total_ms": 179.6381115913391
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21660800278186798,
+                "mean_ms": 0.21660800278186798,
+                "minimum_ms": 0.21660800278186798,
+                "total_ms": 0.21660800278186798
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 337.989013671875,
+                "mean_ms": 337.989013671875,
+                "minimum_ms": 337.989013671875,
+                "total_ms": 337.989013671875
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.010239999741315842,
+                "mean_ms": 0.010239999741315842,
+                "minimum_ms": 0.010239999741315842,
+                "total_ms": 0.010239999741315842
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6895999908447266,
+                "mean_ms": 1.6895999908447266,
+                "minimum_ms": 1.6895999908447266,
+                "total_ms": 1.6895999908447266
+              }
+            },
+            "simulation_span_ms": 340.547607421875
+          },
+          "hits": {
+            "canonical_raw_sha256": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+            "hit_count": 213435
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1779778048,
+            "allocated_before_bytes": 1778070016,
+            "peak_allocated_bytes": 2333152768,
+            "peak_reserved_bytes": 2394947584,
+            "reserved_after_bytes": 2394947584,
+            "reserved_before_bytes": 2227175424
+          },
+          "photons_per_second_wall": 14644502.163324153,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.3414250579662621
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 14644502.163324153,
+        "median_cuda_end_to_end_ms": 349.32777404785156,
+        "median_photons_per_second": 14320105.696133316,
+        "minimum_photons_per_second": 13995709.228942476,
+        "p95_latency_photons_per_second": 14026780.53475259,
+        "sustained_photons_per_second": 14312757.07244583
+      },
+      "tile_plan": {
+        "available_bytes": 40103366144,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  },
+  "timing_contract": {
+    "candidate_counters": "separate reduction pass, excluded from all performance timing",
+    "kernel_profile": "separate intrusive PyTorch-profiler run, excluded from throughput ranking",
+    "phase_events": "inclusive CUDA-event stream spans around unmodified backend methods",
+    "throughput": "wall clock from source generation through host-readable compact hits"
+  }
+}

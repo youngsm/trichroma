@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+#--*-python-*-
+import optparse
+import sys
+import time
+
+from chroma.cache import Cache
+from chroma.loader import load_geometry_from_string
+from chroma.log import logger, logging
+
+def list_geo(cache, args):
+    geometries = cache.list_geometry()
+    print('List of cached geometries:')
+    print('\n'.join(geometries))
+
+def save(cache, args):
+    start = time.time()
+    geometry = load_geometry_from_string(args[0])
+    print('Geometry generated in %1.1f seconds.' % (time.time() - start))
+
+    start = time.time()
+    cache.save_geometry(args[1], geometry)
+    print('Geometry saved to cache in %1.1f seconds.' % (time.time() - start))
+
+def remove(cache, args):
+    cache.remove_geometry(args[0])
+    print('Geometry "%s" removed.' % args[0])
+
+commands = { 'list' : list_geo,
+             'save' : save,
+             'remove' : remove }
+             
+
+def main():
+    logger.setLevel(logging.INFO)
+
+    parser = optparse.OptionParser('%prog <cmd> <options>')
+    parser.add_option('-c', '--cache', dest='cache', 
+                      default=None, help='Chroma cache directory')
+    options, args = parser.parse_args()
+
+    if len(args) < 1:
+        sys.exit(parser.format_help())
+
+    if options.cache is None:
+        cache = Cache()
+    else:
+        cache = Cache(options.cache)
+
+    cmd = args[0]
+    cmd_args = args[1:]
+
+    if cmd in commands:
+        commands[cmd](cache, cmd_args)
+    else:
+        print('error: unknown cmd %s' % cmd)
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+

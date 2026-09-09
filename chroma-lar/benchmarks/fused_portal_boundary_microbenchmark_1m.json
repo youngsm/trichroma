@@ -1,0 +1,65 @@
+{
+  "benchmark": "fused_portal_boundary_microbenchmark",
+  "timing_metadata": {
+    "compile_polluted_timing": false,
+    "reason": "An exact comparison call and two untimed warmups preceded all timed samples."
+  },
+  "promotion": {
+    "enabled_by_default": false,
+    "decision": "Keep as an opt-in experimental reference. The isolated 1.037x median gain did not become a stable material end-to-end gain."
+  },
+  "python": "3.12.8 | packaged by conda-forge | (main, Dec  5 2024, 14:24:40) [GCC 13.3.0]",
+  "platform": "Linux-5.14.0-570.58.1.el9_6.x86_64-x86_64-with-glibc2.34",
+  "torch": "2.5.1+cu124",
+  "triton": "3.1.0",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "config": {
+    "nphotons": 1000000,
+    "replicates": 7,
+    "warmups": 2,
+    "collision_epochs": 2,
+    "history_length": 8,
+    "block_size": 128,
+    "seed": 8123,
+    "json": "benchmarks/fused_portal_boundary_microbenchmark_1m.json"
+  },
+  "population": {
+    "source_photons": 1000000,
+    "boundary_photons": 990696,
+    "direct_photons": 668889,
+    "fallback_photons": 321807,
+    "direct_fraction": 0.6751707890210519
+  },
+  "variants": {
+    "materialized": {
+      "seconds": [
+        0.0004782080054283142,
+        0.00045158401131629945,
+        0.0004843519926071167,
+        0.000596992015838623,
+        0.0005683199763298034,
+        0.000562175989151001,
+        0.00046592000126838686
+      ],
+      "median_seconds": 0.0004843519926071167,
+      "boundary_photons_per_second": 2045405025.934528,
+      "direct_photons_per_second": 1380997725.2278404
+    },
+    "fused": {
+      "seconds": [
+        0.0004116480052471161,
+        0.00037376001477241517,
+        0.0004915199875831604,
+        0.00047513601183891296,
+        0.000477183997631073,
+        0.00046694400906562803,
+        0.0004095999896526337
+      ],
+      "median_seconds": 0.00046694400906562803,
+      "boundary_photons_per_second": 2121659087.09787,
+      "direct_photons_per_second": 1432482239.8695536
+    }
+  },
+  "fused_speedup": 1.0372806657832974,
+  "correctness": "all state words and output queue sets exact"
+}

@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+"""High-level profiling driver for chroma-lite simulations.
+
+This script instruments the heavy stages of a Chroma photon propagation run,
+including host-side batching, GPU memory transfers, kernel execution, and hit
+collection.  It prints a compact summary of timings together with the built-in
+CUDA kernel statistics and (optionally) device-side counters when the code is
+compiled with ``CHROMA_DEVICE_PROFILE=1``.
+
+Example usage (synthetic photons, 1M):
+
+    ./bin/chroma-profile --geometry '' --n-photons 1000000
+
+To use a cached detector geometry or a custom generator, pass the same string
+you would normally give to ``chroma-sim``.  Large-production events can be fed
+in through ``--photons-npz`` (expects arrays named ``pos``, ``dir``, ``pol``,
+``wavelengths`` and optionally ``t``, ``last_hit_triangles``, ``flags``,
+``weights`` and ``evidx``).
+"""
+
+from __future__ import annotations
+
+import argparse
+import math
+import os
+import sys
+import time
+from collections import OrderedDict
+from contextlib import contextmanager
+from functools import wraps
+from typing import Callable, Dict, Iterable, Iterator, Optional, Tuple
+
+import numpy as np
+import pycuda.driver as cuda
+
+from chroma import Simulation, event, gpu
+from chroma.sim import Simulation as SimulationClass
+
+from chroma.gpu import photon as photon_mod
+from chroma.gpu.tools import cuda_options, get_cu_module
+from chroma.gpu.profiler import device_report
+from chroma.log import logger
+import logging
+logger.setLevel(logging.INFO)
+
+class StageRecorder:
+    """Small helper to accumulate wall / GPU times for profiling stages."""
+
+    def __init__(self) -> None:
+        self._records: OrderedDict[str, Dict[str, float]] = OrderedDict()
+
+    def add(self, name: str, wall_seconds: float, gpu_ms: Optional[float] = None, result: Optional[float] = None) -> None:
+        rec = self._records.get(name)
+        if rec is None:
+            rec = {
+                "count": 0.0,
+                "wall": 0.0,
+                "gpu": 0.0,
+                "gpu_samples": 0.0,
+                "last_result": None,
+            }
+            self._records[name] = rec
+
+        rec["count"] += 1.0
+        rec["wall"] += wall_seconds
+        if gpu_ms is not None:
+            rec["gpu"] += gpu_ms
+            rec["gpu_samples"] += 1.0
+        if result is not None:
+            rec["last_result"] = result
+
+    def items(self) -> Iterable[Tuple[str, Dict[str, float]]]:
+        return self._records.items()
+
+    def get(self, name: str) -> Optional[Dict[str, float]]:
+        return self._records.get(name)
+
+
+def _with_gpu_timing(func: Callable) -> Callable:
+    """Wrap a callable to return (result, wall_seconds, gpu_ms_or_none)."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_wall = time.perf_counter()
+        gpu_ms: Optional[float] = None
+
+        try:
+            ctx = cuda.Context.get_current()
+        except cuda.LogicError:
+            ctx = None
+
+        start_evt = end_evt = None
+        if ctx is not None:
+            start_evt = cuda.Event()
+            end_evt = cuda.Event()
+            start_evt.record()
+
+        result = func(*args, **kwargs)
+
+        if start_evt is not None and end_evt is not None:
+            end_evt.record()
+            end_evt.synchronize()
+            gpu_ms = end_evt.time_since(start_evt)
+
+        wall = time.perf_counter() - start_wall
+        return result, wall, gpu_ms
+
+    return wrapper
+
+
+@contextmanager
+def _instrument_chroma(recorder: StageRecorder) -> Iterator[None]:
+    """Patch the key execution points to record timings."""
+
+    patches: list[Tuple[object, str, Callable]] = []
+
+    def patch(obj: object, attr: str, factory: Callable[[Callable], Callable]) -> None:
+        original = getattr(obj, attr)
+        patched = factory(original)
+        setattr(obj, attr, patched)
+        patches.append((obj, attr, original))
+
+    # Host-side concatenation of photons prior to GPU upload.
+    def join_factory(original_join: Callable) -> Callable:
+        @wraps(original_join)
+        def join_wrapper(photon_list, concatenate=True):
+            start_wall = time.perf_counter()
+            out = original_join(photon_list, concatenate=concatenate)
+            recorder.add("cpu_photon_join", time.perf_counter() - start_wall)
+            return out
+
+        return join_wrapper
+
+    patch(event.Photons, "join", join_factory)
+
+    # GPUPhotons constructor (alloc + H2D copy)
+    def init_factory(original_init: Callable) -> Callable:
+        @wraps(original_init)
+        def init_wrapper(self, *args, **kwargs):
+            result, wall, gpu_ms = _with_gpu_timing(original_init)(self, *args, **kwargs)
+            recorder.add("gpu_photons_init", wall, gpu_ms)
+            return result
+
+        return init_wrapper
+
+    patch(photon_mod.GPUPhotons, "__init__", init_factory)
+
+    # Propagation kernel invocation
+    def propagate_factory(original_prop: Callable) -> Callable:
+        @wraps(original_prop)
+        def propagate_wrapper(self, *args, **kwargs):
+            result, wall, gpu_ms = _with_gpu_timing(original_prop)(self, *args, **kwargs)
+            recorder.add("propagate", wall, gpu_ms)
+            return result
+
+        return propagate_wrapper
+
+    patch(photon_mod.GPUPhotons, "propagate", propagate_factory)
+
+    # Hits retrieval (optional, only if detector available)
+    if hasattr(photon_mod.GPUPhotons, "get_flat_hits"):
+        def flat_hits_factory(original_get_flat_hits: Callable) -> Callable:
+            @wraps(original_get_flat_hits)
+            def get_flat_hits_wrapper(self, *args, **kwargs):
+                result, wall, gpu_ms = _with_gpu_timing(original_get_flat_hits)(self, *args, **kwargs)
+                recorder.add("gpu_get_flat_hits", wall, gpu_ms)
+                return result
+
+            return get_flat_hits_wrapper
+
+        patch(photon_mod.GPUPhotons, "get_flat_hits", flat_hits_factory)
+
+    # GPU -> host photon download (when requested)
+    def get_factory(original_get: Callable) -> Callable:
+        @wraps(original_get)
+        def get_wrapper(self, *args, **kwargs):
+            result, wall, gpu_ms = _with_gpu_timing(original_get)(self, *args, **kwargs)
+            recorder.add("gpu_photons_get", wall, gpu_ms)
+            return result
+
+        return get_wrapper
+
+    patch(photon_mod.GPUPhotons, "get", get_factory)
+
+    # Entire batch execution in Simulation._simulate_batch
+    def batch_factory(original_batch: Callable) -> Callable:
+        @wraps(original_batch)
+        def batch_wrapper(self, *args, **kwargs):
+            start_wall = time.perf_counter()
+            try:
+                yield from original_batch(self, *args, **kwargs)
+            finally:
+                recorder.add("simulate_batch", time.perf_counter() - start_wall)
+
+        return batch_wrapper
+
+    patch(SimulationClass, "_simulate_batch", batch_factory)
+
+    try:
+        yield
+    finally:
+        for obj, attr, original in reversed(patches):
+            setattr(obj, attr, original)
+
+
+def _generate_synthetic_photons(nphotons: int, seed: Optional[int]) -> event.Photons:
+    rng = np.random.default_rng(seed)
+    pos = rng.uniform(-1000.0, 1000.0, size=(nphotons, 3)).astype(np.float32)
+
+    directions = rng.normal(size=(nphotons, 3))
+    directions /= np.linalg.norm(directions, axis=1)[:, None]
+    directions = directions.astype(np.float32)
+
+    # Ensure polarization vectors are perpendicular to direction
+    random_vec = rng.normal(size=(nphotons, 3))
+    pol = random_vec - (random_vec * directions).sum(axis=1)[:, None] * directions
+    pol /= np.linalg.norm(pol, axis=1)[:, None]
+    pol = pol.astype(np.float32)
+
+    wavelengths = rng.uniform(380.0, 500.0, size=nphotons).astype(np.float32)
+    t = np.zeros(nphotons, dtype=np.float32)
+
+    return event.Photons(pos, directions, pol, wavelengths, t)
+
+
+def _load_photons_from_npz(path: str) -> event.Photons:
+    data = np.load(path)
+
+    def pick(name: str, default=None):
+        if name in data:
+            return data[name]
+        if default is not None:
+            return default
+        raise KeyError(f"Missing array '{name}' in {path}")
+
+    required = {"pos", "dir", "pol", "wavelengths"}
+    missing = sorted(required - set(data.keys()))
+    if missing:
+        raise RuntimeError(f"{path} is missing required arrays: {', '.join(missing)}")
+
+    return event.Photons(
+        pos=pick("pos"),
+        dir=pick("dir"),
+        pol=pick("pol"),
+        wavelengths=pick("wavelengths"),
+        t=pick("t", default=np.zeros(len(data["pos"]), dtype=np.float32)),
+        last_hit_triangles=pick("last_hit_triangles", default=None),
+        flags=pick("flags", default=None),
+        weights=pick("weights", default=None),
+        evidx=pick("evidx", default=None),
+    )
+
+
+def _maybe_reset_device_counters() -> Optional[np.ndarray]:
+    try:
+        module = get_cu_module("propagate.cu", options=cuda_options)
+        reset = module.get_function("chroma_prof_reset")
+        reset(block=(64, 1, 1), grid=(1, 1))
+        return module
+    except (cuda.LogicError, AttributeError):
+        return None
+
+
+def _collect_device_counters(module) -> Optional[Dict[str, np.ndarray]]:
+    if module is None:
+        return None
+
+    try:
+        calls_dev, size_calls = module.get_global("chroma_prof_calls")
+        cycles_dev, size_cycles = module.get_global("chroma_prof_cycles")
+    except cuda.LogicError:
+        return None
+
+    count = size_calls // np.dtype(np.uint64).itemsize
+    calls = np.zeros(count, dtype=np.uint64)
+    cycles = np.zeros(count, dtype=np.uint64)
+    cuda.memcpy_dtoh(calls, calls_dev)
+    cuda.memcpy_dtoh(cycles, cycles_dev)
+    return {"calls": calls, "cycles": cycles}
+
+
+def _estimate_memory_bytes(nphotons: int) -> int:
+    # Mirrors GPUPhotons allocation when copy_flags/triangles/weights are True.
+    bytes_per_vec3 = 3 * 4
+    scalars = 4
+    total = (
+        3 * bytes_per_vec3  # pos, dir, pol
+        + scalars  # wavelengths
+        + scalars  # time
+        + 4  # last_hit_triangles (int32)
+        + 4  # flags (uint32)
+        + 4  # weights (float32)
+        + 4  # evidx (uint32)
+    )
+    return total * nphotons
+
+
+def main(argv: Optional[Iterable[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Profile a chroma-lite photon propagation run.")
+    parser.add_argument("geometry", help="Geometry string (same syntax as chroma-sim).", nargs="?", default="")
+    parser.add_argument("--photons-npz", dest="photons_npz", help="Load photons from NPZ file.")
+    parser.add_argument("--n-photons", type=int, default=1_000_000, help="Number of synthetic photons to generate if no NPZ provided.")
+    parser.add_argument("--seed", type=int, default=None, help="Base random seed for synthetic photons and Simulation.")
+    parser.add_argument("--photons-per-batch", type=int, default=1_000_000, help="Upper bound on photons per simulation batch.")
+    parser.add_argument("--max-steps", type=int, default=100, help="Maximum propagation steps per kernel call.")
+    parser.add_argument("--photons-track", action="store_true", help="Enable photon tracking (large memory usage).")
+    parser.add_argument("--keep-hits", action="store_true", help="Collect flat hits from the GPU (default off).")
+    parser.add_argument("--cuda-device", type=int, default=None, help="CUDA device index to use.")
+    parser.add_argument("--nthreads-per-block", type=int, default=None, help="Override Simulation thread block size.")
+    parser.add_argument("--max-blocks", type=int, default=None, help="Override Simulation max blocks per launch.")
+    parser.add_argument("--detailed-kernels", action="store_true", help="Record per-launch kernel timings.")
+    parser.add_argument("--device-counters", action="store_true", help="Dump device-side counters (requires CHROMA_DEVICE_PROFILE=1).")
+    parser.add_argument("--compact-dead", action="store_true", help="Compact terminated photons on the GPU after propagation.")
+    parser.add_argument("--compact", action="store_true", help="[deprecated] Alias for --compact-dead.")
+
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    compact_dead = args.compact_dead or args.compact
+    if args.compact and not args.compact_dead:
+        print("[info] --compact is deprecated; use --compact-dead instead.", file=sys.stderr)
+
+    if args.photons_npz and args.n_photons:
+        print("[info] --photons-npz provided; ignoring --n-photons", file=sys.stderr)
+
+    # Prepare photons
+    if args.photons_npz:
+        photons = _load_photons_from_npz(args.photons_npz)
+    else:
+        photons = _generate_synthetic_photons(args.n_photons, args.seed)
+
+    nphotons = len(photons)
+
+    # Geometry and simulation setup
+    from chroma_lar.geometry import build_detector_from_config
+    geometry = build_detector_from_config(args.geometry, flatten=True, analytic_wires=True)
+    # geometry = load_geometry_from_string(args.geometry, cuda_device=args.cuda_device)
+
+    sim_kwargs = {
+        "detector": geometry,
+        "seed": args.seed,
+        "cuda_device": args.cuda_device,
+        "photon_tracking": args.photons_track,
+    }
+    if args.nthreads_per_block is not None:
+        sim_kwargs["nthreads_per_block"] = args.nthreads_per_block
+    if args.max_blocks is not None:
+        sim_kwargs["max_blocks"] = args.max_blocks
+
+    sim = Simulation(**sim_kwargs)
+
+    if args.detailed_kernels:
+        gpu.enable_cuda_profiler(detailed=True)
+    else:
+        gpu.enable_cuda_profiler(detailed=False)
+
+    module_for_counters = None
+    if args.device_counters:
+        module_for_counters = _maybe_reset_device_counters()
+        if module_for_counters is None:
+            print("[warn] Device counters requested but chroma_prof_* symbols unavailable. Compile with CHROMA_DEVICE_PROFILE=1 and ensure environment variable is set before running.", file=sys.stderr)
+
+    recorder = StageRecorder()
+
+    batch_event = photons
+    total_start = time.perf_counter()
+
+    with _instrument_chroma(recorder):
+        for _ in sim.simulate(
+            [batch_event],
+            keep_photons_beg=False,
+            keep_photons_end=False,
+            keep_hits=args.keep_hits,
+            keep_flat_hits=args.keep_hits,
+            run_daq=False,
+            max_steps=args.max_steps,
+            photons_per_batch=args.photons_per_batch,
+            compact_dead_photons=compact_dead,
+        ):
+            pass
+
+    total_wall = time.perf_counter() - total_start
+
+    device_counters = _collect_device_counters(module_for_counters) if module_for_counters is not None else None
+
+    photons_per_launch = sim.nthreads_per_block * sim.max_blocks
+    expected_chunks = math.ceil(nphotons / photons_per_launch) if photons_per_launch > 0 else 0
+
+    print("\n=== Run Parameters ===")
+    print(f"Geometry id: {args.geometry!r}")
+    print(f"Total photons: {nphotons:,}")
+    print(f"Simulation seed: {sim.seed}")
+    print(f"Threads / block: {sim.nthreads_per_block}")
+    print(f"Max blocks / launch: {sim.max_blocks}")
+    print(f"Photons per launch capacity: {photons_per_launch:,}")
+    print(f"Estimated propagate chunks per step: {expected_chunks:,}")
+    print(f"Photons per batch target: {args.photons_per_batch:,}")
+    print(f"Max steps: {args.max_steps}")
+    bytes_estimate = _estimate_memory_bytes(nphotons)
+    print(f"Approx. photon buffer size: {bytes_estimate / 1e9:.2f} GB")
+    print(f"Total wall time: {total_wall:.3f} s")
+
+    print("\n=== Stage Timings ===")
+    header = f"{'stage':24s}{'calls':>10s}{'wall [s]':>14s}{'wall/call [ms]':>18s}{'gpu total [ms]':>18s}{'gpu/call [ms]':>18s}"
+    print(header)
+    print("-" * len(header))
+    for name, rec in recorder.items():
+        calls = int(rec["count"])
+        wall_total = rec["wall"]
+        wall_per_call = (wall_total / calls * 1e3) if calls else 0.0
+        gpu_samples = rec.get("gpu_samples", 0.0)
+        gpu_total = rec["gpu"] if gpu_samples else float("nan")
+        gpu_per_call = (gpu_total / gpu_samples) if gpu_samples else float("nan")
+
+        gpu_total_str = f"{gpu_total:,.3f}" if not math.isnan(gpu_total) else "--"
+        gpu_per_call_str = f"{gpu_per_call:,.3f}" if not math.isnan(gpu_per_call) else "--"
+
+        print(f"{name:24s}{calls:10d}{wall_total:14.3f}{wall_per_call:18.3f}{gpu_total_str:>18s}{gpu_per_call_str:>18s}")
+
+    propagate_stats = recorder.get("propagate")
+    if propagate_stats is not None:
+        propagate_calls = int(propagate_stats["count"])
+        print(f"\nPropagate kernel launches observed: {propagate_calls:,}")
+
+    print("\n=== CUDA Kernel Profiler ===")
+    report = gpu.cuda_profiler_report()
+    print(report)
+
+    if device_counters is not None:
+        profile_labels = {
+            0: "intersect_mesh",
+            1: "intersect_node",
+            2: "intersect_triangle",
+            3: "intersect_box",
+        }
+        calls = device_counters["calls"]
+        cycles = device_counters["cycles"]
+        print("\n=== Device Counters (CHROMA_DEVICE_PROFILE) ===")
+        print(f"{'id':>4s} {'label':16s} {'calls':>12s} {'cycles':>18s} {'cycles/call':>18s}")
+        for idx, count in enumerate(calls):
+            if count == 0:
+                continue
+            label = profile_labels.get(idx, f"slot_{idx}")
+            avg_cycles = cycles[idx] / count if count else 0.0
+            print(f"{idx:4d} {label:16s} {int(count):12d} {int(cycles[idx]):18d} {avg_cycles:18.1f}")
+
+    # print("\n=== Device Counters (CHROMA_DEVICE_PROFILE) ===")
+    # print(device_report())
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

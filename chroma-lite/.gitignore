@@ -1,0 +1,16 @@
+syntax:glob
+*.pyc
+*~
+*.so
+*.d
+*.root
+*.lprof
+./doc/build
+build/
+Chroma.egg-info/
+distribute*.gz
+distribute*.egg
+.coverage
+*.simg
+
+.vscode

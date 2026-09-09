@@ -1,0 +1,233 @@
+#!/usr/bin/env python
+#--*-python-*-
+import optparse
+import sys
+import time
+
+import numpy as np
+
+from chroma.cache import Cache
+from chroma.loader import load_geometry_from_string
+from chroma.log import logger, logging
+from chroma.bvh import make_recursive_grid_bvh
+from chroma.gpu import create_cuda_context
+from chroma.gpu.geometry import GPUGeometry
+from chroma.gpu.bvh import optimize_layer, area_sort_nodes
+
+
+def parse_bvh_id(id_str):
+    '''Parse a BVH identifier given on the command line into
+    a name of geometry and an optional BVH name, assuming the form:
+
+          "geo_name:bvh_name"
+          
+    If no bvh_name is given, it is assumed to be "default."
+    '''
+    bvh_name = 'default'
+    parts = id_str.split(':')
+    if len(parts) > 1 and len(parts[1]) > 0:
+        bvh_name = parts[1]
+    geo_name = parts[0]
+    return geo_name, bvh_name
+
+
+def sort_node(cache, args):
+    geo_name, bvh_name = parse_bvh_id(args[0])
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    geometry = cache.load_geometry(geo_name)
+    geometry.bvh = cache.load_bvh(mesh_hash, bvh_name)
+
+    print('Sorting BVH nodes by area...')
+
+    context = create_cuda_context()
+    gpu_geometry = GPUGeometry(geometry)
+    geometry.bvh.nodes = area_sort_nodes(gpu_geometry, geometry.bvh.layer_bounds)
+
+    print('Saving new BVH...')
+    context.pop()
+    cache.save_bvh(geometry.bvh, mesh_hash, bvh_name)
+        
+
+def node_swap(cache, args):
+    geo_name, bvh_name = parse_bvh_id(args[0])
+
+    if args[1].endswith('-'):
+        redo_all_above = True
+        opt_layer_index = int(args[1][:-1])
+    else:
+        redo_all_above = False
+        opt_layer_index = int(args[1])
+
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    bvh = cache.load_bvh(mesh_hash, bvh_name)
+
+    if opt_layer_index < 1 or opt_layer_index > bvh.layer_count() - 1:
+        print('Can only optimize node order in this tree for layers 1 through %d' % (bvh.layer_count() - 1))
+        return
+
+    if redo_all_above:
+        opt_range = list(range(2, opt_layer_index+1))
+        opt_range.reverse()
+    else:
+        opt_range = [opt_layer_index]
+
+    context = create_cuda_context()
+    for opt_layer_index in opt_range:
+        original_parent_area = bvh.get_layer(opt_layer_index-1).area_fixed()
+
+        print('Optimizing layer %d through node swaps' % opt_layer_index)
+        opt_layer = bvh.get_layer(opt_layer_index)
+        new_layer_nodes = optimize_layer(bvh.get_layer(opt_layer_index).nodes)
+        bvh.nodes[bvh.layer_bounds[opt_layer_index]:bvh.layer_bounds[opt_layer_index+1]] = new_layer_nodes
+
+        print('Rebuilding tree...')
+        new_nodes = rebuild_tree(bvh, opt_layer_index)
+        bvh.nodes = new_nodes
+
+        print('Original parent area (layer %d): %e' % (opt_layer_index, original_parent_area))
+        print('New parent area (layer %d):      %e' % (opt_layer_index, bvh.get_layer(opt_layer_index-1).area_fixed()))
+
+    print('Saving new BVH...')
+    context.pop()
+    print_stat(geo_name, bvh_name, mesh_hash, bvh)
+    cache.save_bvh(bvh, mesh_hash, bvh_name)
+
+def create(cache, args):
+    geo_name, bvh_name = parse_bvh_id(args[0])
+    degree = int(args[1])
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    print('Loading geometry (MD5=%s): %s' % (mesh_hash, geo_name))
+    geometry = cache.load_geometry(geo_name)
+
+    print('Creating degree %d BVH...' % degree)
+
+    start = time.time()
+    context = create_cuda_context()
+    bvh = make_recursive_grid_bvh(geometry.mesh, target_degree=degree)
+    context.pop()
+    logger.info('BVH generated in %1.1f seconds.' % (time.time() - start))
+
+    cache.save_bvh(bvh, mesh_hash, bvh_name)
+
+def list_cmd(cache, args):
+    geo_name = args[0]
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    bvh_list = cache.list_bvh(mesh_hash)
+    print('BVHs for %s (MD5=%s):' % (geo_name, mesh_hash))
+    print('\n'.join(bvh_list))
+
+def copy(cache, args):
+    geo_name, bvh_name = parse_bvh_id(args[0])
+    target_bvh_name = args[1]
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    bvh = cache.load_bvh(mesh_hash, bvh_name)
+
+    cache.save_bvh(bvh, mesh_hash, target_bvh_name)
+
+def remove(cache, args):
+    geo_name, bvh_name = parse_bvh_id(args[0])
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    cache.remove_bvh(mesh_hash, bvh_name)
+
+def stat(cache, args):
+    geo_name, bvh_name = parse_bvh_id(args[0])
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    bvh = cache.load_bvh(mesh_hash, bvh_name)
+    print_stat(geo_name, bvh_name, mesh_hash, bvh)
+
+def area_hist(cache, args):
+    geo_name, bvh_name = parse_bvh_id(args[0])
+    mesh_hash = cache.get_geometry_hash(geo_name)
+    bvh = cache.load_bvh(mesh_hash, bvh_name)
+
+    print('BVH %s:%s' % (geo_name, bvh_name))
+    print()
+
+    if (args[1] == 'all'):
+        layer_ids = list(range(bvh.layer_count()))
+    else:
+        layer_ids = [int(args[1])]
+    
+    for layer_id in layer_ids:
+        layer = bvh.get_layer(layer_id)
+        areas = layer.areas_fixed()
+        areas = areas[areas > 0] # Cull dummy nodes
+        min_area = areas.min()
+        max_area = areas.max()
+        mean = areas.mean()
+        stddev = areas.std()
+        print('Layer %d (%d nodes, %1.2e area):' % (layer_id, len(areas), areas.sum()))
+        print('    min|max|avg|stddev: %1.2e|%1.2e|%1.2e|%1.2e' \
+            % (min_area, max_area, mean, stddev))
+        print('    stddev/avg:         %4.2f' % (stddev/mean))
+
+        from chroma.rootimport import ROOT
+        h = ROOT.TH1D('layer%d'%layer_id, ';Area', 100, min_area, max_area+1)
+        for a in areas:
+            h.Fill(a)
+        h.Draw()
+        ROOT.gPad.Update()
+        input('Hit enter to continue.')
+
+def print_stat(geo_name, bvh_name, mesh_hash, bvh):
+    num_layers = bvh.layer_count()
+    print('[BVH] %s:%s (MD5=%s)' % (geo_name, bvh_name, mesh_hash))
+    print('-' * 72)
+    print('World origin: (%f,%f,%f)' % tuple(bvh.world_coords.world_origin))
+    print('World scale factor: %f' % bvh.world_coords.world_scale)
+    print('Nodes: %d' % len(bvh))
+    print('Layers:')
+
+    areas = []
+    for i in range(num_layers):
+        layer = bvh.get_layer(i)
+        if len(layer) == 1:
+            node_str = 'node, '
+        else:
+            node_str = 'nodes,'
+        area = layer.area_fixed()
+        areas.append(area)
+        print('  % 3d) % 10s %s    area = % 9e' % \
+            (i, len(layer), node_str, area))
+    print('Log sum area: %f' % np.log(areas).sum())
+
+commands = {
+    'stat' : stat,
+    'create': create,
+    'list' : list_cmd,
+    'copy' : copy,
+    'remove' : remove,
+    'node_swap' : node_swap,
+    'hist' : area_hist,
+    'sort' : sort_node,
+    }
+             
+
+def main():
+    logger.setLevel(logging.INFO)
+
+    parser = optparse.OptionParser('%prog <cmd> <options>')
+    parser.add_option('-c', '--cache', dest='cache', 
+                      default=None, help='Chroma cache directory')
+    options, args = parser.parse_args()
+
+    if len(args) < 1:
+        sys.exit(parser.format_help())
+
+    if options.cache is None:
+        cache = Cache()
+    else:
+        cache = Cache(options.cache)
+
+    cmd = args[0]
+    cmd_args = args[1:]
+
+    if cmd in commands:
+        commands[cmd](cache, cmd_args)
+    else:
+        print('error: unknown cmd %s' % cmd)
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+

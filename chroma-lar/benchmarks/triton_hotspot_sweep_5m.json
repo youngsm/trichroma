@@ -1,0 +1,3661 @@
+{
+  "all_configurations_physics_matched": false,
+  "benchmark": "reflect3wires Triton hotspot and launch-policy sweep",
+  "best_configuration": {
+    "block_size": 128,
+    "history_length": 8,
+    "maximum_photons_per_second": 11886629.621030396,
+    "median_cuda_end_to_end_ms": 430.3626708984375,
+    "median_photons_per_second": 11623796.53968734,
+    "minimum_photons_per_second": 11360963.458344283,
+    "p95_latency_photons_per_second": 11386140.101201124,
+    "sustained_photons_per_second": 11617853.453156838
+  },
+  "command": [
+    "/sdf/home/y/youngsam/sw/dune/.conda/envs/py310_torch/bin/python",
+    "/sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/benchmarks/profile_triton_hotspots.py",
+    "--nphotons",
+    "5000000",
+    "--history-lengths",
+    "1,2,3,4,6,8",
+    "--block-sizes",
+    "64,128,256",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "131072",
+    "--diagnostic-photons",
+    "0",
+    "--kernel-profile",
+    "off",
+    "--json",
+    "chroma-lar/benchmarks/triton_hotspot_sweep_5m.json"
+  ],
+  "configuration": {
+    "block_sizes": [
+      64,
+      128,
+      256
+    ],
+    "center_mm": [
+      -1000.0,
+      0.0,
+      0.0
+    ],
+    "diagnostic_photons": 0,
+    "history_epochs_per_poll": 1,
+    "history_lengths": [
+      1,
+      2,
+      3,
+      4,
+      6,
+      8
+    ],
+    "max_steps": 1000,
+    "nphotons": 5000000,
+    "profile_photons": 262144,
+    "replicates": 2,
+    "reservoir_rounds": 128,
+    "seed": 8123,
+    "tile_size": null,
+    "voxel_size_mm": 30.0,
+    "warmup_photons": 131072
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "cuda_visible_devices": null,
+    "device_count_visible": 1,
+    "free_memory_bytes_at_start": 41961127936,
+    "index": 0,
+    "name": "NVIDIA A100-SXM4-40GB",
+    "properties": {
+      "major": 8,
+      "max_threads_per_multi_processor": 2048,
+      "minor": 0,
+      "multi_processor_count": 108,
+      "regs_per_multiprocessor": 65536,
+      "total_memory": 42405855232,
+      "uuid": "503baa09-51e4-3570-bd4e-02c202b862ff",
+      "warp_size": 32
+    },
+    "requested": "cuda:0",
+    "total_memory_bytes_runtime": 42405855232
+  },
+  "diagnostic_passes": [],
+  "host": "sdfampere001",
+  "kernel_profiles": [],
+  "optimization_evidence_map": {
+    "1_branch_specialization": [
+      "kernel_profiles[].families[boundary_classification|boundary_physics]",
+      "diagnostic_passes[].final_state.photons_ever_with_history_bit",
+      "records[].runs[].boundary_trace.weighted_survival_fraction"
+    ],
+    "2_collision_unroll_and_block_size": [
+      "records[].history_length",
+      "records[].block_size",
+      "kernel_profiles[].families[bulk_collision]"
+    ],
+    "3_common_path_fusion": [
+      "records[].runs[].backend_stats.boundary_rounds",
+      "records[].runs[].cuda_event_timing.phases_inclusive",
+      "kernel_profiles[].families[].calls"
+    ],
+    "4_exact_pmt_locator": [
+      "kernel_profiles[].families[pmt_grid_broadphase|pmt_tlas_traversal|pmt_blas_traversal]",
+      "diagnostic_passes[].boundary_candidates"
+    ],
+    "5_device_resident_scheduling": [
+      "kernel_profiles[].families[host_rendezvous_transfer|host_queue_bookkeeping|queue_scan_compaction]",
+      "kernel_profiles[].summed_activity_over_cuda_span",
+      "records[].runs[].cuda_event_timing.derived.collision_queue_scheduler_residual_ms"
+    ]
+  },
+  "records": [
+    {
+      "block_size": 64,
+      "history_length": 1,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 1.0056691118516028,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 1.254591941833496,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.2915203925233168,
+              "collision_queue_scheduler_residual_ms": 707.9705365896225,
+              "top_level_unattributed_ms": 0.683594111353159
+            },
+            "end_to_end_span_ms": 1007.0473022460938,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 66.11456298828125,
+                "mean_ms": 2.6899916502313874,
+                "minimum_ms": 0.6492159962654114,
+                "total_ms": 293.20908987522125
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21750399470329285,
+                "mean_ms": 0.21750399470329285,
+                "minimum_ms": 0.21750399470329285,
+                "total_ms": 0.21750399470329285
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 1001.1796264648438,
+                "mean_ms": 1001.1796264648438,
+                "minimum_ms": 1001.1796264648438,
+                "total_ms": 1001.1796264648438
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.699712038040161,
+                "mean_ms": 3.699712038040161,
+                "minimum_ms": 3.699712038040161,
+                "total_ms": 3.699712038040161
+              }
+            },
+            "simulation_span_ms": 1005.792724609375
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1191275008,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623625216,
+            "peak_reserved_bytes": 1788870656,
+            "reserved_after_bytes": 1788870656,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 4964949.453384819,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 1.007059597875923
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.8944338760338724,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.718720018863678,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.23554775670808684,
+              "collision_queue_scheduler_residual_ms": 681.2049800753593,
+              "top_level_unattributed_ms": 0.702126357704401
+            },
+            "end_to_end_span_ms": 895.2871704101562,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.943039894104004,
+                "mean_ms": 1.8164965433293376,
+                "minimum_ms": 0.9390079975128174,
+                "total_ms": 210.71359902620316
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.23155200481414795,
+                "mean_ms": 0.23155200481414795,
+                "minimum_ms": 0.23155200481414795,
+                "total_ms": 0.23155200481414795
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 891.9185791015625,
+                "mean_ms": 891.9185791015625,
+                "minimum_ms": 891.9185791015625,
+                "total_ms": 891.9185791015625
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.703935980796814,
+                "mean_ms": 1.703935980796814,
+                "minimum_ms": 1.703935980796814,
+                "total_ms": 1.703935980796814
+              }
+            },
+            "simulation_span_ms": 894.5684814453125
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232502784,
+            "allocated_before_bytes": 1189563904,
+            "peak_allocated_bytes": 1743520768,
+            "peak_reserved_bytes": 2057306112,
+            "reserved_after_bytes": 2057306112,
+            "reserved_before_bytes": 1788870656
+          },
+          "photons_per_second_wall": 5584712.615675486,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.8953012167476118
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 5584712.615675486,
+        "median_cuda_end_to_end_ms": 951.167236328125,
+        "median_photons_per_second": 5274831.034530153,
+        "minimum_photons_per_second": 4964949.453384819,
+        "p95_latency_photons_per_second": 4992652.4191815285,
+        "sustained_photons_per_second": 5256626.357696995
+      },
+      "tile_plan": {
+        "available_bytes": 40691872256,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 128,
+      "history_length": 1,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 3.036328191868961,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.30585598945617676,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.07016184764150676,
+              "collision_queue_scheduler_residual_ms": 2818.720913171768,
+              "top_level_unattributed_ms": 0.7257810067385435
+            },
+            "end_to_end_span_ms": 3036.774169921875,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.53990364074707,
+                "mean_ms": 1.9545341609814846,
+                "minimum_ms": 0.6318079829216003,
+                "total_ms": 213.0442235469818
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2346239984035492,
+                "mean_ms": 0.2346239984035492,
+                "minimum_ms": 0.2346239984035492,
+                "total_ms": 0.2346239984035492
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 3031.76513671875,
+                "mean_ms": 3031.76513671875,
+                "minimum_ms": 3031.76513671875,
+                "total_ms": 3031.76513671875
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01740800030529499,
+                "mean_ms": 0.01740800030529499,
+                "minimum_ms": 0.01740800030529499,
+                "total_ms": 0.01740800030529499
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.7253119945526123,
+                "mean_ms": 3.7253119945526123,
+                "minimum_ms": 3.7253119945526123,
+                "total_ms": 3.7253119945526123
+              }
+            },
+            "simulation_span_ms": 3036.46826171875
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1191275008,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623625216,
+            "peak_reserved_bytes": 1788870656,
+            "reserved_after_bytes": 1788870656,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 1646479.9781423078,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 3.036781537812203
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.8580775773152709,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.28415998816490173,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.2404295412167211,
+              "collision_queue_scheduler_residual_ms": 649.3014976382256,
+              "top_level_unattributed_ms": 0.678592573851347
+            },
+            "end_to_end_span_ms": 858.477294921875,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.812992095947266,
+                "mean_ms": 1.7787498014754262,
+                "minimum_ms": 0.9154559969902039,
+                "total_ms": 206.33497697114944
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2171200066804886,
+                "mean_ms": 0.2171200066804886,
+                "minimum_ms": 0.2171200066804886,
+                "total_ms": 0.2171200066804886
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 855.636474609375,
+                "mean_ms": 855.636474609375,
+                "minimum_ms": 855.636474609375,
+                "total_ms": 855.636474609375
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.649664044380188,
+                "mean_ms": 1.649664044380188,
+                "minimum_ms": 1.649664044380188,
+                "total_ms": 1.649664044380188
+              }
+            },
+            "simulation_span_ms": 858.193115234375
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232502784,
+            "allocated_before_bytes": 1189563904,
+            "peak_allocated_bytes": 1743520768,
+            "peak_reserved_bytes": 2057306112,
+            "reserved_after_bytes": 2057306112,
+            "reserved_before_bytes": 1788870656
+          },
+          "photons_per_second_wall": 5824208.399935461,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.8584857643581927
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 5824208.399935461,
+        "median_cuda_end_to_end_ms": 1947.625732421875,
+        "median_photons_per_second": 3735344.1890388844,
+        "minimum_photons_per_second": 1646479.9781423078,
+        "p95_latency_photons_per_second": 1707727.99051374,
+        "sustained_photons_per_second": 2567217.914526205
+      },
+      "tile_plan": {
+        "available_bytes": 40691872256,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 256,
+      "history_length": 1,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 1.24378213705495,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2837440073490143,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.16382037056202842,
+              "collision_queue_scheduler_residual_ms": 1035.63081407547,
+              "top_level_unattributed_ms": 0.6671325154602528
+            },
+            "end_to_end_span_ms": 1244.18896484375,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.675071716308594,
+                "mean_ms": 1.8695139709962618,
+                "minimum_ms": 0.6256639957427979,
+                "total_ms": 203.77702283859253
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21558399498462677,
+                "mean_ms": 0.21558399498462677,
+                "minimum_ms": 0.21558399498462677,
+                "total_ms": 0.21558399498462677
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 1239.4078369140625,
+                "mean_ms": 1239.4078369140625,
+                "minimum_ms": 1239.4078369140625,
+                "total_ms": 1239.4078369140625
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.6024320125579834,
+                "mean_ms": 3.6024320125579834,
+                "minimum_ms": 3.6024320125579834,
+                "total_ms": 3.6024320125579834
+              }
+            },
+            "simulation_span_ms": 1243.9052734375
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1191275008,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623625216,
+            "peak_reserved_bytes": 1788870656,
+            "reserved_after_bytes": 1788870656,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 4018656.1063956106,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 1.2441970319487154
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.8844694858416915,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.29392001032829285,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.22998998615447183,
+              "collision_queue_scheduler_residual_ms": 678.5997480154037,
+              "top_level_unattributed_ms": 0.6956479661166668
+            },
+            "end_to_end_span_ms": 884.8814697265625,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.955327987670898,
+                "mean_ms": 1.753847176658696,
+                "minimum_ms": 0.9093120098114014,
+                "total_ms": 203.44627249240875
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21359999477863312,
+                "mean_ms": 0.21359999477863312,
+                "minimum_ms": 0.21359999477863312,
+                "total_ms": 0.21359999477863312
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 882.0460205078125,
+                "mean_ms": 882.0460205078125,
+                "minimum_ms": 882.0460205078125,
+                "total_ms": 882.0460205078125
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6209919452667236,
+                "mean_ms": 1.6209919452667236,
+                "minimum_ms": 1.6209919452667236,
+                "total_ms": 1.6209919452667236
+              }
+            },
+            "simulation_span_ms": 884.5875244140625
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232502784,
+            "allocated_before_bytes": 1189563904,
+            "peak_allocated_bytes": 1743520768,
+            "peak_reserved_bytes": 2057306112,
+            "reserved_after_bytes": 2057306112,
+            "reserved_before_bytes": 1788870656
+          },
+          "photons_per_second_wall": 5650415.925849838,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.8848906108178198
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 5650415.925849838,
+        "median_cuda_end_to_end_ms": 1064.5352172851562,
+        "median_photons_per_second": 4834536.016122725,
+        "minimum_photons_per_second": 4018656.1063956106,
+        "p95_latency_photons_per_second": 4077532.7824152783,
+        "sustained_photons_per_second": 4696847.513053059
+      },
+      "tile_plan": {
+        "available_bytes": 40691872256,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 64,
+      "history_length": 2,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.6291161808185279,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.7122880220413208,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.3425562867500195,
+              "collision_queue_scheduler_residual_ms": 409.19486063718796,
+              "top_level_unattributed_ms": 0.717990081757307
+            },
+            "end_to_end_span_ms": 629.9786987304688,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.312576293945312,
+                "mean_ms": 1.9776070429644454,
+                "minimum_ms": 0.6195200085639954,
+                "total_ms": 215.55916768312454
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2380480021238327,
+                "mean_ms": 0.2380480021238327,
+                "minimum_ms": 0.2380480021238327,
+                "total_ms": 0.2380480021238327
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 624.7540283203125,
+                "mean_ms": 624.7540283203125,
+                "minimum_ms": 624.7540283203125,
+                "total_ms": 624.7540283203125
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.545088052749634,
+                "mean_ms": 3.545088052749634,
+                "minimum_ms": 3.545088052749634,
+                "total_ms": 3.545088052749634
+              }
+            },
+            "simulation_span_ms": 629.2664184570312
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1191275008,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623625216,
+            "peak_reserved_bytes": 1788870656,
+            "reserved_after_bytes": 1788870656,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 7936623.422187619,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.6299908328801394
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.6075474261306226,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.3012480139732361,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.34043371528951677,
+              "collision_queue_scheduler_residual_ms": 398.0826243162155,
+              "top_level_unattributed_ms": 0.7204957716166973
+            },
+            "end_to_end_span_ms": 607.9747924804688,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 10.049535751342773,
+                "mean_ms": 1.7833842748198017,
+                "minimum_ms": 0.9082880020141602,
+                "total_ms": 206.87257587909698
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21510399878025055,
+                "mean_ms": 0.21510399878025055,
+                "minimum_ms": 0.21510399878025055,
+                "total_ms": 0.21510399878025055
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 604.9552001953125,
+                "mean_ms": 604.9552001953125,
+                "minimum_ms": 604.9552001953125,
+                "total_ms": 604.9552001953125
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.7715200185775757,
+                "mean_ms": 1.7715200185775757,
+                "minimum_ms": 1.7715200185775757,
+                "total_ms": 1.7715200185775757
+              }
+            },
+            "simulation_span_ms": 607.673583984375
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232502784,
+            "allocated_before_bytes": 1189563904,
+            "peak_allocated_bytes": 1743520768,
+            "peak_reserved_bytes": 2057306112,
+            "reserved_after_bytes": 2057306112,
+            "reserved_before_bytes": 1788870656
+          },
+          "photons_per_second_wall": 8223910.355825449,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.6079832809045911
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 8223910.355825449,
+        "median_cuda_end_to_end_ms": 618.9767456054688,
+        "median_photons_per_second": 8080266.889006535,
+        "minimum_photons_per_second": 7936623.422187619,
+        "p95_latency_photons_per_second": 7950510.232760695,
+        "sustained_photons_per_second": 8077713.3291002605
+      },
+      "tile_plan": {
+        "available_bytes": 40691872256,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 128,
+      "history_length": 2,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.6255925861187279,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.28918400406837463,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.342100148064392,
+              "collision_queue_scheduler_residual_ms": 407.2863618135452,
+              "top_level_unattributed_ms": 0.6362793929874897
+            },
+            "end_to_end_span_ms": 625.9765625,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.273664474487305,
+                "mean_ms": 1.963740776438232,
+                "minimum_ms": 0.6481919884681702,
+                "total_ms": 214.04774463176727
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21798400580883026,
+                "mean_ms": 0.21798400580883026,
+                "minimum_ms": 0.21798400580883026,
+                "total_ms": 0.21798400580883026
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 621.3341064453125,
+                "mean_ms": 621.3341064453125,
+                "minimum_ms": 621.3341064453125,
+                "total_ms": 621.3341064453125
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.486720085144043,
+                "mean_ms": 3.486720085144043,
+                "minimum_ms": 3.486720085144043,
+                "total_ms": 3.486720085144043
+              }
+            },
+            "simulation_span_ms": 625.6873779296875
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1191275008,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623625216,
+            "peak_reserved_bytes": 1788870656,
+            "reserved_after_bytes": 1788870656,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 7987389.738136081,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.6259867320768535
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.6063361577689648,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.28486400842666626,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.33817226389517135,
+              "collision_queue_scheduler_residual_ms": 398.83735209703445,
+              "top_level_unattributed_ms": 0.6741755567491055
+            },
+            "end_to_end_span_ms": 606.7412109375,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.917440414428711,
+                "mean_ms": 1.7679889669706081,
+                "minimum_ms": 0.9093120098114014,
+                "total_ms": 205.08672016859055
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21356800198554993,
+                "mean_ms": 0.21356800198554993,
+                "minimum_ms": 0.21356800198554993,
+                "total_ms": 0.21356800198554993
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 603.924072265625,
+                "mean_ms": 603.924072265625,
+                "minimum_ms": 603.924072265625,
+                "total_ms": 603.924072265625
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6332800388336182,
+                "mean_ms": 1.6332800388336182,
+                "minimum_ms": 1.6332800388336182,
+                "total_ms": 1.6332800388336182
+              }
+            },
+            "simulation_span_ms": 606.4563598632812
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232502784,
+            "allocated_before_bytes": 1189563904,
+            "peak_allocated_bytes": 1743520768,
+            "peak_reserved_bytes": 2057306112,
+            "reserved_after_bytes": 2057306112,
+            "reserved_before_bytes": 1788870656
+          },
+          "photons_per_second_wall": 8240625.158208736,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.60675008315593
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 8240625.158208736,
+        "median_cuda_end_to_end_ms": 616.35888671875,
+        "median_photons_per_second": 8114007.448172409,
+        "minimum_photons_per_second": 7987389.738136081,
+        "p95_latency_photons_per_second": 7999681.297422589,
+        "sustained_photons_per_second": 8112031.600282541
+      },
+      "tile_plan": {
+        "available_bytes": 40691872256,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 256,
+      "history_length": 2,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.6419558338820934,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.7024000287055969,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.3231191844102636,
+              "collision_queue_scheduler_residual_ms": 430.0663084387779,
+              "top_level_unattributed_ms": 0.7139944322407246
+            },
+            "end_to_end_span_ms": 642.8114624023438,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.010496139526367,
+                "mean_ms": 1.9034656783856383,
+                "minimum_ms": 0.6225919723510742,
+                "total_ms": 207.47775894403458
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.23628799617290497,
+                "mean_ms": 0.23628799617290497,
+                "minimum_ms": 0.23628799617290497,
+                "total_ms": 0.23628799617290497
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 637.5440673828125,
+                "mean_ms": 637.5440673828125,
+                "minimum_ms": 637.5440673828125,
+                "total_ms": 637.5440673828125
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.6024320125579834,
+                "mean_ms": 3.6024320125579834,
+                "minimum_ms": 3.6024320125579834,
+                "total_ms": 3.6024320125579834
+              }
+            },
+            "simulation_span_ms": 642.1090698242188
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1191275008,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623625216,
+            "peak_reserved_bytes": 1788870656,
+            "reserved_after_bytes": 1788870656,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 7778201.94142081,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.6428220863454044
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.6306150467135012,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.30451199412345886,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.3267786791509461,
+              "collision_queue_scheduler_residual_ms": 421.96420484781265,
+              "top_level_unattributed_ms": 0.6894257329404354
+            },
+            "end_to_end_span_ms": 631.0331420898438,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.784319877624512,
+                "mean_ms": 1.776798889040947,
+                "minimum_ms": 0.9236479997634888,
+                "total_ms": 206.10867112874985
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21939200162887573,
+                "mean_ms": 0.21939200162887573,
+                "minimum_ms": 0.21939200162887573,
+                "total_ms": 0.21939200162887573
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 628.0728759765625,
+                "mean_ms": 628.0728759765625,
+                "minimum_ms": 628.0728759765625,
+                "total_ms": 628.0728759765625
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.7356799840927124,
+                "mean_ms": 1.7356799840927124,
+                "minimum_ms": 1.7356799840927124,
+                "total_ms": 1.7356799840927124
+              }
+            },
+            "simulation_span_ms": 630.7286376953125
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232502784,
+            "allocated_before_bytes": 1189563904,
+            "peak_allocated_bytes": 1743520768,
+            "peak_reserved_bytes": 2057306112,
+            "reserved_after_bytes": 2057306112,
+            "reserved_before_bytes": 1788870656
+          },
+          "photons_per_second_wall": 7923392.8067098735,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.6310428022406995
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 7923392.8067098735,
+        "median_cuda_end_to_end_ms": 636.9223022460938,
+        "median_photons_per_second": 7850797.374065341,
+        "minimum_photons_per_second": 7778201.94142081,
+        "p95_latency_photons_per_second": 7785334.993838478,
+        "sustained_photons_per_second": 7850126.092335634
+      },
+      "tile_plan": {
+        "available_bytes": 40691872256,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 64,
+      "history_length": 3,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.5687915310263634,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2876160144805908,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.40254888415155327,
+              "collision_queue_scheduler_residual_ms": 335.3963745236397,
+              "top_level_unattributed_ms": 0.6175091601908207
+            },
+            "end_to_end_span_ms": 569.1783447265625,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.509183883666992,
+                "mean_ms": 2.1009755544706223,
+                "minimum_ms": 0.6287360191345215,
+                "total_ms": 229.00633543729782
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2332800030708313,
+                "mean_ms": 0.2332800030708313,
+                "minimum_ms": 0.2332800030708313,
+                "total_ms": 0.2332800030708313
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 564.4027099609375,
+                "mean_ms": 564.4027099609375,
+                "minimum_ms": 564.4027099609375,
+                "total_ms": 564.4027099609375
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.624959945678711,
+                "mean_ms": 3.624959945678711,
+                "minimum_ms": 3.624959945678711,
+                "total_ms": 3.624959945678711
+              }
+            },
+            "simulation_span_ms": 568.8907470703125
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1191275008,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623625216,
+            "peak_reserved_bytes": 1788870656,
+            "reserved_after_bytes": 1788870656,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 8784451.879395697,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.5691874767653644
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.5432571638375521,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2831999957561493,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.39154327179025955,
+              "collision_queue_scheduler_residual_ms": 327.73530596494675,
+              "top_level_unattributed_ms": 0.8874889947474003
+            },
+            "end_to_end_span_ms": 543.6676635742188,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.752575874328613,
+                "mean_ms": 1.8341252541747586,
+                "minimum_ms": 0.9574400186538696,
+                "total_ms": 212.758529484272
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2377600073814392,
+                "mean_ms": 0.2377600073814392,
+                "minimum_ms": 0.2377600073814392,
+                "total_ms": 0.2377600073814392
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 540.4938354492188,
+                "mean_ms": 540.4938354492188,
+                "minimum_ms": 540.4938354492188,
+                "total_ms": 540.4938354492188
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.7530879974365234,
+                "mean_ms": 1.7530879974365234,
+                "minimum_ms": 1.7530879974365234,
+                "total_ms": 1.7530879974365234
+              }
+            },
+            "simulation_span_ms": 543.3844604492188
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232502784,
+            "allocated_before_bytes": 1189563904,
+            "peak_allocated_bytes": 1743520768,
+            "peak_reserved_bytes": 2057306112,
+            "reserved_after_bytes": 2057306112,
+            "reserved_before_bytes": 1788870656
+          },
+          "photons_per_second_wall": 9196677.739513863,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.5436745900660753
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 9196677.739513863,
+        "median_cuda_end_to_end_ms": 556.4230041503906,
+        "median_photons_per_second": 8990564.80945478,
+        "minimum_photons_per_second": 8784451.879395697,
+        "p95_latency_photons_per_second": 8804183.527225189,
+        "sustained_photons_per_second": 8985839.573517116
+      },
+      "tile_plan": {
+        "available_bytes": 40691872256,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 128,
+      "history_length": 3,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.534376434981823,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2847039997577667,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.3928945118063333,
+              "collision_queue_scheduler_residual_ms": 320.0199371576309,
+              "top_level_unattributed_ms": 0.6555695794522762
+            },
+            "end_to_end_span_ms": 534.7738037109375,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.76416015625,
+                "mean_ms": 1.9265855419526405,
+                "minimum_ms": 0.6215680241584778,
+                "total_ms": 209.99782407283783
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21638399362564087,
+                "mean_ms": 0.21638399362564087,
+                "minimum_ms": 0.21638399362564087,
+                "total_ms": 0.21638399362564087
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 530.0177612304688,
+                "mean_ms": 530.0177612304688,
+                "minimum_ms": 530.0177612304688,
+                "total_ms": 530.0177612304688
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.5880959033966064,
+                "mean_ms": 3.5880959033966064,
+                "minimum_ms": 3.5880959033966064,
+                "total_ms": 3.5880959033966064
+              }
+            },
+            "simulation_span_ms": 534.4890747070312
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 9349582.280775324,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.5347832501865923
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.5201916471123695,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.28566399216651917,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.391913315385127,
+              "collision_queue_scheduler_residual_ms": 313.8605408668518,
+              "top_level_unattributed_ms": 0.6719991080462933
+            },
+            "end_to_end_span_ms": 520.590087890625,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 10.068991661071777,
+                "mean_ms": 1.7578813741947044,
+                "minimum_ms": 0.9123839735984802,
+                "total_ms": 203.9142394065857
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2202879935503006,
+                "mean_ms": 0.2202879935503006,
+                "minimum_ms": 0.2202879935503006,
+                "total_ms": 0.2202879935503006
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 517.7747802734375,
+                "mean_ms": 517.7747802734375,
+                "minimum_ms": 517.7747802734375,
+                "total_ms": 517.7747802734375
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6261119842529297,
+                "mean_ms": 1.6261119842529297,
+                "minimum_ms": 1.6261119842529297,
+                "total_ms": 1.6261119842529297
+              }
+            },
+            "simulation_span_ms": 520.304443359375
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 9604327.023643602,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.5205986830405891
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 9604327.023643602,
+        "median_cuda_end_to_end_ms": 527.6819458007812,
+        "median_photons_per_second": 9476954.652209463,
+        "minimum_photons_per_second": 9349582.280775324,
+        "p95_latency_photons_per_second": 9361998.141894583,
+        "sustained_photons_per_second": 9475242.739300713
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 256,
+      "history_length": 3,
+      "physics_matches_first_configuration": false,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30610811,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213774,
+            "elapsed_seconds": 0.5579869183711708,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30610811,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 477.0,
+            "boundary_queue_p95": 1788802.6499999983,
+            "rounds": 114,
+            "surviving_events": 25610812,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366590483342633
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2820799946784973,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.37832343470249424,
+              "collision_queue_scheduler_residual_ms": 342.6499542593956,
+              "top_level_unattributed_ms": 0.6110787950456142
+            },
+            "end_to_end_span_ms": 558.3721923828125,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.694527626037598,
+                "mean_ms": 1.9370509993045701,
+                "minimum_ms": 0.6215680241584778,
+                "total_ms": 211.13855892419815
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21503999829292297,
+                "mean_ms": 0.21503999829292297,
+                "minimum_ms": 0.21503999829292297,
+                "total_ms": 0.21503999829292297
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 553.7885131835938,
+                "mean_ms": 553.7885131835938,
+                "minimum_ms": 553.7885131835938,
+                "total_ms": 553.7885131835938
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.4641919136047363,
+                "mean_ms": 3.4641919136047363,
+                "minimum_ms": 3.4641919136047363,
+                "total_ms": 3.4641919136047363
+              }
+            },
+            "simulation_span_ms": 558.090087890625
+          },
+          "hits": {
+            "canonical_raw_sha256": "045d1dcd50dfc2b79cd6cd9cfde5eb2812a210bc0d65044daf6be8de310c5c89",
+            "hit_count": 213774
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1190938624,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288832,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 8954442.189073503,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.5583820738829672
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577745,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213550,
+            "elapsed_seconds": 0.5395884923636913,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577745,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 397.0,
+            "boundary_queue_p95": 1753517.25,
+            "rounds": 116,
+            "surviving_events": 25577754,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364826771889163
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2993600070476532,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.3810081269150848,
+              "collision_queue_scheduler_residual_ms": 331.46517926454544,
+              "top_level_unattributed_ms": 0.671906691044569
+            },
+            "end_to_end_span_ms": 540.0003662109375,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.651200294494629,
+                "mean_ms": 1.7726764036663647,
+                "minimum_ms": 0.9082880020141602,
+                "total_ms": 205.6304628252983
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21721599996089935,
+                "mean_ms": 0.21721599996089935,
+                "minimum_ms": 0.21721599996089935,
+                "total_ms": 0.21721599996089935
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 537.0956420898438,
+                "mean_ms": 537.0956420898438,
+                "minimum_ms": 537.0956420898438,
+                "total_ms": 537.0956420898438
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.7049599885940552,
+                "mean_ms": 1.7049599885940552,
+                "minimum_ms": 1.7049599885940552,
+                "total_ms": 1.7049599885940552
+              }
+            },
+            "simulation_span_ms": 539.7009887695312
+          },
+          "hits": {
+            "canonical_raw_sha256": "30f286749a0e151f8a2cf8485bc8b5b146be111ff55b057d69e784cc60e59bbd",
+            "hit_count": 213550
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1232167424,
+            "allocated_before_bytes": 1189227520,
+            "peak_allocated_bytes": 1743184384,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 9259102.731364785,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.5400091288611293
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 9259102.731364785,
+        "median_cuda_end_to_end_ms": 549.186279296875,
+        "median_photons_per_second": 9106772.460219145,
+        "minimum_photons_per_second": 8954442.189073503,
+        "p95_latency_photons_per_second": 8969198.266887888,
+        "sustained_photons_per_second": 9104224.410225729
+      },
+      "tile_plan": {
+        "available_bytes": 40690111488,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 64,
+      "history_length": 4,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.4992113569751382,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.28540799021720886,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.4259102493667821,
+              "collision_queue_scheduler_residual_ms": 282.0415545105934,
+              "top_level_unattributed_ms": 0.6665335269644856
+            },
+            "end_to_end_span_ms": 499.5978088378906,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.740608215332031,
+                "mean_ms": 1.9510300219605823,
+                "minimum_ms": 0.6553599834442139,
+                "total_ms": 212.66227239370346
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.23209600150585175,
+                "mean_ms": 0.23209600150585175,
+                "minimum_ms": 0.23209600150585175,
+                "total_ms": 0.23209600150585175
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 494.7038269042969,
+                "mean_ms": 494.7038269042969,
+                "minimum_ms": 494.7038269042969,
+                "total_ms": 494.7038269042969
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.013311999849975109,
+                "mean_ms": 0.013311999849975109,
+                "minimum_ms": 0.013311999849975109,
+                "total_ms": 0.013311999849975109
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.6966400146484375,
+                "mean_ms": 3.6966400146484375,
+                "minimum_ms": 3.6966400146484375,
+                "total_ms": 3.6966400146484375
+              }
+            },
+            "simulation_span_ms": 499.3124084472656
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 10007854.298423208,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.4996075932867825
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.4905905039049685,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.30768001079559326,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.42484075922974524,
+              "collision_queue_scheduler_residual_ms": 279.6239038705826,
+              "top_level_unattributed_ms": 0.708985386416316
+            },
+            "end_to_end_span_ms": 491.02850341796875,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.829376220703125,
+                "mean_ms": 1.7972259305674454,
+                "minimum_ms": 0.9154559969902039,
+                "total_ms": 208.47820794582367
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2528960108757019,
+                "mean_ms": 0.2528960108757019,
+                "minimum_ms": 0.2528960108757019,
+                "total_ms": 0.2528960108757019
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 488.10211181640625,
+                "mean_ms": 488.10211181640625,
+                "minimum_ms": 488.10211181640625,
+                "total_ms": 488.10211181640625
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.015359999611973763,
+                "mean_ms": 0.015359999611973763,
+                "minimum_ms": 0.015359999611973763,
+                "total_ms": 0.015359999611973763
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6414719820022583,
+                "mean_ms": 1.6414719820022583,
+                "minimum_ms": 1.6414719820022583,
+                "total_ms": 1.6414719820022583
+              }
+            },
+            "simulation_span_ms": 490.7208251953125
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 10182517.972283442,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.491037679836154
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 10182517.972283442,
+        "median_cuda_end_to_end_ms": 495.3131561279297,
+        "median_photons_per_second": 10095186.135353325,
+        "minimum_photons_per_second": 10007854.298423208,
+        "p95_latency_photons_per_second": 10016445.047272058,
+        "sustained_photons_per_second": 10094430.641631927
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 128,
+      "history_length": 4,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.5136625333689153,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2917439937591553,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.4413649612165755,
+              "collision_queue_scheduler_residual_ms": 282.5036913752556,
+              "top_level_unattributed_ms": 0.6108853183686733
+            },
+            "end_to_end_span_ms": 514.0515747070312,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 13.227007865905762,
+                "mean_ms": 2.080326476775178,
+                "minimum_ms": 0.6318079829216003,
+                "total_ms": 226.75558596849442
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21555200219154358,
+                "mean_ms": 0.21555200219154358,
+                "minimum_ms": 0.21555200219154358,
+                "total_ms": 0.21555200219154358
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 509.25927734375,
+                "mean_ms": 509.25927734375,
+                "minimum_ms": 509.25927734375,
+                "total_ms": 509.25927734375
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.6628479957580566,
+                "mean_ms": 3.6628479957580566,
+                "minimum_ms": 3.6628479957580566,
+                "total_ms": 3.6628479957580566
+              }
+            },
+            "simulation_span_ms": 513.7598266601562
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 9726454.022850301,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.5140619580633938
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.4844826040789485,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.32444798946380615,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.42487159274376884,
+              "collision_queue_scheduler_residual_ms": 276.1428151130676,
+              "top_level_unattributed_ms": 0.7051246957853436
+            },
+            "end_to_end_span_ms": 484.9336853027344,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.606143951416016,
+                "mean_ms": 1.7749715961258987,
+                "minimum_ms": 0.9093120098114014,
+                "total_ms": 205.89670515060425
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.258976012468338,
+                "mean_ms": 0.258976012468338,
+                "minimum_ms": 0.258976012468338,
+                "total_ms": 0.258976012468338
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 482.0395202636719,
+                "mean_ms": 482.0395202636719,
+                "minimum_ms": 482.0395202636719,
+                "total_ms": 482.0395202636719
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.014336000196635723,
+                "mean_ms": 0.014336000196635723,
+                "minimum_ms": 0.014336000196635723,
+                "total_ms": 0.014336000196635723
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.5912959575653076,
+                "mean_ms": 1.5912959575653076,
+                "minimum_ms": 1.5912959575653076,
+                "total_ms": 1.5912959575653076
+              }
+            },
+            "simulation_span_ms": 484.6092529296875
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 10310409.29833677,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.48494680039584637
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 10310409.29833677,
+        "median_cuda_end_to_end_ms": 499.4926300048828,
+        "median_photons_per_second": 10018431.660593536,
+        "minimum_photons_per_second": 9726454.022850301,
+        "p95_latency_photons_per_second": 9754076.32261199,
+        "sustained_photons_per_second": 10009922.250754723
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 256,
+      "history_length": 4,
+      "physics_matches_first_configuration": false,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30611901,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213844,
+            "elapsed_seconds": 0.4990050499327481,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30611901,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788810.7499999981,
+            "rounds": 114,
+            "surviving_events": 25611902,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366648644264203
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 1.3056960105895996,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.40262869464772877,
+              "collision_queue_scheduler_residual_ms": 293.6552719473839,
+              "top_level_unattributed_ms": 0.6143097393214703
+            },
+            "end_to_end_span_ms": 500.4154357910156,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 10.334207534790039,
+                "mean_ms": 1.8436321430250044,
+                "minimum_ms": 0.6277120113372803,
+                "total_ms": 200.9559035897255
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21731199324131012,
+                "mean_ms": 0.21731199324131012,
+                "minimum_ms": 0.21731199324131012,
+                "total_ms": 0.21731199324131012
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 494.6111755371094,
+                "mean_ms": 494.6111755371094,
+                "minimum_ms": 494.6111755371094,
+                "total_ms": 494.6111755371094
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.655679941177368,
+                "mean_ms": 3.655679941177368,
+                "minimum_ms": 3.655679941177368,
+                "total_ms": 3.655679941177368
+              }
+            },
+            "simulation_span_ms": 499.1097412109375
+          },
+          "hits": {
+            "canonical_raw_sha256": "3b8de9eb6ef26bc7e2a95447601c9becca2a622d7628a125706a9d6c9787f82e",
+            "hit_count": 213844
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 9991478.169648763,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.5004264549352229
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577240,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213413,
+            "elapsed_seconds": 0.5005106250755489,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577240,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 382.0,
+            "boundary_queue_p95": 1753722.25,
+            "rounds": 116,
+            "surviving_events": 25577249,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364799766100538
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2885439991950989,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.4123666473182369,
+              "collision_queue_scheduler_residual_ms": 291.66901779174805,
+              "top_level_unattributed_ms": 0.660852637141943
+            },
+            "end_to_end_span_ms": 500.9120788574219,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.774080276489258,
+                "mean_ms": 1.7796590410429856,
+                "minimum_ms": 0.9103360176086426,
+                "total_ms": 206.44044876098633
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2189120054244995,
+                "mean_ms": 0.2189120054244995,
+                "minimum_ms": 0.2189120054244995,
+                "total_ms": 0.2189120054244995
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 498.1094665527344,
+                "mean_ms": 498.1094665527344,
+                "minimum_ms": 498.1094665527344,
+                "total_ms": 498.1094665527344
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.623039960861206,
+                "mean_ms": 1.623039960861206,
+                "minimum_ms": 1.623039960861206,
+                "total_ms": 1.623039960861206
+              }
+            },
+            "simulation_span_ms": 500.62353515625
+          },
+          "hits": {
+            "canonical_raw_sha256": "0e42a02f417b93b29cde3656a4171b8df9b212ff295031c9095990ea6269e3dd",
+            "hit_count": 213413
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 9981604.499545796,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.5009214701130986
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 9991478.169648763,
+        "median_cuda_end_to_end_ms": 500.66375732421875,
+        "median_photons_per_second": 9986541.334597278,
+        "minimum_photons_per_second": 9981604.499545796,
+        "p95_latency_photons_per_second": 9982097.719558615,
+        "sustained_photons_per_second": 9986538.894078635
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 64,
+      "history_length": 6,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.4605744038708508,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2919360101222992,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.47228366108158215,
+              "collision_queue_scheduler_residual_ms": 238.44111639261246,
+              "top_level_unattributed_ms": 0.6993503756821156
+            },
+            "end_to_end_span_ms": 460.97998046875,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 13.164544105529785,
+                "mean_ms": 1.9961048085755164,
+                "minimum_ms": 0.6318079829216003,
+                "total_ms": 217.5754241347313
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2171200066804886,
+                "mean_ms": 0.2171200066804886,
+                "minimum_ms": 0.2171200066804886,
+                "total_ms": 0.2171200066804886
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 456.01654052734375,
+                "mean_ms": 456.01654052734375,
+                "minimum_ms": 456.01654052734375,
+                "total_ms": 456.01654052734375
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.742719888687134,
+                "mean_ms": 3.742719888687134,
+                "minimum_ms": 3.742719888687134,
+                "total_ms": 3.742719888687134
+              }
+            },
+            "simulation_span_ms": 460.6880187988281
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 10846241.082260005,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.46098920004442334
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.4429186908528209,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2921279966831207,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.4653488232305424,
+              "collision_queue_scheduler_residual_ms": 234.3246603012085,
+              "top_level_unattributed_ms": 0.6700249575078487
+            },
+            "end_to_end_span_ms": 443.32977294921875,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.821184158325195,
+                "mean_ms": 1.7773020596339786,
+                "minimum_ms": 0.9164800047874451,
+                "total_ms": 206.1670389175415
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.22111999988555908,
+                "mean_ms": 0.22111999988555908,
+                "minimum_ms": 0.22111999988555908,
+                "total_ms": 0.22111999988555908
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 440.49169921875,
+                "mean_ms": 440.49169921875,
+                "minimum_ms": 440.49169921875,
+                "total_ms": 440.49169921875
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6435199975967407,
+                "mean_ms": 1.6435199975967407,
+                "minimum_ms": 1.6435199975967407,
+                "total_ms": 1.6435199975967407
+              }
+            },
+            "simulation_span_ms": 443.0376281738281
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 11278088.292769633,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.44333754712715745
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 11278088.292769633,
+        "median_cuda_end_to_end_ms": 452.1548767089844,
+        "median_photons_per_second": 11062164.68751482,
+        "minimum_photons_per_second": 10846241.082260005,
+        "p95_latency_photons_per_second": 10867046.486464309,
+        "sustained_photons_per_second": 11057950.05099265
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 128,
+      "history_length": 6,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.4469206207431853,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 1.5705280303955078,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.468394066933641,
+              "collision_queue_scheduler_residual_ms": 233.04535549879074,
+              "top_level_unattributed_ms": 0.6787367425858974
+            },
+            "end_to_end_span_ms": 448.60552978515625,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 13.309951782226562,
+                "mean_ms": 1.9209958112567938,
+                "minimum_ms": 0.6246399879455566,
+                "total_ms": 209.3885434269905
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21651199460029602,
+                "mean_ms": 0.21651199460029602,
+                "minimum_ms": 0.21651199460029602,
+                "total_ms": 0.21651199460029602
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 442.43389892578125,
+                "mean_ms": 442.43389892578125,
+                "minimum_ms": 442.43389892578125,
+                "total_ms": 442.43389892578125
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.694591999053955,
+                "mean_ms": 3.694591999053955,
+                "minimum_ms": 3.694591999053955,
+                "total_ms": 3.694591999053955
+              }
+            },
+            "simulation_span_ms": 447.0350036621094
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 11145356.973710744,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.44861730420961976
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.4365710550919175,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.28275200724601746,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.46716225184977206,
+              "collision_queue_scheduler_residual_ms": 230.21021956205368,
+              "top_level_unattributed_ms": 0.6713991351425648
+            },
+            "end_to_end_span_ms": 436.9668273925781,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.4453763961792,
+                "mean_ms": 1.7586405590690415,
+                "minimum_ms": 0.9205759763717651,
+                "total_ms": 204.00230485200882
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.22726400196552277,
+                "mean_ms": 0.22726400196552277,
+                "minimum_ms": 0.22726400196552277,
+                "total_ms": 0.22726400196552277
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 434.2125244140625,
+                "mean_ms": 434.2125244140625,
+                "minimum_ms": 434.2125244140625,
+                "total_ms": 434.2125244140625
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.5605759620666504,
+                "mean_ms": 1.5605759620666504,
+                "minimum_ms": 1.5605759620666504,
+                "total_ms": 1.5605759620666504
+              }
+            },
+            "simulation_span_ms": 436.6840515136719
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 11442302.192234876,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.4369749999605119
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 11442302.192234876,
+        "median_cuda_end_to_end_ms": 442.7861785888672,
+        "median_photons_per_second": 11293829.58297281,
+        "minimum_photons_per_second": 11145356.973710744,
+        "p95_latency_photons_per_second": 11159837.71540687,
+        "sustained_photons_per_second": 11291877.710444618
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 256,
+      "history_length": 6,
+      "physics_matches_first_configuration": false,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612261,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213850,
+            "elapsed_seconds": 0.5062639759853482,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612261,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 452.0,
+            "boundary_queue_p95": 1788813.9999999981,
+            "rounds": 114,
+            "surviving_events": 25612262,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366667852466043
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.8737599849700928,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.4336545416072991,
+              "collision_queue_scheduler_residual_ms": 282.218024790287,
+              "top_level_unattributed_ms": 0.6601705960929394
+            },
+            "end_to_end_span_ms": 507.2508239746094,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 12.947456359863281,
+                "mean_ms": 2.0146119742218507,
+                "minimum_ms": 0.634880006313324,
+                "total_ms": 219.59270519018173
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21769599616527557,
+                "mean_ms": 0.21769599616527557,
+                "minimum_ms": 0.21769599616527557,
+                "total_ms": 0.21769599616527557
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 501.81072998046875,
+                "mean_ms": 501.81072998046875,
+                "minimum_ms": 501.81072998046875,
+                "total_ms": 501.81072998046875
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.6771841049194336,
+                "mean_ms": 3.6771841049194336,
+                "minimum_ms": 3.6771841049194336,
+                "total_ms": 3.6771841049194336
+              }
+            },
+            "simulation_span_ms": 506.3770446777344
+          },
+          "hits": {
+            "canonical_raw_sha256": "76826c8147ab7495b07a1d15df795a6aecdcb771739fa78712151c592817f84d",
+            "hit_count": 213850
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 9856846.534703905,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.507261625956744
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577289,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.4771002479828894,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577289,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753720.75,
+            "rounds": 116,
+            "surviving_events": 25577298,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364802386503264
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.2808319926261902,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.4271405088866019,
+              "collision_queue_scheduler_residual_ms": 270.88885045051575,
+              "top_level_unattributed_ms": 0.664025317877531
+            },
+            "end_to_end_span_ms": 477.49005126953125,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.486335754394531,
+                "mean_ms": 1.757201661323679,
+                "minimum_ms": 0.9134079813957214,
+                "total_ms": 203.83539271354675
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2245440036058426,
+                "mean_ms": 0.2245440036058426,
+                "minimum_ms": 0.2245440036058426,
+                "total_ms": 0.2245440036058426
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 474.7242431640625,
+                "mean_ms": 474.7242431640625,
+                "minimum_ms": 474.7242431640625,
+                "total_ms": 474.7242431640625
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.58515202999115,
+                "mean_ms": 1.58515202999115,
+                "minimum_ms": 1.58515202999115,
+                "total_ms": 1.58515202999115
+              }
+            },
+            "simulation_span_ms": 477.209228515625
+          },
+          "hits": {
+            "canonical_raw_sha256": "ad13b93d5d144000c3af9539f8850bf16e98fb13f4052b0d11bc67b3019d0a82",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 10471250.568913836,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.47749788500368595
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 10471250.568913836,
+        "median_cuda_end_to_end_ms": 492.3704376220703,
+        "median_photons_per_second": 10164048.551808871,
+        "minimum_photons_per_second": 9856846.534703905,
+        "p95_latency_photons_per_second": 9885849.305935403,
+        "sustained_photons_per_second": 10154763.562777944
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 64,
+      "history_length": 8,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.4433189262636006,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 1.2822719812393188,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.5003169654969823,
+              "collision_queue_scheduler_residual_ms": 216.98406380414963,
+              "top_level_unattributed_ms": 0.6595614515244961
+            },
+            "end_to_end_span_ms": 444.7208251953125,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 13.277183532714844,
+                "mean_ms": 2.0354113649884495,
+                "minimum_ms": 0.6246399879455566,
+                "total_ms": 221.859838783741
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21900799870491028,
+                "mean_ms": 0.21900799870491028,
+                "minimum_ms": 0.21900799870491028,
+                "total_ms": 0.21900799870491028
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 438.8439025878906,
+                "mean_ms": 438.8439025878906,
+                "minimum_ms": 438.8439025878906,
+                "total_ms": 438.8439025878906
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.704832077026367,
+                "mean_ms": 3.704832077026367,
+                "minimum_ms": 3.704832077026367,
+                "total_ms": 3.704832077026367
+              }
+            },
+            "simulation_span_ms": 443.4385681152344
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 11242594.428337604,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.44473720295354724
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.42099027009680867,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.28038400411605835,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.49070360221241127,
+              "collision_queue_scheduler_residual_ms": 211.93996942043304,
+              "top_level_unattributed_ms": 0.650580819696188
+            },
+            "end_to_end_span_ms": 421.3840026855469,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.631744384765625,
+                "mean_ms": 1.781353939196159,
+                "minimum_ms": 0.9134079813957214,
+                "total_ms": 206.63705694675446
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.22121599316596985,
+                "mean_ms": 0.22121599316596985,
+                "minimum_ms": 0.22121599316596985,
+                "total_ms": 0.22121599316596985
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 418.5770263671875,
+                "mean_ms": 418.5770263671875,
+                "minimum_ms": 418.5770263671875,
+                "total_ms": 418.5770263671875
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6435199975967407,
+                "mean_ms": 1.6435199975967407,
+                "minimum_ms": 1.6435199975967407,
+                "total_ms": 1.6435199975967407
+              }
+            },
+            "simulation_span_ms": 421.1036071777344
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 11865454.584187783,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.4213913562707603
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 11865454.584187783,
+        "median_cuda_end_to_end_ms": 433.0524139404297,
+        "median_photons_per_second": 11554024.506262694,
+        "minimum_photons_per_second": 11242594.428337604,
+        "p95_latency_photons_per_second": 11272180.281610902,
+        "sustained_photons_per_second": 11545630.141737686
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 128,
+      "history_length": 8,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612376,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213841,
+            "elapsed_seconds": 0.4392599668353796,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612376,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788809.8499999982,
+            "rounds": 114,
+            "surviving_events": 25612377,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673988324199
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.7355200052261353,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.5005620599147043,
+              "collision_queue_scheduler_residual_ms": 214.8632539510727,
+              "top_level_unattributed_ms": 0.6244874708354473
+            },
+            "end_to_end_span_ms": 440.0926513671875,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 13.290495872497559,
+                "mean_ms": 2.017665168560973,
+                "minimum_ms": 0.6236159801483154,
+                "total_ms": 219.92550337314606
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21855999529361725,
+                "mean_ms": 0.21855999529361725,
+                "minimum_ms": 0.21855999529361725,
+                "total_ms": 0.21855999529361725
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 434.78875732421875,
+                "mean_ms": 434.78875732421875,
+                "minimum_ms": 434.78875732421875,
+                "total_ms": 434.78875732421875
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.714047908782959,
+                "mean_ms": 3.714047908782959,
+                "minimum_ms": 3.714047908782959,
+                "total_ms": 3.714047908782959
+              }
+            },
+            "simulation_span_ms": 439.35711669921875
+          },
+          "hits": {
+            "canonical_raw_sha256": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+            "hit_count": 213841
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 11360963.458344283,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.4401035192422569
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577256,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213419,
+            "elapsed_seconds": 0.42024482786655426,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577256,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753713.25,
+            "rounds": 116,
+            "surviving_events": 25577265,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364800621743168
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.27856001257896423,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.49471609488782986,
+              "collision_queue_scheduler_residual_ms": 209.88949221372604,
+              "top_level_unattributed_ms": 0.6619135029613972
+            },
+            "end_to_end_span_ms": 420.6326904296875,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.71571159362793,
+                "mean_ms": 1.7927238514711117,
+                "minimum_ms": 0.9113600254058838,
+                "total_ms": 207.95596677064896
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.22067199647426605,
+                "mean_ms": 0.22067199647426605,
+                "minimum_ms": 0.22067199647426605,
+                "total_ms": 0.22067199647426605
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 417.845458984375,
+                "mean_ms": 417.845458984375,
+                "minimum_ms": 417.845458984375,
+                "total_ms": 417.845458984375
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.6138240098953247,
+                "mean_ms": 1.6138240098953247,
+                "minimum_ms": 1.6138240098953247,
+                "total_ms": 1.6138240098953247
+              }
+            },
+            "simulation_span_ms": 420.3541564941406
+          },
+          "hits": {
+            "canonical_raw_sha256": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+            "hit_count": 213419
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 11886629.621030396,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.42064068280160427
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 11886629.621030396,
+        "median_cuda_end_to_end_ms": 430.3626708984375,
+        "median_photons_per_second": 11623796.53968734,
+        "minimum_photons_per_second": 11360963.458344283,
+        "p95_latency_photons_per_second": 11386140.101201124,
+        "sustained_photons_per_second": 11617853.453156838
+      },
+      "tile_plan": {
+        "available_bytes": 40690112000,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    },
+    {
+      "block_size": 256,
+      "history_length": 8,
+      "physics_matches_first_configuration": false,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 30612369,
+            "boundary_rounds": 114,
+            "dense_rounds": 114,
+            "detections": 213838,
+            "elapsed_seconds": 0.459368655923754,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30612369,
+            "boundary_queue_max": 4999999,
+            "boundary_queue_median": 451.0,
+            "boundary_queue_p95": 1788812.1999999983,
+            "rounds": 114,
+            "surviving_events": 25612370,
+            "terminated_events": 4999999,
+            "weighted_survival_fraction": 0.8366673614838499
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 1.356768012046814,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.43274571228665026,
+              "collision_queue_scheduler_residual_ms": 256.1569163799286,
+              "top_level_unattributed_ms": 0.5964265502989292
+            },
+            "end_to_end_span_ms": 460.8232116699219,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 109,
+                "maximum_ms": 11.018239974975586,
+                "mean_ms": 1.824147961555271,
+                "minimum_ms": 0.6205440163612366,
+                "total_ms": 198.83212780952454
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.21606400609016418,
+                "mean_ms": 0.21606400609016418,
+                "minimum_ms": 0.21606400609016418,
+                "total_ms": 0.21606400609016418
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 454.9890441894531,
+                "mean_ms": 454.9890441894531,
+                "minimum_ms": 454.9890441894531,
+                "total_ms": 454.9890441894531
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 3.6526079177856445,
+                "mean_ms": 3.6526079177856445,
+                "minimum_ms": 3.6526079177856445,
+                "total_ms": 3.6526079177856445
+              }
+            },
+            "simulation_span_ms": 459.4664306640625
+          },
+          "hits": {
+            "canonical_raw_sha256": "75734957b3586d340386504b2a39092deb4f116d6e774e1d46ada7c1e501b4eb",
+            "hit_count": 213838
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1190938112,
+            "allocated_before_bytes": 31450112,
+            "peak_allocated_bytes": 1623288320,
+            "peak_reserved_bytes": 1774190592,
+            "reserved_after_bytes": 1774190592,
+            "reserved_before_bytes": 52428800
+          },
+          "photons_per_second_wall": 10849732.796909837,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.46084084222093225
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 30577098,
+            "boundary_rounds": 116,
+            "dense_rounds": 116,
+            "detections": 213415,
+            "elapsed_seconds": 0.4601051486097276,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 30577098,
+            "boundary_queue_max": 4999995,
+            "boundary_queue_median": 383.0,
+            "boundary_queue_p95": 1753711.5,
+            "rounds": 116,
+            "surviving_events": 25577107,
+            "terminated_events": 4999991,
+            "weighted_survival_fraction": 0.8364792172232957
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.289247989654541,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.0,
+              "boundary_resolution_fraction_of_simulation_span": 0.4404164155545954,
+              "collision_queue_scheduler_residual_ms": 255.0180468559265,
+              "top_level_unattributed_ms": 0.678762536495924
+            },
+            "end_to_end_span_ms": 460.507080078125,
+            "phases_inclusive": {
+              "boundary_resolution": {
+                "calls": 116,
+                "maximum_ms": 9.919487953186035,
+                "mean_ms": 1.74730593993746,
+                "minimum_ms": 0.907263994216919,
+                "total_ms": 202.68748903274536
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2197120040655136,
+                "mean_ms": 0.2197120040655136,
+                "minimum_ms": 0.2197120040655136,
+                "total_ms": 0.2197120040655136
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 457.7055358886719,
+                "mean_ms": 457.7055358886719,
+                "minimum_ms": 457.7055358886719,
+                "total_ms": 457.7055358886719
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.602560043334961,
+                "mean_ms": 1.602560043334961,
+                "minimum_ms": 1.602560043334961,
+                "total_ms": 1.602560043334961
+              }
+            },
+            "simulation_span_ms": 460.21783447265625
+          },
+          "hits": {
+            "canonical_raw_sha256": "02571910f1bc6eb7181791ad6aa7bac0d96b29f4b5bd2e44753e5722aecd61e2",
+            "hit_count": 213415
+          },
+          "matches_first_configuration": false,
+          "memory": {
+            "allocated_after_bytes": 1232165888,
+            "allocated_before_bytes": 1189227008,
+            "peak_allocated_bytes": 1743183872,
+            "peak_reserved_bytes": 2042626048,
+            "reserved_after_bytes": 2042626048,
+            "reserved_before_bytes": 1774190592
+          },
+          "photons_per_second_wall": 10857380.73400022,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.4605162260122597
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 10857380.73400022,
+        "median_cuda_end_to_end_ms": 460.66514587402344,
+        "median_photons_per_second": 10853556.76545503,
+        "minimum_photons_per_second": 10849732.796909837,
+        "p95_latency_photons_per_second": 10850114.93786308,
+        "sustained_photons_per_second": 10853555.41817913
+      },
+      "tile_plan": {
+        "available_bytes": 40688014848,
+        "estimated_peak_bytes": 2560000000,
+        "explicit": false,
+        "tile_capacity": 5000000,
+        "tile_count": 1
+      }
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  },
+  "timing_contract": {
+    "candidate_counters": "separate reduction pass, excluded from all performance timing",
+    "kernel_profile": "separate intrusive PyTorch-profiler run, excluded from throughput ranking",
+    "phase_events": "inclusive CUDA-event stream spans around unmodified backend methods",
+    "throughput": "wall clock from source generation through host-readable compact hits"
+  }
+}

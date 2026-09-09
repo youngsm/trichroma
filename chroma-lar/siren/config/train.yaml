@@ -1,0 +1,41 @@
+train:
+    max_epochs: 2000
+    save_every_epochs: 25
+    optimizer_class: Adam
+    optimizer_param:
+        lr: 1.e-6
+    resume: False
+photonlib:
+    filepath: /home/sam/sw/chroma-lxe/data/lxeplib_2mm.h5
+logger:
+    dir_name: logs
+    file_name: log.csv
+    log_every_nstep: 17
+    analysis:
+        vis_bias:
+            threshold: 4.5e-4
+model:
+    network:
+        in_features: 3
+        hidden_features: 512
+        hidden_layers: 5
+        out_features: 1
+    ckpt_file: ""
+    output_scale:
+        fix: True
+transform_vis:
+    vmax: 1.0
+    eps: 1.e-7
+    sin_out: True
+data:
+    dataset:
+        weight:
+            method: "vis"
+            threshold: 1.e-8
+            factor: 1.e+6
+    loader:
+        batch_size: 119164
+        num_workers: 4
+        shuffle: True
+        pin_memory: True
+        drop_last: True

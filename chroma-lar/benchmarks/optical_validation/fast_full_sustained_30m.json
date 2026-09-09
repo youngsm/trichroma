@@ -1,0 +1,268 @@
+{
+  "calibration_fingerprint": "5e8a6bd2a76f993242c8002d07b6f35bfaa82eaef314e59aa73952b2b4236745",
+  "calibration_status": "synthetic",
+  "configuration": {
+    "block_size": 128,
+    "calibration": "chroma-lar/benchmarks/optical_validation/full_detector_synthetic_calibration.json",
+    "counts": [
+      30000000
+    ],
+    "depositions": true,
+    "epochs_per_poll": 2,
+    "fused_pmt": false,
+    "history_length": 8,
+    "output": "chroma-lar/benchmarks/optical_validation/fast_full_sustained_30m.json",
+    "repeats": 5
+  },
+  "counts": [
+    {
+      "maximum_photons_per_second": 21027042.44520241,
+      "median_photons_per_second": 20653670.837470837,
+      "minimum_photons_per_second": 19265034.332924746,
+      "photons": 30000000,
+      "runs": [
+        {
+          "detected": 115457,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115457,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1019982,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.5015133759006858,
+          "peak_torch_allocated_bytes": 15314519040,
+          "peak_torch_reserved_bytes": 18782093312,
+          "photoelectrons": 103935,
+          "photons": 30002201,
+          "photons_per_second": 19981307.846826952,
+          "seed": 901,
+          "stages": [
+            {
+              "event_seconds": 1.434064557775855,
+              "photons": 30002201,
+              "source_seconds": 0.0028594802133738995,
+              "transport_output_seconds": 1.4312045178376138
+            },
+            {
+              "digitization_seconds": 0.0305147310718894,
+              "pmt_response_seconds": 0.036574923899024725
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 115811,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115811,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1019435,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.5565623440779746,
+          "peak_torch_allocated_bytes": 14963701248,
+          "peak_torch_reserved_bytes": 18782093312,
+          "photoelectrons": 104196,
+          "photons": 29987227,
+          "photons_per_second": 19265034.332924746,
+          "seed": 1910,
+          "stages": [
+            {
+              "event_seconds": 1.495463402941823,
+              "photons": 29987227,
+              "source_seconds": 0.0029625981114804745,
+              "transport_output_seconds": 1.4925003051757812
+            },
+            {
+              "digitization_seconds": 0.02946847304701805,
+              "pmt_response_seconds": 0.03117802692577243
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 115758,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115758,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1020518,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.452684718184173,
+          "peak_torch_allocated_bytes": 16359485440,
+          "peak_torch_reserved_bytes": 20986200064,
+          "photoelectrons": 104033,
+          "photons": 30003272,
+          "photons_per_second": 20653670.837470837,
+          "seed": 2919,
+          "stages": [
+            {
+              "event_seconds": 1.3934274977073073,
+              "photons": 30003272,
+              "source_seconds": 0.002780431881546974,
+              "transport_output_seconds": 1.3906467258930206
+            },
+            {
+              "digitization_seconds": 0.028542653191834688,
+              "pmt_response_seconds": 0.03037337400019169
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 115424,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115424,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1022741,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.4269942659884691,
+          "peak_torch_allocated_bytes": 16360606208,
+          "peak_torch_reserved_bytes": 23190306816,
+          "photoelectrons": 103787,
+          "photons": 30005469,
+          "photons_per_second": 21027042.44520241,
+          "seed": 3928,
+          "stages": [
+            {
+              "event_seconds": 1.3675345513038337,
+              "photons": 30005469,
+              "source_seconds": 0.0027295630425214767,
+              "transport_output_seconds": 1.3648044783622026
+            },
+            {
+              "digitization_seconds": 0.028713468927890062,
+              "pmt_response_seconds": 0.03038904396817088
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 114877,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 114877,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1018952,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.436867879703641,
+          "peak_torch_allocated_bytes": 14966314496,
+          "peak_torch_reserved_bytes": 23190306816,
+          "photoelectrons": 103385,
+          "photons": 30000273,
+          "photons_per_second": 20878936.34743068,
+          "seed": 4937,
+          "stages": [
+            {
+              "event_seconds": 1.3764454438351095,
+              "photons": 30000273,
+              "source_seconds": 0.002729852683842182,
+              "transport_output_seconds": 1.3737151511013508
+            },
+            {
+              "digitization_seconds": 0.029174978844821453,
+              "pmt_response_seconds": 0.030779155902564526
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 20339812.687958762,
+      "target_reached": true,
+      "warmup": {
+        "detected": 115355,
+        "diagnostics": {
+          "aborted": 0,
+          "detected": 115355,
+          "escaped": 0,
+          "nonfinite": 0,
+          "reemitted": 1020985,
+          "step_limit": 0,
+          "unfinished": 0
+        },
+        "event_seconds": 3.441200708039105,
+        "peak_torch_allocated_bytes": 12844827136,
+        "peak_torch_reserved_bytes": 13748928512,
+        "photoelectrons": 103764,
+        "photons": 29991791,
+        "photons_per_second": 8715501.810148757,
+        "seed": 1729,
+        "stages": [
+          {
+            "event_seconds": 3.333122240845114,
+            "photons": 29991791,
+            "source_seconds": 1.595652095042169,
+            "transport_output_seconds": 1.7374696158804
+          },
+          {
+            "digitization_seconds": 0.03492626827210188,
+            "pmt_response_seconds": 0.06583035178482533
+          }
+        ],
+        "waveform_shape": [
+          2,
+          162,
+          16000
+        ]
+      }
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-40GB",
+  "events": [
+    11,
+    99
+  ],
+  "excluded": "detector construction, compilation warmup, file writes and optional full dead-photon debugging states",
+  "host": "sdfampere032",
+  "python": "3.10.20",
+  "scene_fingerprint": "2c7682d77c0ee828314ba1112abb692d051c62461476e6aa695dbc599f244c56",
+  "scope": "GPU scintillation generation, spectral transport, PMT collection/TTS/charge, waveform superposition, noise/ADC and CPU-readable optical hits/PE/waveforms",
+  "setup_seconds": 1.623731386847794,
+  "source": "Poisson scintillation yield from an energy deposition at (-1000,0,0) mm",
+  "source_sha256": {
+    "chroma-lar/chroma_lar/optical_simulation.py": "7489f54c701dbcce2752b896838919c26393029f80ad1ca5ff95f01ddf6c3fd6",
+    "chroma-lar/chroma_lar/spectral_backend.py": "cd87f0fe2b7c20b600724686226cf363723d7b6e1beffaf17d1fb6f1a7cb897b",
+    "chroma-lar/chroma_lar/spectral_kernels.py": "e054cabb4badea0324b87f8126d5b4e5855899ba152f0cbbf9316f1439928d28",
+    "chroma-lar/chroma_lar/triton_backend.py": "28caa674cdca7c08f98fe729854a1fcb0f12659706ef7c9509e88be8ebcbc096",
+    "chroma-lar/chroma_lar/triton_scene/compiler.py": "0a5b7a0671cf9b48dbead1b0f52f2b7813b1180142f77fdf306b45eb40995b25",
+    "chroma-lite/chroma/triton/digitizer_kernels.py": "22c50cd6e615d32811189a43b2691799d0199a3ed7663573dbfcdb444dd676aa"
+  },
+  "target_sustained_photons_per_second": 20000000,
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0"
+}

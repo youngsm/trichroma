@@ -1,0 +1,19 @@
+detector_type: wire
+
+LAr:
+  density: 1.396 # g/cm^3
+
+TPC:
+  active_volume: 
+    x: [-2160., 2160.] # mm
+    y: [-2160., 2160.] # mm
+    z: [-2160., 2160.] # mm
+  cathode_thickness: 6 # mm
+  sensor_spacing: 3    # mm
+
+PMT:
+  gap_pmt_active:  10  # mm
+  sensor_spacing: 471  # mm
+  sensor_radius:   50  # mm
+  ce_angle_thres: 0.15 # 1/degree?
+  center_pmts: true

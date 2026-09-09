@@ -1,0 +1,25 @@
+detector_type: pixel
+
+LAr:
+  density: 1.396  # g/cm^3
+
+TPC:
+  active_volume:
+    x: [-2160., 2160.]  # mm
+    y: [-2160., 2160.]  # mm
+    z: [-2160., 2160.]  # mm
+  cathode_thickness: 6  # mm
+
+PMT:
+  gap_pmt_active: 10   # mm
+  n_x_half: 5          # PMTs in +X half per Z-row
+  n_z: 9               # PMTs along Z per half-wall
+  diameter_in: 4.38    # inches
+  wall_margin: 200 # mm
+
+pixel:
+  pitch: 4.32          # mm, centre-to-centre
+  pad_size: 2.419      # mm, square side before chamfer
+  chamfer_radius: 0.43 # mm
+  n_pixels_y: 1000
+  n_pixels_z: 1000

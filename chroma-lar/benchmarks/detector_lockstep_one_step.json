@@ -1,0 +1,115 @@
+{
+  "active_count": {
+    "chroma": 7974,
+    "triton": 7974
+  },
+  "agreement_by_process": {
+    "bulk_scatter": {
+      "count": 7051,
+      "direction_exact": 7051,
+      "polarization_exact": 7051,
+      "position_exact": 7051,
+      "time_exact": 7051
+    },
+    "dielectric_transmit": {
+      "count": 17,
+      "direction_exact": 17,
+      "polarization_exact": 17,
+      "position_exact": 17,
+      "time_exact": 17
+    },
+    "surface_absorb": {
+      "count": 218,
+      "direction_exact": 218,
+      "polarization_exact": 218,
+      "position_exact": 218,
+      "time_exact": 218
+    },
+    "surface_specular": {
+      "count": 906,
+      "direction_exact": 906,
+      "polarization_exact": 906,
+      "position_exact": 906,
+      "time_exact": 906
+    }
+  },
+  "chroma_mesh_box_compatibility": true,
+  "compared_records_before_first_difference": 8192,
+  "detector": "detector_config_reflect_reflect3wires",
+  "draw_consumption_certified": true,
+  "field_agreement": {
+    "boundary_kind": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "detected_channel": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "direction": {
+      "exact_fraction": 1.0,
+      "exact_rows": 8192,
+      "maximum_absolute_difference": 0.0
+    },
+    "draw_count": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "draw_cursor": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "history": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "interaction_cursor": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "overflow": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "polarization": {
+      "exact_fraction": 1.0,
+      "exact_rows": 8192,
+      "maximum_absolute_difference": 0.0
+    },
+    "position": {
+      "exact_fraction": 1.0,
+      "exact_rows": 8192,
+      "maximum_absolute_difference": 0.0
+    },
+    "process": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    },
+    "time": {
+      "exact": 8192,
+      "exact_fraction": 1.0
+    }
+  },
+  "first_difference": null,
+  "legacy_specular_reflection": true,
+  "matched_bitwise": true,
+  "photons": 8192,
+  "process_counts": {
+    "chroma": {
+      "bulk_scatter": 7051,
+      "dielectric_transmit": 17,
+      "surface_absorb": 218,
+      "surface_specular": 906
+    },
+    "triton": {
+      "bulk_scatter": 7051,
+      "dielectric_transmit": 17,
+      "surface_absorb": 218,
+      "surface_specular": 906
+    }
+  },
+  "schema_version": 1,
+  "scope": "one complete physical interaction from identical input/tape words",
+  "source_seed": 8123,
+  "tape_seed": 99173
+}

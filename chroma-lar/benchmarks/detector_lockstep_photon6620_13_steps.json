@@ -1,0 +1,67 @@
+{
+  "active_set": {
+    "chroma": 1,
+    "exact": true,
+    "triton": 1
+  },
+  "chroma_mesh_box_compatibility": true,
+  "detector": "detector_config_reflect_reflect3wires",
+  "draw_consumption_certified": false,
+  "field_agreement": {
+    "detected_channel": {
+      "exact": 1,
+      "exact_fraction": 1.0
+    },
+    "direction": {
+      "exact_fraction": 0.0,
+      "exact_rows": 0,
+      "maximum_absolute_difference": 1.8713443279266357
+    },
+    "draw_cursor": {
+      "exact": 1,
+      "exact_fraction": 1.0
+    },
+    "history": {
+      "exact": 1,
+      "exact_fraction": 1.0
+    },
+    "interaction_cursor": {
+      "exact": 1,
+      "exact_fraction": 1.0
+    },
+    "overflow": {
+      "exact": 1,
+      "exact_fraction": 1.0
+    },
+    "polarization": {
+      "exact_fraction": 0.0,
+      "exact_rows": 0,
+      "maximum_absolute_difference": 1.7493406534194946
+    },
+    "position": {
+      "exact_fraction": 0.0,
+      "exact_rows": 0,
+      "maximum_absolute_difference": 332.3984375
+    },
+    "time": {
+      "exact": 0,
+      "exact_fraction": 0.0
+    }
+  },
+  "global_photon_ids": [
+    6620
+  ],
+  "interaction_cursor_range": {
+    "maximum": 13,
+    "minimum": 13
+  },
+  "legacy_specular_reflection": true,
+  "matched_bitwise": false,
+  "max_steps": 13,
+  "photons": 1,
+  "schema_version": 1,
+  "scope": "complete resident state after bounded full-history replay",
+  "source_seed": 8123,
+  "tape_overflow_free": true,
+  "tape_seed": 99173
+}
