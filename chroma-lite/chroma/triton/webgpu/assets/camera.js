@@ -278,20 +278,23 @@ export class PhotonCamera extends OpticalLab {
           `nonfinite ${stats[6]}; surviving photon IDs ${JSON.stringify(tails)}; escaped photon IDs ${JSON.stringify(escaped)}`
         );
       }
+      const manifest = this.scenes[scene].scene;
+      // Rebuilding a scene's photon maps should preserve the composed camera view.
+      if (this.scene !== scene) {
+        this.eye = manifest.camera.default_eye.slice();
+        this.target = manifest.camera.default_target.slice();
+        this.fov = manifest.camera.field_of_view_degrees;
+        this.cutaway = false;
+        this.uvFalseColor = false;
+      }
       this.scene = scene;
       this.photons = photons;
       this.seed = seed;
       this.polarization = polarization;
       this.frame = 0;
-      const manifest = this.scenes[scene].scene;
-      this.eye = manifest.camera.default_eye.slice();
-      this.target = manifest.camera.default_target.slice();
-      this.fov = manifest.camera.field_of_view_degrees;
-      this.cutaway = false;
-      this.uvFalseColor = false;
-      for (const id of ['cutaway', 'uv_false_color'])
+      for (const [id, key] of [['cutaway', 'cutaway'], ['uv_false_color', 'uvFalseColor']])
         if ($(id)) {
-          $(id).checked = false;
+          $(id).checked = this[key];
           $(id).disabled = !manifest.camera.pmt;
         }
       const result = {
