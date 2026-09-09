@@ -1,0 +1,80 @@
+{
+  "scope": "Triton replay using captured native XORWOW words, exact original geometry, CUDA-normalized initial states",
+  "random_source": "independently initialized and generated XORWOW",
+  "capture_report_sha256": "44e28a10f521e81def7917010aff293bd268209aea72f17fab3cf5085d9aa56b",
+  "source_sha256": {
+    "chroma-lar/benchmarks/replay_original_chroma.py": "6df00e2e5b0ea7bdad8308b3b3b8cbd232fc7abbc10ca43a1cc4fe377a748be3",
+    "chroma-lar/chroma_lar/triton_scene/legacy_spectral.py": "6afb88e475ede02dd1a377d4c313d17bbb75185ade2ac98bfc0334c0e1a61d09",
+    "chroma-lar/chroma_lar/triton_scene/chroma_global_traversal.py": "a1b6e46fa047f154c9f0e0e304b7d5860fd1a8edea2c99fb92c2c4614b015353",
+    "chroma-lar/chroma_lar/triton_backend.py": "28caa674cdca7c08f98fe729854a1fcb0f12659706ef7c9509e88be8ebcbc096",
+    "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b",
+    "chroma-lite/chroma/triton/xorwow.py": "1f4d8e61e505a8180963f46684990fef44adb743e1ecc60d37e7e7aff4e6648d"
+  },
+  "cases": [
+    {
+      "case": "spectral_multibounce",
+      "photons": 8192,
+      "capture_archive_sha256": "0f69bb9cee104bb4ab5fb10d7bedc8a7f9709b6cc07efabdcea22b542f4252a4",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "bulk_reemit",
+      "photons": 8192,
+      "capture_archive_sha256": "03bb2bda1184b5c2bfe0ce9e0945b6ba71aaae5903956923a003bf0674742f63",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    }
+  ],
+  "passed": true
+}

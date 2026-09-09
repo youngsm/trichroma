@@ -1,0 +1,327 @@
+{
+  "scope": "original queue ordering with independently normalized photon states and independently seeded/evolved XORWOW in Triton",
+  "capture_report_sha256": "86f11a32ff8c851cc256ca4193febcf5493455d8c1ab169b37a965a8d46f67bd",
+  "photons": 81920,
+  "launches": [
+    {
+      "index": 0,
+      "threads": 81920,
+      "max_steps": 1,
+      "committed_interactions": 81920,
+      "draws": 316574,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 1,
+      "threads": 79655,
+      "max_steps": 1,
+      "committed_interactions": 79655,
+      "draws": 304407,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 2,
+      "threads": 76636,
+      "max_steps": 1,
+      "committed_interactions": 76636,
+      "draws": 290172,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 3,
+      "threads": 72947,
+      "max_steps": 1,
+      "committed_interactions": 72947,
+      "draws": 274861,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 4,
+      "threads": 69104,
+      "max_steps": 1,
+      "committed_interactions": 69104,
+      "draws": 259792,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 5,
+      "threads": 65124,
+      "max_steps": 1,
+      "committed_interactions": 65124,
+      "draws": 244069,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 6,
+      "threads": 61286,
+      "max_steps": 1,
+      "committed_interactions": 61286,
+      "draws": 229378,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 7,
+      "threads": 57499,
+      "max_steps": 1,
+      "committed_interactions": 57499,
+      "draws": 214601,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 8,
+      "threads": 53798,
+      "max_steps": 1,
+      "committed_interactions": 53798,
+      "draws": 200769,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 9,
+      "threads": 50381,
+      "max_steps": 1,
+      "committed_interactions": 50381,
+      "draws": 187953,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 10,
+      "threads": 47020,
+      "max_steps": 1,
+      "committed_interactions": 47020,
+      "draws": 175079,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 11,
+      "threads": 43847,
+      "max_steps": 1,
+      "committed_interactions": 43847,
+      "draws": 163423,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 12,
+      "threads": 40907,
+      "max_steps": 1,
+      "committed_interactions": 40907,
+      "draws": 152308,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 13,
+      "threads": 38137,
+      "max_steps": 1,
+      "committed_interactions": 38137,
+      "draws": 142114,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 14,
+      "threads": 35558,
+      "max_steps": 1,
+      "committed_interactions": 35558,
+      "draws": 132494,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 15,
+      "threads": 33207,
+      "max_steps": 1,
+      "committed_interactions": 33207,
+      "draws": 123418,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "index": 16,
+      "threads": 30946,
+      "max_steps": 8176,
+      "committed_interactions": 455198,
+      "draws": 1695002,
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    }
+  ],
+  "source_sha256": {
+    "chroma-lar/benchmarks/replay_original_schedule.py": "83219b989a13b0e17c1bcf70c3f3a5189e7a819c5578c3dbcde6887e686c1832",
+    "chroma-lar/chroma_lar/triton_scene/legacy_spectral.py": "5682fcd8480158d6d0400e9a81b19937db4c706ebf382a6384a53d9d45031af7",
+    "chroma-lar/chroma_lar/triton_scene/legacy_wires.py": "1fbe8c9ad9dd489d8e5e6adeefb0bdfce31934d07d4d3bcd77ba22cc4cedf487",
+    "chroma-lar/chroma_lar/triton_scene/_legacy_wire_ptx.py": "66fdee1b67fe9fcaf004c35c48ecb9d0cf5169dac87b2776ccef82288e096545",
+    "chroma-lar/chroma_lar/triton_scene/chroma_global_traversal.py": "a1b6e46fa047f154c9f0e0e304b7d5860fd1a8edea2c99fb92c2c4614b015353",
+    "chroma-lar/chroma_lar/triton_backend.py": "28caa674cdca7c08f98fe729854a1fcb0f12659706ef7c9509e88be8ebcbc096",
+    "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b",
+    "chroma-lite/chroma/triton/xorwow.py": "1f4d8e61e505a8180963f46684990fef44adb743e1ecc60d37e7e7aff4e6648d"
+  },
+  "limits": "A captured atomic schedule is required; equal seeds alone do not determine the original queue ordering. Original states are verified after every actual launch, which may contain multiple interactions in the final tail.",
+  "passed": true,
+  "final_words_sha256": "aa66ef504102a7a9c84ff8b12d541f09b7a1f471fecc8c11530c7d1975e85a1b",
+  "unfinished_photons": 0
+}

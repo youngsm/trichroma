@@ -1,0 +1,594 @@
+{
+  "hardware": false,
+  "scenes": [
+    {
+      "scene": {
+        "name": "prism",
+        "title": "Dispersive prism",
+        "manifest": "camera-prism.json",
+        "sha256": "d3dfd3129b49014da5b0fd40a04a0b7d984309723f8cb9c9ba9fa585d96430d1",
+        "byte_length": 122598,
+        "scene_fingerprint": "9ea2d2559f6b65bbbd1864e31175f22d448e237f6e91ac9c79f077b0cc5c8984"
+      },
+      "photons": 4096,
+      "state": {
+        "count": 4096,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.008007049560546875,
+        "times_max_abs": 1.5497207641601562e-05,
+        "wavelengths_max_abs": 0.0,
+        "direction_max_abs": 1.341104507446289e-06,
+        "polarization_max_abs": 1.4156103134155273e-06,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 9.779261178621823e-08,
+        "polarization_norm_max_error": 9.747759999179095e-08,
+        "polarization_dot_max_abs": 1.1872741012552979e-07
+      },
+      "maps": {
+        "passed": false,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 487,
+            "mismatches": 2,
+            "finite": true,
+            "max_abs": 1.2115255039856048,
+            "browser_sum": 3480.330688714981,
+            "cpu_sum": 3480.3307119686833,
+            "disagreement_indices": [
+              3599193,
+              3599257
+            ]
+          },
+          "fill_wall": {
+            "cells": 784,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 2.4153478408450724e-06,
+            "browser_sum": 5347.24281167984,
+            "cpu_sum": 5347.241954446496,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 352,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 4.001446421986188e-06,
+            "browser_sum": 254.25507963639393,
+            "cpu_sum": 254.25504769071017,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 0,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 0,
+            "browser_sum": 0.0,
+            "cpu_sum": 0.0,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 48,
+          "height": 30,
+          "frame": 1,
+          "queue_ms": 1006.8999996185303,
+          "photons": 4096,
+          "eye": [
+            -240,
+            -170,
+            95
+          ],
+          "target": [
+            30,
+            0,
+            -40
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 0.0021498920395970345,
+        "bvhCameraMatchesBrute": true,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      }
+    },
+    {
+      "scene": {
+        "name": "fluorescence",
+        "title": "Fluorescent coating",
+        "manifest": "camera-fluorescence.json",
+        "sha256": "a836f8d6337fc890ee552b2fafbc0c0f590df1c339bf3849fb5b8cfb50fd3fe5",
+        "byte_length": 125211,
+        "scene_fingerprint": "a74b9fb57767064de9c21fbae3c2b315f1a1e9644b7a14d9ef4e8dd0bf277081"
+      },
+      "photons": 4096,
+      "state": {
+        "count": 4096,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.002899169921875,
+        "times_max_abs": 1.52587890625e-05,
+        "wavelengths_max_abs": 6.103515625e-05,
+        "direction_max_abs": 1.125037670135498e-06,
+        "polarization_max_abs": 5.602836608886719e-06,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 9.797251587784217e-08,
+        "polarization_norm_max_error": 1.1139265065907011e-07,
+        "polarization_dot_max_abs": 1.830154859328026e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 2020,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 2.1761198554237637e-07,
+            "browser_sum": 2517.620206296444,
+            "cpu_sum": 2517.620207865355,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 777,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 2.4153478408450724e-06,
+            "browser_sum": 5299.741923332214,
+            "cpu_sum": 5299.741074629977,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 1083,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 4.001446421986188e-06,
+            "browser_sum": 894.3136406012181,
+            "cpu_sum": 894.3135885673146,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 1765,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 5.817587762635412e-07,
+            "browser_sum": 2945.223185837269,
+            "cpu_sum": 2945.223183371394,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 48,
+          "height": 30,
+          "frame": 1,
+          "queue_ms": 986.3000001907349,
+          "photons": 4096,
+          "eye": [
+            -240,
+            -170,
+            95
+          ],
+          "target": [
+            30,
+            0,
+            -40
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 0.00010615307110128924,
+        "bvhCameraMatchesBrute": true,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      }
+    },
+    {
+      "scene": {
+        "name": "rayleigh",
+        "title": "Rayleigh scattering",
+        "manifest": "camera-rayleigh.json",
+        "sha256": "b72d2911915a7822f829f6727b1ddd7ca4d6e8bad3135540fbaf88682e7a130d",
+        "byte_length": 97978,
+        "scene_fingerprint": "0ca6b117c585ac3bd62ef3ff8a59e810af6a90821122767c9d7bb09b1992fb6a"
+      },
+      "photons": 4096,
+      "state": {
+        "count": 4096,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.00121307373046875,
+        "times_max_abs": 4.291534423828125e-06,
+        "wavelengths_max_abs": 0.0,
+        "direction_max_abs": 1.043081283569336e-06,
+        "polarization_max_abs": 1.1920928955078125e-06,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 1.0297627328625936e-07,
+        "polarization_norm_max_error": 1.1314298831166525e-07,
+        "polarization_dot_max_abs": 2.099562352864126e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 3029,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 6.402264425275916e-07,
+            "browser_sum": 3480.3307073116302,
+            "cpu_sum": 3480.3307119686833,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 784,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 3.3590511989700644e-06,
+            "browser_sum": 5347.242810726166,
+            "cpu_sum": 5347.241954446496,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 45972,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 9.011245786116895e-06,
+            "browser_sum": 19205.11244827753,
+            "cpu_sum": 19205.110502852043,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 0,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 0,
+            "browser_sum": 0.0,
+            "cpu_sum": 0.0,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 48,
+          "height": 30,
+          "frame": 1,
+          "queue_ms": 862,
+          "photons": 4096,
+          "eye": [
+            -240,
+            -170,
+            95
+          ],
+          "target": [
+            30,
+            0,
+            0
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 5.254956704447977e-06,
+        "bvhCameraMatchesBrute": true,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      },
+      "axis_aligned_volume": {
+        "actual": [
+          [
+            3.913913133146707e-06,
+            0.36430972814559937
+          ],
+          [
+            3.913913133146707e-06,
+            0.36430972814559937
+          ],
+          [
+            3.913911314157303e-06,
+            0.36430981755256653
+          ],
+          [
+            3.913911314157303e-06,
+            0.36430981755256653
+          ],
+          [
+            3.913911314157303e-06,
+            0.36430981755256653
+          ],
+          [
+            3.913911314157303e-06,
+            0.36430981755256653
+          ]
+        ],
+        "expected": [
+          3.913914610208376e-06,
+          0.36430942958206564
+        ],
+        "passed": true,
+        "directions": [
+          "+x",
+          "-x",
+          "+y",
+          "-y",
+          "+z",
+          "-z"
+        ]
+      }
+    },
+    {
+      "scene": {
+        "name": "pmt",
+        "title": "TPB-coated PMT",
+        "manifest": "camera-pmt.json",
+        "sha256": "3bff41fd1edbcc05c544f184800d406e7af63c9a58e4d60964c224e76894982d",
+        "byte_length": 854602,
+        "scene_fingerprint": "a221a0380fce79fe65068abfc176dfe7c53e312208d83679ac43ce34e652b6f9"
+      },
+      "photons": 4096,
+      "state": {
+        "count": 4096,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.007518768310546875,
+        "times_max_abs": 0.0009765625,
+        "wavelengths_max_abs": 3.0517578125e-05,
+        "direction_max_abs": 1.0132789611816406e-06,
+        "polarization_max_abs": 1.1101365089416504e-06,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 1.0067117650613966e-07,
+        "polarization_norm_max_error": 1.0685505791308003e-07,
+        "polarization_dot_max_abs": 2.0836673564339492e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 1842,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 6.605394951009202e-07,
+            "browser_sum": 4779.866417884827,
+            "cpu_sum": 4779.866418449656,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 690,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 2.4153478408450724e-06,
+            "browser_sum": 4702.5879011154175,
+            "cpu_sum": 4702.587151303862,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 5748,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 4.316942831872339e-06,
+            "browser_sum": 6227.433065644311,
+            "cpu_sum": 6227.432633340279,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 503,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 2.32559436241786e-06,
+            "browser_sum": 3011.4842866659164,
+            "cpu_sum": 3011.4842887786326,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 48,
+          "height": 30,
+          "frame": 1,
+          "queue_ms": 1733.8999996185303,
+          "photons": 4096,
+          "eye": [
+            -160,
+            -180,
+            90
+          ],
+          "target": [
+            80,
+            0,
+            -15
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 3.1386447517434135e-05,
+        "bvhCameraMatchesBrute": true,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      },
+      "photocathode": {
+        "browser": 301,
+        "cpu": 301
+      },
+      "cutaway_controls": {
+        "sameMaps": true,
+        "sameEvent": true,
+        "cutChangesImage": true,
+        "uvChangesImage": true,
+        "restoringModeIsExact": true,
+        "finite": true
+      },
+      "bvh_transport": {
+        "terminal_states_exact": true,
+        "maps": {
+          "passed": true,
+          "atol": 0.0001,
+          "rtol": 0.0001,
+          "comparisons": {
+            "wall": {
+              "cells": 1842,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 0.0,
+              "browser_sum": 4779.866417884827,
+              "cpu_sum": 4779.866417884827,
+              "disagreement_indices": []
+            },
+            "fill_wall": {
+              "cells": 690,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 0.0,
+              "browser_sum": 4702.5879011154175,
+              "cpu_sum": 4702.5879011154175,
+              "disagreement_indices": []
+            },
+            "volume": {
+              "cells": 5748,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 1.9073486328125e-06,
+              "browser_sum": 6227.433070829915,
+              "cpu_sum": 6227.433065644311,
+              "disagreement_indices": []
+            },
+            "wls": {
+              "cells": 503,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 5.7220458984375e-06,
+              "browser_sum": 3011.484280705452,
+              "cpu_sum": 3011.4842866659164,
+              "disagreement_indices": []
+            }
+          }
+        }
+      }
+    }
+  ],
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "474d3385ab643ac58d88774a30ab7147d7e9912e1ba5885d9be662dc00344460",
+    "chroma-lar/chroma_lar/pmt_camera.py": "0b1fb021fc37f852a474c528b8d43b1f3f2b783a5a6456292a13ceec0c13b24d",
+    "chroma-lar/chroma_lar/optical_showcase.py": "e1fa1fae941504f6d3e5a8ec76bf8e58489a5015a6bda4086c50fa410a1869be",
+    "chroma-lar/chroma_lar/webgpu_physics.py": "f2e8860279d6f0e421fa83b30902dcc0d989b392ba6cf251227c74bac3174b94",
+    "chroma-lar/benchmarks/check_photon_camera.py": "955327d841ab251da0d102d07d0aa00cb89d15f83184e266a1b49b9710837f9f",
+    "chroma-lite/chroma/triton/spectral.py": "55f916bed15ef5a5e92e0a7bec21aff8f94a1e2e67bd6f9bd6bb995546c81b0c",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5"
+  },
+  "asset_hashes": {
+    "camera.html": "715c4c0f16fbd345d48433de28c2ed3605d85ae5cb4100574975c499484337c3",
+    "camera.js": "bb073f27ce60202de73a1d24449c8568add2e99b9ae8da42fa839ba5ff83d105",
+    "camera.wgsl": "b08f6cb046c980894845bf4bdae146f25ff865f680e5a8aa1805ffb95c45b84c",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "physics.html": "f6dcfb161cc96dd50070a997a22f31b0901a485dd08a432f7cebbf7801e71744",
+    "physics.js": "a9809d544258b3c30497fb77bf827576da01e202639e1a591a0a09db54fc9940",
+    "physics.wgsl": "ea4c6940e3f521522b02fae9e32971afe3e151cb9e5d34314c260859f88c0262"
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "page_errors": [],
+  "passed": false
+}

@@ -1,0 +1,282 @@
+{
+  "capture_sha256": "a0434ec3a0626e2fc587de4e740a7612163912d77c783c24c3070762158a7889",
+  "implementation_sha256": "1f4d8e61e505a8180963f46684990fef44adb743e1ecc60d37e7e7aff4e6648d",
+  "runs": [
+    {
+      "key": "run_0",
+      "seed": 0,
+      "offset": 0,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_1",
+      "seed": 0,
+      "offset": 1,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_2",
+      "seed": 0,
+      "offset": 129,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_3",
+      "seed": 0,
+      "offset": 4294967303,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_4",
+      "seed": 0,
+      "offset": 9223372036854775821,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_5",
+      "seed": 1,
+      "offset": 0,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_6",
+      "seed": 1,
+      "offset": 1,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_7",
+      "seed": 1,
+      "offset": 129,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_8",
+      "seed": 1,
+      "offset": 4294967303,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_9",
+      "seed": 1,
+      "offset": 9223372036854775821,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_10",
+      "seed": 99173,
+      "offset": 0,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_11",
+      "seed": 99173,
+      "offset": 1,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_12",
+      "seed": 99173,
+      "offset": 129,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_13",
+      "seed": 99173,
+      "offset": 4294967303,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_14",
+      "seed": 99173,
+      "offset": 9223372036854775821,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_15",
+      "seed": 4294967303,
+      "offset": 0,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_16",
+      "seed": 4294967303,
+      "offset": 1,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_17",
+      "seed": 4294967303,
+      "offset": 129,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_18",
+      "seed": 4294967303,
+      "offset": 4294967303,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_19",
+      "seed": 4294967303,
+      "offset": 9223372036854775821,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_20",
+      "seed": 18446744073709551615,
+      "offset": 0,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_21",
+      "seed": 18446744073709551615,
+      "offset": 1,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_22",
+      "seed": 18446744073709551615,
+      "offset": 129,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_23",
+      "seed": 18446744073709551615,
+      "offset": 4294967303,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    },
+    {
+      "key": "run_24",
+      "seed": 18446744073709551615,
+      "offset": 9223372036854775821,
+      "mismatches": {
+        "initial": 0,
+        "final": 0,
+        "integers": 0,
+        "uniforms": 0
+      }
+    }
+  ],
+  "passed": true
+}

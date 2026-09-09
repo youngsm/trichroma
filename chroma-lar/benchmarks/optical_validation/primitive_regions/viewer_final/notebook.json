@@ -1,0 +1,26 @@
+{
+  "cells": 10,
+  "executed_cells": 7,
+  "widget_created": true,
+  "initial_png_verified": true,
+  "preview_callback": true,
+  "scheduled_full_frame": true,
+  "browser_painting_tested": false,
+  "detector_selection_callbacks": [
+    "reflect3wires",
+    "pixelTPC",
+    "pixelPads"
+  ],
+  "ray_count_control": true,
+  "detector": {
+    "name": "theia",
+    "radius_mm": 25500.0,
+    "diameter_mm": 508.0,
+    "coverage": 0.81,
+    "sensor_instances": 49684,
+    "canonical_sensor_triangles": 660,
+    "enclosure_triangles": 400,
+    "representation": "instanced PMT meshes and faceted enclosure"
+  },
+  "source_sha256": "62d8afb6f9322603c61b0961b92000f0af8fd1ba4c87beafa63f15a975934f4c"
+}

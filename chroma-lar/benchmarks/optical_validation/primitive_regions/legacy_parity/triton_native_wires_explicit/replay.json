@@ -1,0 +1,91 @@
+{
+  "scope": "Raw-word comparison of independently evolved Triton photon histories against verified original Chroma captures",
+  "random_source": "independently initialized and generated XORWOW",
+  "capture_report_sha256": "cb53fce2a62d66835bb000a6c76f483a6ffc5feea0922b6e81f5a19bc9e51ba4",
+  "source_sha256": {
+    "chroma-lar/benchmarks/replay_original_chroma.py": "6a58e86619c13b80ec7f903c64480a21cbecb5f893a9183eab37596b41eceea6",
+    "chroma-lar/chroma_lar/triton_scene/legacy_spectral.py": "42bcfef91f2a629b49b040cdd1db91b0df3eef8e3ee027a7d8aab9fa2743a318",
+    "chroma-lar/chroma_lar/triton_scene/legacy_wires.py": "1fbe8c9ad9dd489d8e5e6adeefb0bdfce31934d07d4d3bcd77ba22cc4cedf487",
+    "chroma-lar/chroma_lar/triton_scene/_legacy_wire_ptx.py": "7262db66feaf5dee0593dcd140535a1efcec494fca56309a1e319ce617db4aa8",
+    "chroma-lar/chroma_lar/triton_scene/_legacy_wire_ptx.json": "cca2970f1f1cc142acbe2f5da81663ac5df779aafd45fa3d5c9f2e9f49c41981",
+    "chroma-lar/chroma_lar/triton_scene/chroma_global_traversal.py": "a1b6e46fa047f154c9f0e0e304b7d5860fd1a8edea2c99fb92c2c4614b015353",
+    "chroma-lar/chroma_lar/triton_backend.py": "28caa674cdca7c08f98fe729854a1fcb0f12659706ef7c9509e88be8ebcbc096",
+    "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b",
+    "chroma-lite/chroma/triton/xorwow.py": "1f4d8e61e505a8180963f46684990fef44adb743e1ecc60d37e7e7aff4e6648d"
+  },
+  "cases": [
+    {
+      "case": "analytic_wires",
+      "photons": 8192,
+      "initialization": "independent normalization of raw input photon words",
+      "unfinished_reference_photons": 0,
+      "capture_archive_sha256": "bf22acd8d7ac945bf7ec230f9031e3d9da37686bef697931846fb309a07e171a",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 937,
+          "first": {
+            "index": [
+              98,
+              0
+            ],
+            "original_word": 1120403457,
+            "triton_word": 1100713547,
+            "field": "position_x"
+          }
+        },
+        "state_words": {
+          "mismatches": 2181,
+          "first": {
+            "index": [
+              98,
+              0,
+              0
+            ],
+            "original_word": 1100713432,
+            "triton_word": 1100713535,
+            "field": "position_x"
+          }
+        },
+        "draw_counts": {
+          "mismatches": 64,
+          "first": {
+            "index": [
+              98,
+              1
+            ],
+            "original_word": 3,
+            "triton_word": 2
+          }
+        },
+        "interaction_counts": {
+          "mismatches": 17,
+          "first": {
+            "index": [
+              736
+            ],
+            "original_word": 3,
+            "triton_word": 2
+          }
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        },
+        "native_rng_words": {
+          "mismatches": 228,
+          "first": {
+            "index": [
+              98,
+              0
+            ],
+            "original_word": 1427169106,
+            "triton_word": 1426806669,
+            "field": "position_x"
+          }
+        }
+      },
+      "passed": false
+    }
+  ],
+  "passed": false
+}

@@ -1,0 +1,8 @@
+{
+  "error": "\nArrays are not equal\n\nMismatched elements: 1 / 10000 (0.01%)\nMax absolute difference among violations: 262\nMax relative difference among violations: 0.99242424\n ACTUAL: array([  2, 292,  18, ...,   2,   2,   2], shape=(10000,), dtype=uint32)\n DESIRED: array([  2, 292,  18, ...,   2,   2,   2], shape=(10000,), dtype=uint32)",
+  "flag_mismatch_indices": [
+    8115
+  ],
+  "cpu_detected": 1336,
+  "gpu_detected": 1336
+}

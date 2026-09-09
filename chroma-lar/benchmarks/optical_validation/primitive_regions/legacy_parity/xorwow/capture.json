@@ -1,0 +1,139 @@
+{
+  "reference": "/sdf/group/neutrino/youngsam/sim/chroma-lite",
+  "cuda_headers": "/sdf/group/neutrino/youngsam/sim/chroma-lite/chroma/cuda",
+  "cuda_options": [
+    "--use_fast_math",
+    "-Xptxas=-dlcm=ca",
+    "-diag-suppress=177,20044"
+  ],
+  "original_random_header_sha256": "3cacc335f4613de45ef44d1addfc91966ee6e4391efa7083cf3af2a49c4435aa",
+  "wrapper_sha256": "a54f75efa6a4b07489b16eef3665b839eb5436588fe47622a5f597b9b276aeba",
+  "archive_sha256": "779397359256b10e6ceb37847c7eaafe4040388313551245cfbcc8ce1748ad94",
+  "runs": [
+    {
+      "key": "run_0",
+      "seed": 0,
+      "offset": 0
+    },
+    {
+      "key": "run_1",
+      "seed": 0,
+      "offset": 1
+    },
+    {
+      "key": "run_2",
+      "seed": 0,
+      "offset": 129
+    },
+    {
+      "key": "run_3",
+      "seed": 0,
+      "offset": 4294967303
+    },
+    {
+      "key": "run_4",
+      "seed": 0,
+      "offset": 9223372036854775821
+    },
+    {
+      "key": "run_5",
+      "seed": 1,
+      "offset": 0
+    },
+    {
+      "key": "run_6",
+      "seed": 1,
+      "offset": 1
+    },
+    {
+      "key": "run_7",
+      "seed": 1,
+      "offset": 129
+    },
+    {
+      "key": "run_8",
+      "seed": 1,
+      "offset": 4294967303
+    },
+    {
+      "key": "run_9",
+      "seed": 1,
+      "offset": 9223372036854775821
+    },
+    {
+      "key": "run_10",
+      "seed": 99173,
+      "offset": 0
+    },
+    {
+      "key": "run_11",
+      "seed": 99173,
+      "offset": 1
+    },
+    {
+      "key": "run_12",
+      "seed": 99173,
+      "offset": 129
+    },
+    {
+      "key": "run_13",
+      "seed": 99173,
+      "offset": 4294967303
+    },
+    {
+      "key": "run_14",
+      "seed": 99173,
+      "offset": 9223372036854775821
+    },
+    {
+      "key": "run_15",
+      "seed": 4294967303,
+      "offset": 0
+    },
+    {
+      "key": "run_16",
+      "seed": 4294967303,
+      "offset": 1
+    },
+    {
+      "key": "run_17",
+      "seed": 4294967303,
+      "offset": 129
+    },
+    {
+      "key": "run_18",
+      "seed": 4294967303,
+      "offset": 4294967303
+    },
+    {
+      "key": "run_19",
+      "seed": 4294967303,
+      "offset": 9223372036854775821
+    },
+    {
+      "key": "run_20",
+      "seed": 18446744073709551615,
+      "offset": 0
+    },
+    {
+      "key": "run_21",
+      "seed": 18446744073709551615,
+      "offset": 1
+    },
+    {
+      "key": "run_22",
+      "seed": 18446744073709551615,
+      "offset": 129
+    },
+    {
+      "key": "run_23",
+      "seed": 18446744073709551615,
+      "offset": 4294967303
+    },
+    {
+      "key": "run_24",
+      "seed": 18446744073709551615,
+      "offset": 9223372036854775821
+    }
+  ]
+}

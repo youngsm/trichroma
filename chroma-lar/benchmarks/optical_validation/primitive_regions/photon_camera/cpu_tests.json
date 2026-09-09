@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/sdf/home/y/youngsam/sw/dune/.conda/envs/pimm-bench/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "chroma-lar/test/test_photon_camera.py",
+    "chroma-lar/test/test_webgpu_physics.py",
+    "chroma-lar/test/test_optical_showcase.py",
+    "-k",
+    "not gpu_prefix"
+  ],
+  "exit_code": 0,
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "f6f3080cc76282136bad43d59fc8fbcd1f4b7e5ff737adb9d7e60e4332b26e1b",
+    "chroma-lar/chroma_lar/pmt_camera.py": "d11ca8faf65fb9a0449a868442a84794bda16fc135c037d9f15302fa3d626bb4",
+    "chroma-lar/chroma_lar/webgpu_physics.py": "f2e8860279d6f0e421fa83b30902dcc0d989b392ba6cf251227c74bac3174b94",
+    "chroma-lar/chroma_lar/optical_showcase.py": "e1fa1fae941504f6d3e5a8ec76bf8e58489a5015a6bda4086c50fa410a1869be",
+    "chroma-lar/benchmarks/check_photon_camera.py": "1d55779d21632f73748f04d55a49ac0d50393277264da6346d42f40674479a4f",
+    "chroma-lar/benchmarks/check_photon_camera_notebook.py": "c84d26b0eeb88c352285ae6be5a9d89348457ecc528c5f3a21f59114d5ee96b7",
+    "notebooks/photon_camera.ipynb": "c514a0a389f704c3e5747813247521650661123c79c768c1f24831b241bc276c"
+  }
+}

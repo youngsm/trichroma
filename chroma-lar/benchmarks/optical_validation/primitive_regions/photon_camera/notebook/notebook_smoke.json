@@ -1,0 +1,52 @@
+{
+  "kernel": "trichroma-gpu",
+  "executed_cells": 3,
+  "iframe_mode": "trusted srcdoc, bundled module and shader bytes",
+  "jupyter_base_url": "/studio-test/",
+  "archive_exists": true,
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "counts": {
+    "detected": 89,
+    "absorbed": 39,
+    "escaped": 0,
+    "reemitted": 74,
+    "scattered": 18,
+    "max_steps": 20,
+    "beam": 99,
+    "fill": 29,
+    "boundary_roundings": 0,
+    "photocathode": 0
+  },
+  "frame": {
+    "width": 64,
+    "height": 40,
+    "frame": 1,
+    "queue_ms": 2814.0999999046326,
+    "photons": 128,
+    "eye": [
+      -240,
+      -170,
+      95
+    ],
+    "target": [
+      30,
+      0,
+      -40
+    ],
+    "exposure": 100000,
+    "cutaway": false,
+    "uv_false_color": false
+  },
+  "finite": true,
+  "page_errors": [],
+  "passed": true
+}

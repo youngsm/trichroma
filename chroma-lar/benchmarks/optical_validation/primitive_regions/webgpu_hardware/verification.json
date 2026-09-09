@@ -1,0 +1,348 @@
+{
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false
+  },
+  "hardware": true,
+  "browser_version": "148.0.7778.96",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "geometry_rendering_only": true,
+  "browser_canvas_verified": true,
+  "browser_paint_fps_measured": false,
+  "oracle": "Independent float64 triangle leaves on the actual exported triangles/transforms, using actual WGSL directions; camera rounding checked separately",
+  "source_hashes": {
+    "chroma-lite/chroma/triton/webgpu/export.py": "cec2c1506a60f22b2634c6812116a336d4d3288cd507718d1d816ac9f8a680cc",
+    "chroma-lite/chroma/triton/webgpu/reference.py": "b800509156bc7b72a3667e1fb852fb76283a8da3a0c787ecaf0b4ae22453425a",
+    "chroma-lite/chroma/triton/viewer.py": "ef15fce94a6c9f4a41a88e599e77e5756731e0ae70ebed910fddf0506e6905db",
+    "chroma-lite/chroma/triton/examples/theia.py": "c70f966b02e2d48f023f539429eb39d38c38d684cf1b4b36b9fd395fd001169d",
+    "chroma-lar/chroma_lar/viewer_examples.py": "9ca597a02512cf667c9e7aca204db7c5090926c0ac081fe3a255f6f899628c88",
+    "chroma-lite/chroma/triton/bvh.py": "6f1ea939148962f4a587317bbf4463182f27b350369fbf905f7f395eaed3902f",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lar/chroma_lar/triton_scene/instances.py": "c13efc2779faa09e7b5be2531d5aaceb0c8a28663d8db32bad852820730cce34",
+    "chroma-lar/chroma_lar/triton_scene/primitive_adapter.py": "507b6f080a53cbb3deb8352c47343058b687d24dc67f6fb8202fcf19f9436c20",
+    "chroma-lar/chroma_lar/geometry/build_larcube_pixel.py": "8bc24c41c566cb1250d61cb9332787fedf5786ca38a1f59251decf80be66636a",
+    "chroma-lar/chroma_lar/geometry/pixelplane.py": "9ab3710654e00e44213800baa29b65f4bdb4539b9a4cd2c81ca128cdd450922b",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.py": "9d0db78013f629874b508a64d5bb3e1752c9d1663547269cdffb1cb8df978ee1",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.yaml": "f6fee4cd3ece48755f1f96be980d49d6da102604af6446cd1d351d3c8a5067c9"
+  },
+  "asset_hashes": {
+    "index.html": "41b246f28e83635fdf3b0858784e241b05e884cd1c4170efa8811d9eb5398866",
+    "viewer.js": "d3c50d02245bffa2e25d0a19536e5f598014519f87253118f1f0871b50ead9ee",
+    "trace.wgsl": "79e93480cf07c641b9b4585d6a32665a6f2228bf5f90d5e3829e00750bb60d76"
+  },
+  "capture_script_sha256": "c8a5dd640abbcef3e45d693a7a974bc34f12baa4485a388989c375fc534fdcd5",
+  "scenes": [
+    {
+      "scene": {
+        "format": "trichroma-webgpu-v1",
+        "name": "theia",
+        "binary": "theia.bin",
+        "sha256": "36be7d3f22ecf85f763214828db2fd7ee070275e4c0dafff4f4561d91e0b4164",
+        "byte_length": 5635540,
+        "groups": 2,
+        "geometry": {
+          "name": "theia",
+          "radius_mm": 25500,
+          "diameter_mm": 508,
+          "coverage": 0.81,
+          "sensor_instances": 49684,
+          "canonical_sensor_triangles": 660,
+          "enclosure_triangles": 400,
+          "representation": "instanced PMT meshes and faceted enclosure"
+        },
+        "camera": {
+          "eye": [
+            14143.417059847501,
+            9903.32724134903,
+            4626.390431207558
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ],
+          "fov": 65
+        },
+        "rendering": "opaque geometry camera rays; no optical photon transport",
+        "precision": "WGSL f32 triangle queries; no analytic wires",
+        "mesh_triangles": 1060,
+        "instances": 49685
+      },
+      "frames": [
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 121.5,
+          "failures": 0,
+          "seed": 0,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        },
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 107.59999990463257,
+          "failures": 0,
+          "seed": 1,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        },
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 108.5,
+          "failures": 0,
+          "seed": 2,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        }
+      ],
+      "compared_rays": 2560,
+      "hit_identity_mismatches": 0,
+      "max_camera_direction_error": 1.7881393432617188e-07,
+      "max_distance_error_mm": 0.03861871429398889,
+      "max_normal_error": 2.188472388309215e-07
+    },
+    {
+      "scene": {
+        "format": "trichroma-webgpu-v1",
+        "name": "pixelTPC",
+        "binary": "pixelTPC.bin",
+        "sha256": "1e8ba67c893b7c502c06c9f29165235d4360a7ff6ffbc797b88afb9dcbd2edb0",
+        "byte_length": 363400,
+        "groups": 2,
+        "geometry": {
+          "name": "pixelTPC",
+          "config": "detector_config_pixel",
+          "sensor_instances": 164,
+          "solid_instances": 167,
+          "triangles": 839732,
+          "active_dimensions_mm": {
+            "x": [
+              -2160,
+              2160
+            ],
+            "y": [
+              -2160,
+              2160
+            ],
+            "z": [
+              -2160,
+              2160
+            ]
+          },
+          "diameter_mm": 111.252,
+          "representation": "original pixel_simplified=True; area-averaged pixel faces",
+          "pixel_simplified": true,
+          "pads_per_face": 1000000,
+          "resolved_pad_triangles": false,
+          "pixel_pitch_mm": 4.32
+        },
+        "camera": {
+          "eye": [
+            -1099.9999999999998,
+            -1089.8655849402867,
+            573.0389863008701
+          ],
+          "target": [
+            -1100,
+            2160,
+            0
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ],
+          "fov": 65
+        },
+        "rendering": "opaque geometry camera rays; no optical photon transport",
+        "precision": "WGSL f32 triangle queries; no analytic wires",
+        "mesh_triangles": 5172,
+        "instances": 165
+      },
+      "frames": [
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 4.800000190734863,
+          "failures": 0,
+          "seed": 0,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        },
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 6.300000190734863,
+          "failures": 0,
+          "seed": 1,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        },
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 4.799999713897705,
+          "failures": 0,
+          "seed": 2,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        }
+      ],
+      "compared_rays": 2560,
+      "hit_identity_mismatches": 0,
+      "max_camera_direction_error": 1.7881393432617188e-07,
+      "max_distance_error_mm": 0.0010731404972830205,
+      "max_normal_error": 9.071253226355935e-08
+    },
+    {
+      "scene": {
+        "format": "trichroma-webgpu-v1",
+        "name": "pixelPads",
+        "binary": "pixelPads.bin",
+        "sha256": "42e46783519ba4bc1ca5120c7a55861899ecec814d4402fc09e8b86f54cd0db5",
+        "byte_length": 1365520,
+        "groups": 1,
+        "geometry": {
+          "name": "pixelPads",
+          "representation": "resolved 32x32-pad closeup only",
+          "complete_detector": false,
+          "sensor_instances": 0,
+          "pads": 1024,
+          "triangles": 20480,
+          "pixel_pitch_mm": 4.32,
+          "pixel_pad_size_mm": 2.419,
+          "pixel_chamfer_radius_mm": 0.43
+        },
+        "camera": {
+          "eye": [
+            131.55696691002717,
+            0,
+            47.88282006559362
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ],
+          "fov": 65
+        },
+        "rendering": "opaque geometry camera rays; no optical photon transport",
+        "precision": "WGSL f32 triangle queries; no analytic wires",
+        "mesh_triangles": 20480,
+        "instances": 1
+      },
+      "frames": [
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 3.6000003814697266,
+          "failures": 0,
+          "seed": 0,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        },
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 4.300000190734863,
+          "failures": 0,
+          "seed": 1,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        },
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 4.800000190734863,
+          "failures": 0,
+          "seed": 2,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"
+        }
+      ],
+      "compared_rays": 2560,
+      "hit_identity_mismatches": 0,
+      "max_camera_direction_error": 1.7881393432617188e-07,
+      "max_distance_error_mm": 7.617145428184813e-06,
+      "max_normal_error": 5.960464477539063e-08
+    }
+  ]
+}

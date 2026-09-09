@@ -1,0 +1,24 @@
+{
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true
+  },
+  "detector_selection": true,
+  "orbit": true,
+  "zoom": true,
+  "ray_count_change": [
+    625000,
+    2500000
+  ],
+  "reset": true,
+  "adaptive_preview_rays": 14194,
+  "source_sha256": "790bd9791e87e21f959705894902ab4d86d09f2c37364c6169c7f44f1b734ae8",
+  "asset_hashes": {
+    "index.html": "4840e8b5e2e1d6306f27acdd26497a762bbf96c8cfe5cb54c89700dcfcaea62f",
+    "viewer.js": "d3c50d02245bffa2e25d0a19536e5f598014519f87253118f1f0871b50ead9ee",
+    "trace.wgsl": "79e93480cf07c641b9b4585d6a32665a6f2228bf5f90d5e3829e00750bb60d76"
+  }
+}

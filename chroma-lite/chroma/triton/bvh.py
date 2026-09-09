@@ -19,7 +19,6 @@ from typing import Any, Optional, Tuple
 
 import numpy as np
 
-
 DEGREE = 4
 CHILD_BITS = 28
 MAX_FIXED = (1 << 16) - 1
@@ -82,11 +81,7 @@ class PackedBVH:
 
     @property
     def nbytes(self) -> int:
-        return int(
-            self.nodes.nbytes
-            + self.triangle_vertices.nbytes
-            + self.world_origin.nbytes
-        )
+        return int(self.nodes.nbytes + self.triangle_vertices.nbytes + self.world_origin.nbytes)
 
     def to_triton(self, device: Optional[Any] = None):
         """Upload this BVH for Triton traversal.
@@ -100,9 +95,7 @@ class PackedBVH:
         return DevicePackedBVH.from_host(self, device=device)
 
 
-def _as_mesh_arrays(
-    vertices: Any, triangles: Optional[Any]
-) -> Tuple[np.ndarray, np.ndarray]:
+def _as_mesh_arrays(vertices: Any, triangles: Optional[Any]) -> Tuple[np.ndarray, np.ndarray]:
     if triangles is None:
         if not hasattr(vertices, "vertices") or not hasattr(vertices, "triangles"):
             raise TypeError(
@@ -148,14 +141,10 @@ def _spread3_16(values: np.ndarray) -> np.ndarray:
     return result
 
 
-def _quantize(
-    points: np.ndarray, world_origin: np.ndarray, world_scale: np.float32
-) -> np.ndarray:
+def _quantize(points: np.ndarray, world_origin: np.ndarray, world_scale: np.float32) -> np.ndarray:
     # C/CUDA conversion to unsigned integer truncates non-negative values.
     scaled = (points - world_origin) / world_scale
-    return np.floor(np.clip(scaled, 0.0, float(_FIXED_INTERVALS))).astype(
-        np.uint32
-    )
+    return np.floor(np.clip(scaled, 0.0, float(_FIXED_INTERVALS))).astype(np.uint32)
 
 
 def build_packed_bvh(
@@ -181,9 +170,7 @@ def build_packed_bvh(
         raise ValueError("the packed traversal format requires degree=4")
 
     vertex_array, triangle_array = _as_mesh_arrays(vertices, triangles)
-    triangle_vertices = np.ascontiguousarray(
-        vertex_array[triangle_array], dtype=np.float32
-    )
+    triangle_vertices = np.ascontiguousarray(vertex_array[triangle_array], dtype=np.float32)
     world_origin = np.ascontiguousarray(vertex_array.min(axis=0), dtype=np.float32)
     extent = np.float32(np.max(vertex_array.max(axis=0) - world_origin))
     # A fully degenerate mesh is still representable and safely traversable.
@@ -193,9 +180,7 @@ def build_packed_bvh(
     upper = triangle_vertices.max(axis=1)
     centroids = triangle_vertices.mean(axis=1, dtype=np.float32)
     q_lower = _quantize(lower, world_origin, world_scale)
-    q_lower = np.where(q_lower > 0, q_lower - np.uint32(1), q_lower).astype(
-        np.uint32
-    )
+    q_lower = np.where(q_lower > 0, q_lower - np.uint32(1), q_lower).astype(np.uint32)
     q_upper = np.minimum(
         _quantize(upper, world_origin, world_scale) + np.uint32(1),
         np.uint32(MAX_FIXED),
@@ -222,19 +207,7 @@ def build_packed_bvh(
     layers = [leaves]
     while len(layers[0]) > 1:
         children = layers[0]
-        parent_count = (len(children) + degree - 1) // degree
-        parents = np.empty((parent_count, 4), dtype=np.uint32)
-        for parent_id in range(parent_count):
-            first = parent_id * degree
-            child_group = children[first : min(first + degree, len(children))]
-            child_lower = child_group[:, :3] & np.uint32(0xFFFF)
-            child_upper = child_group[:, :3] >> np.uint32(16)
-            parents[parent_id, :3] = child_lower.min(axis=0) | (
-                child_upper.max(axis=0) << np.uint32(16)
-            )
-            parents[parent_id, 3] = np.uint32(
-                (len(child_group) << CHILD_BITS) | first
-            )
+        parents = _parent_layer(children, degree)
         layers.insert(0, parents)
 
     layer_counts = tuple(int(len(layer)) for layer in layers)
@@ -262,6 +235,27 @@ def build_packed_bvh(
         layer_counts=layer_counts,
         degree=degree,
     )
+
+
+def _parent_layer(children, degree):
+    """Bit-identical packed parents, with bounded NumPy work buffers."""
+    count = (len(children) + degree - 1) // degree
+    parents = np.empty((count, 4), dtype=np.uint32)
+    for start in range(0, count, 1 << 18):
+        stop = min(count, start + (1 << 18))
+        group = children[start * degree : min(stop * degree, len(children))]
+        if len(group) % degree:
+            padding = np.zeros((degree - len(group) % degree, 4), np.uint32)
+            padding[:, :3] = np.uint32(0xFFFF)  # neutral lower=65535, upper=0
+            group = np.concatenate((group, padding))
+        group = group.reshape(-1, degree, 4)
+        lower = (group[:, :, :3] & np.uint32(0xFFFF)).min(axis=1)
+        upper = (group[:, :, :3] >> np.uint32(16)).max(axis=1)
+        parents[start:stop, :3] = lower | (upper << np.uint32(16))
+        first = np.arange(start, stop, dtype=np.uint32) * degree
+        size = np.minimum(degree, len(children) - first).astype(np.uint32)
+        parents[start:stop, 3] = (size << np.uint32(CHILD_BITS)) | first
+    return parents
 
 
 def _ray_inputs(
@@ -297,6 +291,37 @@ def _ray_inputs(
     return origin_array, direction_array, tmax_array, last_hit_array
 
 
+def _nearest_triangle(v0, edge1, edge2, origin, direction, tmax, last_hit, ids):
+    """Independent Moller--Trumbore arithmetic shared by CPU oracles."""
+    dtype = v0.dtype.type
+    epsilon = dtype(1.0e-9 if dtype == np.float64 else 1.0e-6)
+    h = np.cross(np.broadcast_to(direction, edge2.shape), edge2)
+    determinant = np.einsum("ij,ij->i", edge1, h, dtype=dtype)
+    determinant_epsilon = np.finfo(dtype).eps
+    accepted = (determinant < -determinant_epsilon) | (determinant > determinant_epsilon)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        reciprocal = dtype(1.0) / determinant
+        s = origin - v0
+        u = reciprocal * np.einsum("ij,ij->i", s, h, dtype=dtype)
+        q = np.cross(s, edge1)
+        v = reciprocal * np.einsum("ij,j->i", q, direction, dtype=dtype)
+        distance = reciprocal * np.einsum("ij,ij->i", edge2, q, dtype=dtype)
+    accepted &= (
+        (u >= -epsilon)
+        & (u <= dtype(1.0) + epsilon)
+        & (v >= -epsilon)
+        & (u + v <= dtype(1.0) + epsilon)
+        & (distance > epsilon)
+        & (distance < tmax)
+        & (ids != last_hit)
+    )
+    if not np.any(accepted):
+        return -1, np.float32(np.inf)
+    candidates = np.where(accepted, distance, np.float32(np.inf))
+    best = int(np.argmin(candidates))
+    return int(ids[best]), candidates[best]
+
+
 def nearest_hit_cpu(
     bvh: PackedBVH,
     origins: Any,
@@ -304,6 +329,7 @@ def nearest_hit_cpu(
     *,
     tmax: Optional[Any] = None,
     last_hit: Optional[Any] = None,
+    high_precision: bool = False,
 ) -> TraversalResult:
     """Float32 brute-force nearest-hit reference for local-coordinate rays.
 
@@ -318,46 +344,79 @@ def nearest_hit_cpu(
     triangle_ids = np.full(len(origin_array), -1, dtype=np.int32)
     distances = np.full(len(origin_array), np.inf, dtype=np.float32)
     tri = bvh.triangle_vertices
+    if high_precision:
+        tri = tri.astype(np.float64)
+        origin_array = origin_array.astype(np.float64)
+        direction_array = direction_array.astype(np.float64)
     v0, v1, v2 = tri[:, 0], tri[:, 1], tri[:, 2]
     edge1, edge2 = v1 - v0, v2 - v0
-    epsilon = np.float32(1.0e-6)
-    determinant_epsilon = np.finfo(np.float32).eps
+    ids = np.arange(len(tri), dtype=np.int32)
 
-    for ray_id, (origin, direction) in enumerate(
-        zip(origin_array, direction_array)
-    ):
-        h = np.cross(np.broadcast_to(direction, edge2.shape), edge2)
-        determinant = np.einsum("ij,ij->i", edge1, h, dtype=np.float32)
-        accepted = (determinant < -determinant_epsilon) | (
-            determinant > determinant_epsilon
+    for ray_id, (origin, direction) in enumerate(zip(origin_array, direction_array)):
+        triangle_ids[ray_id], distances[ray_id] = _nearest_triangle(
+            v0, edge1, edge2, origin, direction, tmax_array[ray_id], last_hit_array[ray_id], ids
         )
-        with np.errstate(divide="ignore", invalid="ignore"):
-            reciprocal = np.float32(1.0) / determinant
-            s = origin - v0
-            u = reciprocal * np.einsum("ij,ij->i", s, h, dtype=np.float32)
-            q = np.cross(s, edge1)
-            v = reciprocal * np.einsum(
-                "ij,j->i", q, direction, dtype=np.float32
-            )
-            distance = reciprocal * np.einsum(
-                "ij,ij->i", edge2, q, dtype=np.float32
-            )
-        accepted &= (
-            (u >= -epsilon)
-            & (u <= np.float32(1.0) + epsilon)
-            & (v >= -epsilon)
-            & ((u + v) <= np.float32(1.0) + epsilon)
-            & (distance > epsilon)
-            & (distance < tmax_array[ray_id])
-            & (np.arange(len(tri), dtype=np.int32) != last_hit_array[ray_id])
-        )
-        if np.any(accepted):
-            candidates = np.where(accepted, distance, np.float32(np.inf))
-            triangle_id = int(np.argmin(candidates))
-            triangle_ids[ray_id] = triangle_id
-            distances[ray_id] = candidates[triangle_id]
 
     return TraversalResult(triangle_ids=triangle_ids, distances=distances)
+
+
+def nearest_hit_bvh_cpu(
+    bvh, origins, directions, *, tmax=None, last_hit=None, high_precision=False
+):
+    """CPU BVH broadphase followed by the brute-force oracle's exact leaf test.
+
+    Node slabs use float64 and one extra quantization unit of padding; there
+    is no nearest-hit pruning or candidate cap. Original triangle-ID sorting
+    preserves the brute-force tie rule. This makes large-scene CPU transport
+    tractable while keeping the unaccelerated reference available for checks.
+    """
+    origins, directions, limits, previous = _ray_inputs(origins, directions, tmax, last_hit)
+    triangles = np.full(len(origins), -1, np.int32)
+    distances = np.full(len(origins), np.inf, np.float32)
+    world_origin, scale = bvh.world_origin.astype(float), float(bvh.world_scale)
+    child_mask = np.uint32((1 << CHILD_BITS) - 1)
+    for ray, (origin, direction) in enumerate(zip(origins, directions)):
+        frontier, leaves = np.array([0], np.int64), []
+        origin64, direction64 = origin.astype(float), direction.astype(float)
+        parallel = direction64 == 0
+        divisor = np.where(parallel, 1.0, direction64)
+        while len(frontier):
+            nodes = bvh.nodes[frontier]
+            lower = world_origin + ((nodes[:, :3] & np.uint32(0xFFFF)).astype(float) - 1) * scale
+            upper = world_origin + ((nodes[:, :3] >> np.uint32(16)).astype(float) + 1) * scale
+            first, second = (lower - origin64) / divisor, (upper - origin64) / divisor
+            enter = np.where(parallel, -np.inf, np.minimum(first, second)).max(axis=1)
+            leave = np.where(parallel, np.inf, np.maximum(first, second)).min(axis=1)
+            hit = (leave >= np.maximum(enter, 0.0)) & ~np.any(
+                parallel & ((origin64 < lower) | (origin64 > upper)), axis=1
+            )
+            nodes = nodes[hit]
+            counts = nodes[:, 3] >> np.uint32(CHILD_BITS)
+            children = nodes[:, 3] & child_mask
+            leaves.extend(children[counts == 0].tolist())
+            inner = counts > 0
+            if not inner.any():
+                break
+            slots = np.arange(int(counts[inner].max()))
+            frontier = (children[inner, None] + slots)[slots[None, :] < counts[inner, None]]
+        if not leaves:
+            continue
+        ids = np.unique(leaves).astype(np.int32)
+        tri = bvh.triangle_vertices[ids]
+        if high_precision:
+            tri = tri.astype(np.float64)
+            origin, direction = origin64, direction64
+        triangles[ray], distances[ray] = _nearest_triangle(
+            tri[:, 0],
+            tri[:, 1] - tri[:, 0],
+            tri[:, 2] - tri[:, 0],
+            origin,
+            direction,
+            limits[ray],
+            previous[ray],
+            ids,
+        )
+    return TraversalResult(triangle_ids=triangles, distances=distances)
 
 
 __all__ = [
@@ -366,4 +425,5 @@ __all__ = [
     "TraversalResult",
     "build_packed_bvh",
     "nearest_hit_cpu",
+    "nearest_hit_bvh_cpu",
 ]

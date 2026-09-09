@@ -1,0 +1,393 @@
+{
+  "hardware": false,
+  "scenes": [
+    {
+      "scene": {
+        "name": "prism",
+        "title": "One beam. A spectrum of possibilities.",
+        "manifest": "camera-prism.json",
+        "sha256": "79672b86c55c509bed6bc3c55477edf2d17ae36957ca2a0d4bc81fe0e9a6953c",
+        "byte_length": 122593,
+        "scene_fingerprint": "9ea2d2559f6b65bbbd1864e31175f22d448e237f6e91ac9c79f077b0cc5c8984"
+      },
+      "photons": 256,
+      "state": {
+        "count": 256,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.00042724609375,
+        "times_max_abs": 4.6193599700927734e-06,
+        "wavelengths_max_abs": 0.0,
+        "direction_max_abs": 7.450580596923828e-07,
+        "polarization_max_abs": 9.55536961555481e-07,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 9.613795159957306e-08,
+        "polarization_norm_max_error": 9.613795159957306e-08,
+        "polarization_dot_max_abs": 6.258923912483283e-08
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 127,
+            "mismatches": 0,
+            "max_abs": 3.451284751321282e-07,
+            "browser_sum": 215.82732611894608,
+            "cpu_sum": 215.82732624059574,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 50,
+            "mismatches": 0,
+            "max_abs": 1.8666188053018118e-06,
+            "browser_sum": 339.29205560684204,
+            "cpu_sum": 339.2920017076688,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 18,
+            "mismatches": 0,
+            "max_abs": 4.001446421986188e-06,
+            "browser_sum": 11.857103556394577,
+            "cpu_sum": 11.857100177722552,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 0,
+            "mismatches": 0,
+            "max_abs": 0,
+            "browser_sum": 0.0,
+            "cpu_sum": 0.0,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 64,
+          "height": 40,
+          "frame": 1,
+          "queue_ms": 1958.0999999046326,
+          "photons": 256,
+          "eye": [
+            -240,
+            -170,
+            95
+          ],
+          "target": [
+            30,
+            0,
+            -40
+          ],
+          "exposure": 100000
+        },
+        "scalingError": 0,
+        "maxSignal": 0.0005802139639854431,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      }
+    },
+    {
+      "scene": {
+        "name": "fluorescence",
+        "title": "Ultraviolet in. A visible glow out.",
+        "manifest": "camera-fluorescence.json",
+        "sha256": "c6264903153cc272180fdaa07a67d276fd240873902366cd8fe98c5c98163cd9",
+        "byte_length": 125200,
+        "scene_fingerprint": "7038896d72228b81bb24269cc22724e04356b27eae7f89cf12829ebc50ad8880"
+      },
+      "photons": 256,
+      "state": {
+        "count": 256,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.0006608963012695312,
+        "times_max_abs": 7.62939453125e-06,
+        "wavelengths_max_abs": 6.103515625e-05,
+        "direction_max_abs": 6.128102540969849e-07,
+        "polarization_max_abs": 2.4437904357910156e-06,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 8.732307832381991e-08,
+        "polarization_norm_max_error": 1.0401547934080213e-07,
+        "polarization_dot_max_abs": 1.0323153837310528e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 118,
+            "mismatches": 0,
+            "max_abs": 1.643259346373327e-07,
+            "browser_sum": 147.69560480117798,
+            "cpu_sum": 147.6956047385706,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 50,
+            "mismatches": 0,
+            "max_abs": 1.8666188053018118e-06,
+            "browser_sum": 339.29205560684204,
+            "cpu_sum": 339.29200170766876,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 99,
+            "mismatches": 0,
+            "max_abs": 4.001446421986188e-06,
+            "browser_sum": 59.37720000266563,
+            "cpu_sum": 59.377190006841055,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 150,
+            "mismatches": 0,
+            "max_abs": 1.896620416275141e-07,
+            "browser_sum": 176.6607848405838,
+            "cpu_sum": 176.66078395195527,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 64,
+          "height": 40,
+          "frame": 1,
+          "queue_ms": 1497.5,
+          "photons": 256,
+          "eye": [
+            -240,
+            -170,
+            95
+          ],
+          "target": [
+            30,
+            0,
+            -40
+          ],
+          "exposure": 100000
+        },
+        "scalingError": 0,
+        "maxSignal": 0.0004868537944275886,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      }
+    },
+    {
+      "scene": {
+        "name": "rayleigh",
+        "title": "A blue halo. A red beam.",
+        "manifest": "camera-rayleigh.json",
+        "sha256": "fe806633c90c3c98ca2dcf9253f8591e25340e2973890cad8f2230103d20ca4b",
+        "byte_length": 97956,
+        "scene_fingerprint": "0ca6b117c585ac3bd62ef3ff8a59e810af6a90821122767c9d7bb09b1992fb6a"
+      },
+      "photons": 256,
+      "state": {
+        "count": 256,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.000408172607421875,
+        "times_max_abs": 1.1920928955078125e-06,
+        "wavelengths_max_abs": 0.0,
+        "direction_max_abs": 6.92903995513916e-07,
+        "polarization_max_abs": 9.55536961555481e-07,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 9.914473952932212e-08,
+        "polarization_norm_max_error": 1.1314298831166525e-07,
+        "polarization_dot_max_abs": 1.9360781644550684e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 202,
+            "mismatches": 0,
+            "max_abs": 1.234972817343305e-07,
+            "browser_sum": 215.82732558250427,
+            "cpu_sum": 215.82732624059574,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 50,
+            "mismatches": 0,
+            "max_abs": 1.8666188053018118e-06,
+            "browser_sum": 339.29205560684204,
+            "cpu_sum": 339.29200170766876,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 3399,
+            "mismatches": 0,
+            "max_abs": 4.652950593708738e-06,
+            "browser_sum": 1520.8283166793913,
+            "cpu_sum": 1520.8281564344427,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 0,
+            "mismatches": 0,
+            "max_abs": 0,
+            "browser_sum": 0.0,
+            "cpu_sum": 0.0,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 64,
+          "height": 40,
+          "frame": 1,
+          "queue_ms": 1369.5,
+          "photons": 256,
+          "eye": [
+            -240,
+            -170,
+            95
+          ],
+          "target": [
+            30,
+            0,
+            0
+          ],
+          "exposure": 100000
+        },
+        "scalingError": 0,
+        "maxSignal": 8.19170891190879e-05,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      },
+      "axis_aligned_volume": {
+        "actual": [
+          [
+            6.262261013034731e-05,
+            0.36430972814559937
+          ],
+          [
+            6.262261013034731e-05,
+            0.36430972814559937
+          ],
+          [
+            6.262258102651685e-05,
+            0.36430981755256653
+          ],
+          [
+            6.262258102651685e-05,
+            0.36430981755256653
+          ],
+          [
+            6.262258102651685e-05,
+            0.36430981755256653
+          ],
+          [
+            6.262258102651685e-05,
+            0.36430981755256653
+          ]
+        ],
+        "expected": [
+          6.262263376333402e-05,
+          0.36430942958206564
+        ],
+        "passed": true,
+        "directions": [
+          "+x",
+          "-x",
+          "+y",
+          "-y",
+          "+z",
+          "-z"
+        ]
+      }
+    }
+  ],
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "c3c5702dec149719670d14d434c377ae3a3a0a127a8fe1e7a73b18e94c42df06",
+    "chroma-lar/chroma_lar/webgpu_physics.py": "f2e8860279d6f0e421fa83b30902dcc0d989b392ba6cf251227c74bac3174b94",
+    "chroma-lar/benchmarks/check_photon_camera.py": "dec9cabfe787a9cf969d7ce8772a8eff0f3d8b07e74641d624a986b80980a041"
+  },
+  "asset_hashes": {
+    "camera.html": "6317d890b48f94f364140f7e395f6f0af761d985caf823abda27aa0e99748e82",
+    "camera.js": "8eb25d35efe42f33b7bfce7357eb40b2eb972adf983454dbb224e220a27baf47",
+    "camera.wgsl": "534e28a9cb7e3bf217570905cea01b919bbf3bf2ad7898b846bd759fe22878d9",
+    "deposition.wgsl": "4a2d03a3af4393ae0e13fc9db4e30d430ca6d33ca723f0b59c2a7d8686af941c",
+    "physics.html": "8fa83dbb2cc8618af5a1c057a7c4f42573aa481fa5f48ece0037bae6e6f7f6ba",
+    "physics.js": "e1b1e6e9b4db9180800c1bac07026006be24e6d618980bf3a2dc47b28a0848ea",
+    "physics.wgsl": "9d272dfdccf00f959dfb8e96a2252496d6cbe1c2ae7c0666a6efc848e6aaaefe"
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "page_errors": [],
+  "passed": true
+}

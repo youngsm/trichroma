@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "tests": 2,
+  "errors": 0,
+  "scope": "native wire raw-word regressions, complete history and final-only recording",
+  "log_sha256": "201e4b7e5b8866cb880929bb9ecaf548b8e414cbd0040c1faeff00378fa8f5f5"
+}

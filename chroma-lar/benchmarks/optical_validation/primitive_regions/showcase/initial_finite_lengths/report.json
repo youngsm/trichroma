@@ -1,0 +1,102 @@
+{
+  "host": "sdfampere032",
+  "device": "NVIDIA A100-SXM4-40GB",
+  "scenes": [
+    {
+      "name": "prism",
+      "photons": 2500000,
+      "drawn_photons": 512,
+      "scene_fingerprint": "995a08e65a2d7b8125587686393ceca2d0871b1f338531881287184c82d56551",
+      "source_seconds": 3.4547954751178622,
+      "transport_seconds": 2.06957332091406,
+      "trace_seconds": 0.08764185523614287,
+      "photons_per_second": 452540.3882875661,
+      "trajectory_snapshots": 7,
+      "seed": 901,
+      "step_limit_count": 0,
+      "detected": 2500000,
+      "scattered": 0,
+      "reemitted": 0,
+      "reflected": 259918
+    },
+    {
+      "name": "fluorescence",
+      "photons": 2500000,
+      "drawn_photons": 512,
+      "scene_fingerprint": "6a5595515a901d3438b769b7475a50502650e26df5abaddf6b1210f014eda80f",
+      "source_seconds": 3.417661796323955,
+      "transport_seconds": 1.394960594829172,
+      "trace_seconds": 0.010056714061647654,
+      "photons_per_second": 519467.3084253735,
+      "trajectory_snapshots": 4,
+      "seed": 901,
+      "step_limit_count": 0,
+      "detected": 2124171,
+      "scattered": 0,
+      "reemitted": 2124171,
+      "reflected": 0,
+      "delay_quantiles_ns": [
+        0.0,
+        0.9989342180484091,
+        6.611582377583635,
+        49.98684883684687,
+        199.99882323821373
+      ],
+      "input_delay_cdf": [
+        [
+          0.0,
+          1.0,
+          10.0,
+          50.0,
+          200.0
+        ],
+        [
+          0.0,
+          0.25,
+          0.65,
+          0.9,
+          1.0
+        ]
+      ]
+    },
+    {
+      "name": "rayleigh",
+      "photons": 2500000,
+      "drawn_photons": 512,
+      "scene_fingerprint": "a8601cad52fea3b454b90f020f33ac86f22933740c2b92c2efd99bf8c9944631",
+      "source_seconds": 2.5240831240080297,
+      "transport_seconds": 1.0169676248915493,
+      "trace_seconds": 0.42387941014021635,
+      "photons_per_second": 706005.1316058949,
+      "trajectory_snapshots": 43,
+      "seed": 901,
+      "step_limit_count": 0,
+      "detected": 2500000,
+      "scattered": 2204851,
+      "reemitted": 0,
+      "reflected": 0
+    }
+  ],
+  "calibration": "synthetic illustrative optical tables",
+  "trajectory_prefix_endpoint_exact": true,
+  "camera_radiance": false,
+  "source_sha256": {
+    "chroma-lar/chroma_lar/optical_showcase.py": "ba67b8d2f70f157e6269465fcfbad80bbb0fc46f4d936ebb39c8db7da50e3a75",
+    "notebooks/optical_showcase.ipynb": "00153ed3f444715c40e899d9a80717d9837db29f8a0fc4b5da9b5177bdee45fb",
+    "chroma-lite/chroma/triton/spectral.py": "e5690486fefd2d5ca08926c69bc4e93d4d06c584c36c1498884e3c9e2903c08b",
+    "chroma-lite/chroma/triton/spectral_kernels.py": "a8ec73c6a321e2f726082c57e0cc94d407686f52ac7bcc0e5bcad1c517bc78f6",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5",
+    "chroma-lite/chroma/triton/boundary_kernels.py": "cad6ab84967ca1cc28b601b200faf34cb36d7d42ffe12ddcd47a73cf70ce400f",
+    "chroma-lite/chroma/triton/physics.py": "73ba084512014f237c00491b39517447c1c34f67f8b8f9773523b3abfb947fc1",
+    "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b"
+  },
+  "notebook": {
+    "kernel": "trichroma-gpu",
+    "default_2_5m_run": true,
+    "all_scene_callbacks": true,
+    "count_control": true,
+    "path_count_control": true,
+    "time_gate_without_resimulation": true,
+    "browser_painting_tested": false
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "host": "sdfampere032",
+  "device": "NVIDIA A100-SXM4-40GB",
+  "python": "3.10.20",
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0",
+  "configuration": {
+    "size": [
+      25500.0
+    ],
+    "coverage": 0.81,
+    "diameter": 508.0,
+    "counts": [
+      100000,
+      1000000
+    ],
+    "repeats": 3,
+    "reference_count": 10000,
+    "reference_seeds": [
+      44,
+      101,
+      2027
+    ],
+    "output": "chroma-lar/benchmarks/optical_validation/primitive_regions/theia_water.json"
+  },
+  "scope": "CPU Cherenkov source sampling, host-to-device input, general mesh spectral transport, terminal-state download, PMT response, GPU pulse superposition, CPU noise/ADC and host-readable hits/PE/waveforms",
+  "excluded": "geometry construction, compilation warmup and file writes",
+  "backend": "general flattened-mesh SpectralSimulation; region certificates not used in transport",
+  "calibration_status": "illustrative water detector; not a Theia calibration",
+  "optics": "bundled chroma.demo.optics water/glass/r7081hqe tables; black enclosure and PMT backs; scaled SNO demo PMT mesh with diameter from configuration",
+  "source": "fixed-count beta=1 Cherenkov track, 1 m long along +Z at center, 300--650 nm, wavelength-dependent cone and polarization",
+  "readout": {
+    "tts_sigma_ns": 2.0,
+    "transit_time_ns": 30.0,
+    "collection_efficiency": 0.9,
+    "charge_pdf": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.5,
+        0.4
+      ],
+      [
+        1.0,
+        1.0
+      ],
+      [
+        1.5,
+        0.4
+      ],
+      [
+        2.0,
+        0.0
+      ]
+    ],
+    "digitizer": {
+      "event_indices": [
+        0,
+        1
+      ],
+      "channel_count": 49684,
+      "start_ns": 0.0,
+      "sample_period_ns": 1.0,
+      "sample_count": 1024,
+      "pulse_times_ns": [
+        -2.0,
+        0.0,
+        3.0,
+        8.0,
+        16.0
+      ],
+      "pulse_adc_per_pe": [
+        0.0,
+        4.0,
+        2.0,
+        0.5,
+        0.0
+      ],
+      "baseline": 200.0,
+      "noise_rms": 0.4,
+      "adc_bits": 12
+    }
+  },
+  "geometry": {
+    "channels": 49684,
+    "triangles": 32791840,
+    "shared_sensor_triangles": 660,
+    "packing": {
+      "validated": true,
+      "method": "separating projections of enclosing finite cylinders",
+      "candidate_pairs": 147804,
+      "rounding_guard_mm": 0.09824720001779497,
+      "minimum_separation_mm": 7.633725115279361,
+      "removed_edge_sensors": 582
+    }
+  },
+  "construction_seconds": {
+    "fixture": 4.22082951804623,
+    "regions": 7.098268644884229,
+    "mesh_compile_upload": 63.321080995723605
+  },
+  "compiled_regions": {
+    "fingerprint": "8acd068ee7976e05f67692a4b0f28658de1de654bde8ee1798a5a2836bb1092e",
+    "dropped_cells": 0,
+    "coarse_domains": [
+      "water"
+    ],
+    "rejected_domains": {},
+    "regions": [
+      {
+        "lower": [
+          -17855.8046875,
+          -17855.8046875,
+          -17855.8046875
+        ],
+        "upper": [
+          17855.8046875,
+          17855.8046875,
+          17855.8046875
+        ],
+        "material": 0,
+        "domain": "water"
+      }
+    ]
+  },
+  "scene_fingerprint": "7b784126e1a042b6340e0644104174db166cc752fc6e029b0590a8eed1ecce73",
+  "counts": [],
+  "source_sha256": {
+    "chroma-lite/chroma/triton/examples/theia.py": "c70f966b02e2d48f023f539429eb39d38c38d684cf1b4b36b9fd395fd001169d",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lite/chroma/triton/regions.py": "d2412fcaf513505ce55698cca1804a5319a3f3a9afce830867e5bd470203bdd9",
+    "chroma-lite/chroma/triton/bvh.py": "6f1ea939148962f4a587317bbf4463182f27b350369fbf905f7f395eaed3902f",
+    "chroma-lite/chroma/triton/bvh_kernels.py": "f495490b5ae06bc4eff1bf46f1d6091428bd5cd00762a260a3679bb24bd716f0",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5",
+    "chroma-lite/chroma/triton/boundary_kernels.py": "cad6ab84967ca1cc28b601b200faf34cb36d7d42ffe12ddcd47a73cf70ce400f",
+    "chroma-lite/chroma/triton/spectral.py": "e5690486fefd2d5ca08926c69bc4e93d4d06c584c36c1498884e3c9e2903c08b",
+    "chroma-lite/chroma/triton/spectral_kernels.py": "a8ec73c6a321e2f726082c57e0cc94d407686f52ac7bcc0e5bcad1c517bc78f6",
+    "chroma-lite/chroma/demo/optics.py": "2e1547a2e7615343646077238d75324518e768902387460290439267bd334b76",
+    "chroma-lite/chroma/demo/sno_pmt_reduced.txt": "84a6307940856d3c653e24c291a562cebdd1e45141bbc7bfd25cfde5b3fa8517",
+    "chroma-lite/chroma/triton/optical_response.py": "623198c7ecf19d03d0e540dfdc5fc772da286ae543a8dfb522ce308a09fb16ef",
+    "chroma-lite/chroma/triton/digitizer_kernels.py": "22c50cd6e615d32811189a43b2691799d0199a3ed7663573dbfcdb444dd676aa",
+    "chroma-lar/benchmarks/benchmark_theia.py": "7c20c2f006c3903216b8b890ca085943575bf16b07aeb93699ef13f91d97acab",
+    "chroma-lar/benchmarks/optical_parity.py": "bb118b15ce11d713ce7004d509cab3707cd993231221ff98e1cb814aa547a562"
+  },
+  "cpu_comparisons": [
+    {
+      "detected": 135,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 0.0,
+      "wavelength_atol_nm": 0.0,
+      "maximum_hit_time_difference_ns": 0.000152587890625,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 1000,
+      "seed": 44,
+      "source_seed": 51,
+      "cpu_seconds": 4.056721479166299
+    },
+    {
+      "detected": 1314,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 0.0,
+      "wavelength_atol_nm": 0.0,
+      "maximum_hit_time_difference_ns": 0.0003509521484375,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 10000,
+      "seed": 44,
+      "source_seed": 51,
+      "cpu_seconds": 38.0102902520448
+    }
+  ]
+}

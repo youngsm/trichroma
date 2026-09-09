@@ -1,0 +1,153 @@
+{
+  "hardware": false,
+  "scenes": [
+    {
+      "scene": {
+        "name": "pmt",
+        "title": "TPB-coated PMT",
+        "manifest": "camera-pmt.json",
+        "sha256": "40ca8ed4679d6f8493c676592928e765cdac42412047ecf253f6dc01cc847a01",
+        "byte_length": 704474,
+        "scene_fingerprint": "c46e1bc423d06ad45f8eab97db1b7af77a8a50d74303da607338bb50454c9b21"
+      },
+      "photons": 512,
+      "state": {
+        "count": 512,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.007518768310546875,
+        "times_max_abs": 0.00048828125,
+        "wavelengths_max_abs": 0.0,
+        "direction_max_abs": 8.493661880493164e-07,
+        "polarization_max_abs": 9.55536961555481e-07,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 8.939901219306989e-08,
+        "polarization_norm_max_error": 9.352117258387693e-08,
+        "polarization_dot_max_abs": 1.2904091128973505e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 218,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 3.3635854279623345e-07,
+            "browser_sum": 569.1323914527893,
+            "cpu_sum": 569.1323898119708,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 103,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 1.8968468369351399e-06,
+            "browser_sum": 698.9416379928589,
+            "cpu_sum": 698.9415258992375,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 855,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 4.001446421986188e-06,
+            "browser_sum": 827.9026277834482,
+            "cpu_sum": 827.902546963509,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 193,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 4.4139188837277743e-07,
+            "browser_sum": 363.2936828136444,
+            "cpu_sum": 363.29368223106053,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "camera": {
+        "frame": {
+          "width": 32,
+          "height": 20,
+          "frame": 1,
+          "queue_ms": 1108.7000002861023,
+          "photons": 512,
+          "eye": [
+            -160,
+            -180,
+            90
+          ],
+          "target": [
+            80,
+            0,
+            -15
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 4.424394137458876e-05,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      },
+      "photocathode": {
+        "browser": 39,
+        "cpu": 39
+      }
+    }
+  ],
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "7012b4b9b7ab7c3eb5696a970054198eeb5ba43c953cadd06a8e945ab6786687",
+    "chroma-lar/chroma_lar/pmt_camera.py": "0b1fb021fc37f852a474c528b8d43b1f3f2b783a5a6456292a13ceec0c13b24d",
+    "chroma-lar/chroma_lar/optical_showcase.py": "0964e67d6bd0ca5113c7373fb1aa65844f02274f1953ace842f7a71184f476ce",
+    "chroma-lar/chroma_lar/webgpu_physics.py": "f2e8860279d6f0e421fa83b30902dcc0d989b392ba6cf251227c74bac3174b94",
+    "chroma-lar/benchmarks/check_photon_camera.py": "c17bf2fdb16f6f53bdcebe943c3452b47f3f75ec96b0b800a856418f41f59dcf",
+    "chroma-lite/chroma/triton/spectral.py": "55f916bed15ef5a5e92e0a7bec21aff8f94a1e2e67bd6f9bd6bb995546c81b0c",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5"
+  },
+  "asset_hashes": {
+    "camera.html": "316a75395a76041d7558c088365f82b623c3171adbd21e243ec4ef399c1e28f6",
+    "camera.js": "25d87d50543ddbe2ee71e777648e8ff1867ea69f4f8bd7a62afc7a93fd73ada8",
+    "camera.wgsl": "14fb61a0620428be5fdb1815af8b4601a957b1938ec8cf9004e5753d73ab8c75",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "physics.html": "f6dcfb161cc96dd50070a997a22f31b0901a485dd08a432f7cebbf7801e71744",
+    "physics.js": "a9809d544258b3c30497fb77bf827576da01e202639e1a591a0a09db54fc9940",
+    "physics.wgsl": "15e59e06916835956ee46a21e13c69610fe9a042d4ae7f6e7dc0d5f2c324ebc1"
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "page_errors": [],
+  "passed": true
+}

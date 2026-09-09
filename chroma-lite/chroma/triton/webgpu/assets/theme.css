@@ -1,0 +1,111 @@
+/* Typography and palette follow https://youngsm.com/assets/css/personal-home.css.
+   The visualization canvases keep their own scientific display backgrounds. */
+:root {
+  color-scheme: light;
+  --paper: #fdfdfc;
+  --ink: #252723;
+  --text: #343630;
+  --muted: #696b64;
+  --accent: #065f8f;
+  --line: #dcded7;
+  --panel: #f5f6f2;
+  --error: #a03131;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--paper);
+  font: 18px/1.55 "Linux Libertine", Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { width: min(1280px, calc(100% - 72px)); margin: 64px auto 0; padding-bottom: 60px; }
+a { color: var(--accent); text-decoration: none; text-underline-offset: 3px; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+h1, h2, h3 { color: var(--ink); font-family: inherit; font-weight: 400; letter-spacing: 0; }
+h1 { font-size: 34px; line-height: 1.2; margin: 30px 0 12px; }
+h2 { font-size: 25px; line-height: 1.25; margin: 0 0 8px; }
+h3 { font-size: 19px; line-height: 1.4; }
+.intro { max-width: 790px; font-size: 19px; line-height: 1.55; margin: 0 0 27px; }
+.site-nav { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px 28px; }
+.brand { font-size: 23px; color: var(--ink); }
+.page-links { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 17px; }
+.page-links [aria-current="page"] { color: var(--ink); text-decoration: underline; }
+.adapter { font-size: 14px; color: var(--muted); margin-top: 8px; overflow-wrap: anywhere; }
+.controls { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 13px 18px; padding: 19px 0; margin: 0 0 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+label { display: flex; flex-direction: column; gap: 5px; color: var(--muted); font-size: 15px; line-height: 1.3; }
+input, select, button { font: inherit; font-size: 16px; color: var(--text); background: var(--paper); border: 1px solid #bfc4ba; border-radius: 2px; height: 38px; padding: 7px 10px; }
+input { width: 125px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .5; cursor: wait; }
+#run, #simulate { margin-left: auto; color: var(--paper); background: var(--accent); border-color: var(--accent); min-width: 164px; }
+#run:hover, #simulate:hover { background: #084b6e; }
+#status { font-size: 15px; color: var(--muted); white-space: pre-wrap; min-height: 44px; padding: 13px 0; overflow-wrap: anywhere; }
+.error, #error { color: var(--error) !important; }
+#error { white-space: pre-wrap; overflow-wrap: anywhere; }
+.muted { color: var(--muted); font-size: 16px; }
+details { margin-top: 17px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 16px; color: var(--muted); line-height: 1.55; }
+summary { color: var(--accent); cursor: pointer; }
+details p { max-width: 1050px; }
+pre { font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+footer, .scope { color: var(--muted); font-size: 14px; line-height: 1.55; margin-top: 24px; }
+.scope { padding-top: 16px; border-top: 1px solid var(--line); }
+.tag { display: inline-block; margin-bottom: 5px; color: var(--ink); font-size: 18px; }
+
+/* Photon camera. Keep the camera's 640 × 400 display ratio. */
+.camera-page .controls { margin-bottom: 0; }
+#camera { display: block; width: 100%; aspect-ratio: 1.6; background: #030508; touch-action: none; }
+.camera-page aside { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 20px; padding: 14px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.camera-page aside label { flex-direction: row; align-items: center; font-size: 14px; }
+.camera-page aside input { width: 140px; height: 20px; padding: 0; accent-color: var(--accent); }
+.camera-page aside select, .camera-page aside button { height: 31px; padding: 4px 8px; font-size: 14px; }
+#samples { margin-left: auto; }
+
+/* Diagnostics. Plot dimensions are unchanged by the page theme. */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 26px; }
+.panel { overflow: hidden; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); }
+.panelHeader { padding: 20px 20px 0; }
+.eyebrow { font-size: 14px; color: var(--muted); margin: 0 0 7px; }
+#explanation { color: var(--muted); font-size: 16px; line-height: 1.45; min-height: 36px; margin: 0 0 15px; }
+#paths { width: 100%; height: 380px; display: block; background: #0d1421; }
+#pathCaption { font-size: 14px; color: var(--muted); padding: 12px 18px 10px; line-height: 1.4; }
+.gate { display: flex; align-items: center; gap: 12px; padding: 0 18px 16px; font-size: 14px; color: var(--muted); }
+.gate input { width: 100%; min-width: 30px; padding: 0; height: 18px; accent-color: var(--accent); }
+.gate button { height: 29px; font-size: 13px; padding: 4px 8px; white-space: nowrap; }
+.gate span { white-space: nowrap; }
+.metrics { display: grid; grid-template-rows: repeat(4, 1fr); gap: 0; }
+.metric { padding: 18px 0; border-top: 1px solid var(--line); }
+.metric strong { display: block; font-size: 31px; font-weight: 400; line-height: 1.15; color: var(--ink); margin: 8px 0; }
+.metric span { display: block; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 26px; }
+.chart h3 { margin: 15px 18px 12px; }
+.chart canvas { width: 100%; height: 210px; display: block; background: #0d1421; }
+
+/* Detector geometry. Preserve the renderer's 8:5 canvas ratio. */
+.detector-page header { margin-bottom: 20px; }
+.detector-page .controls { justify-content: flex-start; }
+#canvas { width: 100%; aspect-ratio: 8 / 5; background: #080e18; display: block; touch-action: none; border-radius: 2px; }
+
+@media (max-width: 1050px) {
+  main { width: calc(100% - 56px); margin-top: 46px; }
+  .layout { grid-template-columns: 1fr; }
+  .metrics { grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr; gap: 20px; }
+  .metric strong { font-size: 26px; }
+  #run, #simulate { margin-left: 0; }
+}
+@media (max-width: 760px) {
+  main { width: calc(100% - 44px); margin-top: 28px; padding-bottom: 45px; }
+  h1 { font-size: 30px; margin-top: 25px; }
+  h2 { font-size: 24px; }
+  .intro { font-size: 18px; }
+  .page-links { gap: 6px 16px; font-size: 16px; }
+  .controls { gap: 12px; }
+  .charts { grid-template-columns: 1fr; }
+  .metrics { grid-template-columns: repeat(2, 1fr); gap: 8px 22px; }
+  #samples { margin-left: 0; }
+  #paths { height: 300px; }
+  .gate { flex-wrap: wrap; gap: 8px; }
+  .gate input { flex: 1; }
+}

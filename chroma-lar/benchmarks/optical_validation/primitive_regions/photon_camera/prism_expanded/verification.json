@@ -1,0 +1,264 @@
+{
+  "hardware": false,
+  "scenes": [
+    {
+      "scene": {
+        "name": "prism",
+        "title": "Dispersive prism",
+        "manifest": "camera-prism.json",
+        "sha256": "d3dfd3129b49014da5b0fd40a04a0b7d984309723f8cb9c9ba9fa585d96430d1",
+        "byte_length": 122598,
+        "scene_fingerprint": "9ea2d2559f6b65bbbd1864e31175f22d448e237f6e91ac9c79f077b0cc5c8984"
+      },
+      "photons": 40960,
+      "state": {
+        "count": 40960,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.01219940185546875,
+        "times_max_abs": 6.210803985595703e-05,
+        "wavelengths_max_abs": 0.0,
+        "direction_max_abs": 2.5331974029541016e-06,
+        "polarization_max_abs": 2.652406692504883e-06,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 1.1634615848521435e-07,
+        "polarization_norm_max_error": 1.0230794056376169e-07,
+        "polarization_dot_max_abs": 2.2942804189796107e-07
+      },
+      "maps": {
+        "passed": false,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 1667,
+            "mismatches": 4,
+            "finite": true,
+            "max_abs": 1.2115255039856048,
+            "browser_sum": 34545.030887782574,
+            "cpu_sum": 34545.030142737014,
+            "disagreement_indices": [
+              2021487,
+              2021551,
+              3599193,
+              3599257
+            ]
+          },
+          "fill_wall": {
+            "cells": 7823,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 5.441554755236666e-06,
+            "browser_sum": 55508.1805729866,
+            "cpu_sum": 55508.17148557176,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 3059,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 6.192639165125691e-06,
+            "browser_sum": 2225.674464361569,
+            "cpu_sum": 2225.6742433761647,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 0,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 0,
+            "browser_sum": 0.0,
+            "cpu_sum": 0.0,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "wall_bin_boundaries": {
+        "valid": true,
+        "position_tolerance_mm": 0.02,
+        "ambiguities": [
+          {
+            "photon_id": 39164,
+            "map": "wall",
+            "cpu_index": 2021487,
+            "browser_position_index": 2021551,
+            "cpu_position": [
+              -300.0,
+              106.24696350097656,
+              101.4400863647461
+            ],
+            "browser_position": [
+              -300.0,
+              106.25592041015625,
+              101.45228576660156
+            ],
+            "displacement_mm": [
+              0.0,
+              0.0089569091796875,
+              0.01219940185546875
+            ],
+            "crossed_edges": [
+              {
+                "axis": 1,
+                "edge_mm": 106.25
+              }
+            ],
+            "packet_energy": 0.900053792277429,
+            "valid": true
+          },
+          {
+            "photon_id": 738,
+            "map": "wall",
+            "cpu_index": 3599257,
+            "browser_position_index": 3599193,
+            "cpu_position": [
+              -84.37483215332031,
+              -200.0,
+              -16.395933151245117
+            ],
+            "browser_position": [
+              -84.3750228881836,
+              -200.0,
+              -16.395906448364258
+            ],
+            "displacement_mm": [
+              0.00019073486328125,
+              0.0,
+              2.6702880859375e-05
+            ],
+            "crossed_edges": [
+              {
+                "axis": 0,
+                "edge_mm": -84.375
+              }
+            ],
+            "packet_energy": 1.2115255039856048,
+            "valid": true
+          }
+        ],
+        "scope": "Independent deposition at recorded GPU wall positions only for reported adjacent-bin crossings; interior collision records and packet energies remain CPU-derived.",
+        "deposition": {
+          "passed": true,
+          "atol": 0.0001,
+          "rtol": 0.0001,
+          "comparisons": {
+            "wall": {
+              "cells": 1665,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 0.00025631223667232916,
+              "browser_sum": 34545.030887782574,
+              "cpu_sum": 34545.030142737014,
+              "disagreement_indices": []
+            },
+            "fill_wall": {
+              "cells": 7823,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 5.441554755236666e-06,
+              "browser_sum": 55508.1805729866,
+              "cpu_sum": 55508.17148557176,
+              "disagreement_indices": []
+            },
+            "volume": {
+              "cells": 3059,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 6.192639165125691e-06,
+              "browser_sum": 2225.674464361569,
+              "cpu_sum": 2225.6742433761647,
+              "disagreement_indices": []
+            },
+            "wls": {
+              "cells": 0,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 0,
+              "browser_sum": 0.0,
+              "cpu_sum": 0.0,
+              "disagreement_indices": []
+            }
+          }
+        },
+        "passed": true
+      },
+      "camera": {
+        "frame": {
+          "width": 48,
+          "height": 30,
+          "frame": 1,
+          "queue_ms": 931,
+          "photons": 40960,
+          "eye": [
+            -240,
+            -170,
+            95
+          ],
+          "target": [
+            30,
+            0,
+            -40
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 0.002187296748161316,
+        "bvhCameraMatchesBrute": true,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      }
+    }
+  ],
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "cd2abca67d938efa9df5815324df7d8eafe495eedcc400f2eb9ec8356e134b3d",
+    "chroma-lar/chroma_lar/pmt_camera.py": "d11ca8faf65fb9a0449a868442a84794bda16fc135c037d9f15302fa3d626bb4",
+    "chroma-lar/chroma_lar/optical_showcase.py": "e1fa1fae941504f6d3e5a8ec76bf8e58489a5015a6bda4086c50fa410a1869be",
+    "chroma-lar/chroma_lar/webgpu_physics.py": "f2e8860279d6f0e421fa83b30902dcc0d989b392ba6cf251227c74bac3174b94",
+    "chroma-lar/benchmarks/check_photon_camera.py": "bccac44f760d5497d21289e66226ebca0388aa08b43662513fa3db355b492614",
+    "chroma-lite/chroma/triton/spectral.py": "55f916bed15ef5a5e92e0a7bec21aff8f94a1e2e67bd6f9bd6bb995546c81b0c",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5"
+  },
+  "asset_hashes": {
+    "camera.html": "8adae4e641fb112e2c5efbe35e9d3eba0c2642ea6cb5118bf645769103dd955f",
+    "camera.js": "7c8a89c2d4a8cc4431e716ed7870e0300fcc5b9756314c8a4b98c891a49674d3",
+    "camera.wgsl": "b08f6cb046c980894845bf4bdae146f25ff865f680e5a8aa1805ffb95c45b84c",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "physics.html": "9c7c3d83b93b41805c254f609aa423f9d5c27e7f88b9b76df5a2b7daf7baf963",
+    "physics.js": "a9809d544258b3c30497fb77bf827576da01e202639e1a591a0a09db54fc9940",
+    "physics.wgsl": "ea4c6940e3f521522b02fae9e32971afe3e151cb9e5d34314c260859f88c0262"
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "page_errors": [],
+  "passed": true
+}

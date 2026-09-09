@@ -1,0 +1,24 @@
+{
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "43d6c3527d9d4ba0d11bf3b856ebf92b17a184f32e13dcb899936e3a7c62acaf",
+    "chroma-lar/chroma_lar/pmt_camera.py": "d11ca8faf65fb9a0449a868442a84794bda16fc135c037d9f15302fa3d626bb4",
+    "chroma-lar/benchmarks/check_photon_camera.py": "bccac44f760d5497d21289e66226ebca0388aa08b43662513fa3db355b492614",
+    "chroma-lar/test/test_photon_camera.py": "438ebce14e0eee021de951885ce28882aa1860d58a247d482c855735445eca72",
+    "chroma-lite/chroma/triton/webgpu/assets/camera.js": "7c8a89c2d4a8cc4431e716ed7870e0300fcc5b9756314c8a4b98c891a49674d3",
+    "notebooks/photon_camera.ipynb": "c514a0a389f704c3e5747813247521650661123c79c768c1f24831b241bc276c"
+  },
+  "asset_hashes": {
+    "camera.wgsl": "b08f6cb046c980894845bf4bdae146f25ff865f680e5a8aa1805ffb95c45b84c",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "physics.html": "9c7c3d83b93b41805c254f609aa423f9d5c27e7f88b9b76df5a2b7daf7baf963",
+    "camera.html": "8adae4e641fb112e2c5efbe35e9d3eba0c2642ea6cb5118bf645769103dd955f",
+    "fonts.css": "b22f4255964ace317918fe6de9be5c19ee7dfa24f753f5ee1048daa26e04e533",
+    "camera.js": "7c8a89c2d4a8cc4431e716ed7870e0300fcc5b9756314c8a4b98c891a49674d3",
+    "physics.js": "a9809d544258b3c30497fb77bf827576da01e202639e1a591a0a09db54fc9940",
+    "theme.css": "0787a9eec7a0913852769c68dcedf2b81a49aa579c0b169af59a6b6dd0eddd1f",
+    "physics.wgsl": "ea4c6940e3f521522b02fae9e32971afe3e151cb9e5d34314c260859f88c0262"
+  },
+  "final_presentation_change": "Only PMT eye and target defaults changed after the full hardware/software camera audits; optical geometry/tables/source unchanged. The exact tested prior eye/target remain in each report.",
+  "notebook_html_bytes": 1599289,
+  "bundle_zip_sha256": "a05ea511f11b759d2a849ea16e02270dbb79c1b29e115f43990202d0abd8e31e"
+}

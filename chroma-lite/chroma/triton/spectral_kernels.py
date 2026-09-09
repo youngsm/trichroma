@@ -8,6 +8,7 @@ import triton.language as tl
 from triton.language.random import philox
 
 from .bvh_kernels import nearest_hit_local
+from .boundary_kernels import offset_boundary_point
 from .physics_kernels import fresnel_step, rayleigh_scatter
 
 
@@ -102,7 +103,7 @@ def polarization(dx, dy, dz, u):
 @triton.jit
 def interaction_kernel(
     positions, directions, polarizations, wavelengths, times, flags, last_hit, channels, photon_ids,
-    active_rows, hit_triangles, hit_distances, normals, material1, material2, surface_ids, channel_map,
+    active_rows, hit_triangles, hit_distances, triangle_vertices, normals, material1, material2, surface_ids, channel_map,
     rindex, absorption, scattering, velocities, surface_present, surface_model,
     surface_detect, surface_absorb, surface_diffuse, surface_specular, surface_reemit, surface_cdf,
     time_offsets, time_x, time_cdf, time_pdf, reemit_side,
@@ -215,6 +216,8 @@ def interaction_kernel(
     dx, dy, dz = tl.where(passed, fdx, dx), tl.where(passed, fdy, dy), tl.where(passed, fdz, dz)
     px, py, pz = tl.where(passed, fpx, px), tl.where(passed, fpy, py), tl.where(passed, fpz, pz)
     out_flags |= tl.where(passed, tl.where(reflected, 64, 256), 0).to(tl.uint32)
+    continuing = boundary & ((out_flags & 15) == 0)
+    x, y, z = offset_boundary_point(triangle_vertices, tri, x, y, z, dx, dy, dz, continuing)
     tl.store(positions+row*3, x, mask=valid)
     tl.store(positions+row*3+1, y, mask=valid)
     tl.store(positions+row*3+2, z, mask=valid)
@@ -270,13 +273,13 @@ class DeviceSpectralScene:
             if not rows.numel():
                 break
             steps = step+1
-            nearest = nearest_hit_local(self.bvh, state["pos"][rows], state["direction"][rows],
+            nearest = nearest_hit_local(self.bvh, state["pos"][rows], state["direction"][rows], high_precision=True,
                                          last_hit=state["last_hit"][rows], workspace=workspace,
                                          check_overflow=True)
             interaction_kernel[(triton.cdiv(rows.numel(), 128),)](
                 state["pos"], state["direction"], state["polarization"], state["wavelengths"], state["times"],
                 state["flags"], state["last_hit"], state["channels"], state["photon_ids"],
-                rows, nearest.triangle_ids, nearest.distances, *self.arrays,
+                rows, nearest.triangle_ids, nearest.distances, self.bvh.triangle_vertices, *self.arrays,
                 rows.numel(), int(seed), step, float(grid.start), float(grid.step),
                 NW=grid.count, BLOCK=128, enable_fp_fusion=False,
             )

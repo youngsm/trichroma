@@ -70,6 +70,7 @@ if triton is not None and torch is not None:
         STACK_CAPACITY: tl.constexpr,
         BLOCK_SIZE: tl.constexpr,
         COLLECT_STATS: tl.constexpr,
+        HIGH_PRECISION: tl.constexpr,
     ):
         ray = tl.program_id(0) * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
         valid = ray < n_rays
@@ -81,6 +82,12 @@ if triton is not None and torch is not None:
         dy = tl.load(directions + ray * 3 + 1, mask=valid, other=1.0)
         dz = tl.load(directions + ray * 3 + 2, mask=valid, other=1.0)
         ray_tmax = tl.load(tmax_values + ray, mask=valid, other=0.0)
+        if HIGH_PRECISION:
+            ox, oy, oz = ox.to(tl.float64), oy.to(tl.float64), oz.to(tl.float64)
+            dx, dy, dz = dx.to(tl.float64), dy.to(tl.float64), dz.to(tl.float64)
+            ray_tmax = ray_tmax.to(tl.float64)
+            world_x, world_y, world_z = (world_x.to(tl.float64), world_y.to(tl.float64), world_z.to(tl.float64))
+            world_scale = world_scale.to(tl.float64)
         previous_triangle = tl.load(
             last_hit_values + ray, mask=valid, other=-1
         )
@@ -103,6 +110,8 @@ if triton is not None and torch is not None:
 
         # Chroma-compatible eager sibling traversal.  Every intersected inner
         # sibling contributes a child range before the current range is popped.
+        det_epsilon: tl.constexpr = 2.220446049250313e-16 if HIGH_PRECISION else 1.1920928955078125e-7
+        epsilon: tl.constexpr = 1.0e-9 if HIGH_PRECISION else 1.0e-6
         while tl.sum(active.to(tl.int32), axis=0) != 0:
             if COLLECT_STATS:
                 visits += active.to(tl.int32)
@@ -126,6 +135,9 @@ if triton is not None and torch is not None:
             yhi = (packed_y >> 16).to(tl.float32) * world_scale + world_y
             zlo = (packed_z & 0xFFFF).to(tl.float32) * world_scale + world_z
             zhi = (packed_z >> 16).to(tl.float32) * world_scale + world_z
+            if HIGH_PRECISION:
+                xlo, ylo, zlo = xlo - world_scale, ylo - world_scale, zlo - world_scale
+                xhi, yhi, zhi = xhi + world_scale, yhi + world_scale, zhi + world_scale
 
             # Preserve Chroma's operation order at quantized faces.
             tx0 = xlo * invx + neg_ox_inv
@@ -147,6 +159,10 @@ if triton is not None and torch is not None:
             box_hit = (
                 active & (box_near <= box_far) & (box_near <= best_distance)
             )
+            if HIGH_PRECISION:
+                box_hit &= ~(((dx == 0) & ((ox < xlo) | (ox > xhi))) |
+                             ((dy == 0) & ((oy < ylo) | (oy > yhi))) |
+                             ((dz == 0) & ((oz < zlo) | (oz > zhi))))
 
             child_count = (packed_w >> 28).to(tl.int32)
             child = (packed_w & 0x0FFFFFFF).to(tl.int32)
@@ -186,15 +202,17 @@ if triton is not None and torch is not None:
                 triangle_vertices + triangle_base + 8, mask=is_leaf, other=0.0
             )
 
+            if HIGH_PRECISION:
+                v0x, v0y, v0z = v0x.to(tl.float64), v0y.to(tl.float64), v0z.to(tl.float64)
+                v1x, v1y, v1z = v1x.to(tl.float64), v1y.to(tl.float64), v1z.to(tl.float64)
+                v2x, v2y, v2z = v2x.to(tl.float64), v2y.to(tl.float64), v2z.to(tl.float64)
             edge1x, edge1y, edge1z = v1x - v0x, v1y - v0y, v1z - v0z
             edge2x, edge2y, edge2z = v2x - v0x, v2y - v0y, v2z - v0z
             hx = dy * edge2z - dz * edge2y
             hy = dz * edge2x - dx * edge2z
             hz = dx * edge2y - dy * edge2x
             determinant = edge1x * hx + edge1y * hy + edge1z * hz
-            determinant_ok = (determinant < -1.1920928955078125e-7) | (
-                determinant > 1.1920928955078125e-7
-            )
+            determinant_ok = (determinant < -det_epsilon) | (determinant > det_epsilon)
             reciprocal = 1.0 / determinant
             sx, sy, sz = ox - v0x, oy - v0y, oz - v0z
             u = reciprocal * (sx * hx + sy * hy + sz * hz)
@@ -208,12 +226,12 @@ if triton is not None and torch is not None:
             triangle_hit = (
                 is_leaf
                 & determinant_ok
-                & (u >= -1.0e-6)
-                & (u <= 1.0 + 1.0e-6)
-                & (v >= -1.0e-6)
-                & ((u + v) <= 1.0 + 1.0e-6)
-                & (distance > 1.0e-6)
-                & (distance < best_distance)
+                & (u >= -epsilon)
+                & (u <= 1.0 + epsilon)
+                & (v >= -epsilon)
+                & ((u + v) <= 1.0 + epsilon)
+                & (distance > epsilon)
+                & ((distance < best_distance) | (HIGH_PRECISION & (distance == best_distance) & (child < best_triangle)))
             )
             best_distance = tl.where(triangle_hit, distance, best_distance)
             best_triangle = tl.where(triangle_hit, child, best_triangle)
@@ -373,6 +391,7 @@ def nearest_hit_local(
     block_size: int = 32,
     workspace: Optional[TraversalWorkspace] = None,
     collect_stats: bool = False,
+    high_precision: bool = False,
     check_overflow: bool = False,
 ) -> TraversalResult:
     """Find nearest triangles for rays in one instance's local coordinates.
@@ -457,6 +476,8 @@ def nearest_hit_local(
             STACK_CAPACITY=bvh.stack_capacity,
             BLOCK_SIZE=block_size,
             COLLECT_STATS=collect_stats,
+            HIGH_PRECISION=high_precision,
+            enable_fp_fusion=not high_precision,
             num_warps=max(1, block_size // 32),
         )
 

@@ -1,0 +1,12 @@
+{
+  "tests": "test_compacted_oracle_preserves_every_collision_and_terminal_state (4 scenes), test_wall_quantization_audit_reports_edges_without_hiding_flight_errors",
+  "passed": 5,
+  "deselected": 13,
+  "exit_code": 0,
+  "seconds": 14.26,
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "cd2abca67d938efa9df5815324df7d8eafe495eedcc400f2eb9ec8356e134b3d",
+    "chroma-lar/test/test_photon_camera.py": "438ebce14e0eee021de951885ce28882aa1860d58a247d482c855735445eca72",
+    "chroma-lar/benchmarks/check_photon_camera.py": "bccac44f760d5497d21289e66226ebca0388aa08b43662513fa3db355b492614"
+  }
+}

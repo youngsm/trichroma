@@ -17,7 +17,8 @@ import numpy as np
 from chroma.event import (NO_HIT, BULK_ABSORB, SURFACE_DETECT, SURFACE_ABSORB,
                           RAYLEIGH_SCATTER, REFLECT_DIFFUSE, REFLECT_SPECULAR,
                           SURFACE_REEMIT, SURFACE_TRANSMIT)
-from .bvh import PackedBVH, nearest_hit_cpu
+from .bvh import PackedBVH, nearest_hit_cpu, nearest_hit_bvh_cpu
+from .boundary import offset_boundary_points
 from .optical_response import OpticalHits, TabulatedCDF, uniform, validate_seed
 from .photon_input import as_photon_batch, slice_batch
 from .physics import fresnel_step, rayleigh_scatter
@@ -205,8 +206,9 @@ def _finish(state, steps, fingerprint):
     return SpectralResult(hits, state, steps, fingerprint)
 
 
-def propagate_reference(scene, batch, *, seed=1, max_steps=1000):
-    """Slow CPU oracle with brute-force intersections; intended for small scenes."""
+def propagate_reference(scene, batch, *, seed=1, max_steps=1000, use_bvh=False):
+    """Independent CPU optics with brute-force or validated CPU BVH intersections."""
+    intersect = nearest_hit_bvh_cpu if use_bvh else nearest_hit_cpu
     state = _state(batch)
     host, optics = scene.host, scene.host.optics
     mat, surfaces, grid = optics.materials, optics.surfaces, optics.wavelength_grid
@@ -219,8 +221,8 @@ def propagate_reference(scene, batch, *, seed=1, max_steps=1000):
         # Parallel ray/triangle candidates intentionally produce infinities;
         # nearest_hit_cpu masks them using its determinant acceptance test.
         with np.errstate(invalid="ignore", divide="ignore"):
-            result = nearest_hit_cpu(scene.bvh, state["pos"][active], state["direction"][active],
-                                     last_hit=state["last_hit"][active])
+            result = intersect(scene.bvh, state["pos"][active], state["direction"][active],
+                                     last_hit=state["last_hit"][active], high_precision=True)
         missed = result.triangle_ids < 0
         state["flags"][active[missed]] |= NO_HIT
         a = active[~missed]
@@ -324,6 +326,12 @@ def propagate_reference(scene, batch, *, seed=1, max_steps=1000):
                                        draw(17)[pl], draw(18)[pl])
                 state["direction"][pi], state["polarization"][pi] = fresnel.direction, fresnel.polarization
                 state["flags"][pi] |= np.where(fresnel.reflected, REFLECT_SPECULAR, SURFACE_TRANSMIT).astype(np.uint32)
+        continuing = boundary & ((state["flags"][a] & TERMINAL) == 0)
+        ix = a[continuing]
+        if len(ix):
+            state["pos"][ix] = offset_boundary_points(
+                state["pos"][ix], scene.bvh.triangle_vertices[triangles[continuing]],
+                state["direction"][ix])
     remaining = (state["flags"] & TERMINAL) == 0
     state["flags"][remaining] |= STEP_LIMIT
     return _finish(state, steps, scene.fingerprint)
@@ -334,8 +342,8 @@ class SpectralSimulation:
 
     def __init__(self, geometry, *, wavelengths=None, backend="triton", device=None, tile_size=65536):
         self.scene = geometry if isinstance(geometry, SpectralScene) else SpectralScene.compile(geometry, wavelengths=wavelengths)
-        if backend not in ("triton", "reference"):
-            raise ValueError("backend must be 'triton' or 'reference'")
+        if backend not in ("triton", "reference", "reference_bvh"):
+            raise ValueError("backend must be 'triton', 'reference', or 'reference_bvh'")
         if not isinstance(tile_size, (int, np.integer)) or tile_size <= 0:
             raise ValueError("tile_size must be a positive integer")
         self.backend, self.tile_size = backend, tile_size
@@ -360,8 +368,9 @@ class SpectralSimulation:
         states, steps = [], 0
         for start in range(0, batch.photon_count, self.tile_size):
             tile = slice_batch(batch, start, start+self.tile_size)
-            if self.backend == "reference":
-                result = propagate_reference(self.scene, tile, seed=seed, max_steps=max_steps)
+            if self.backend in ("reference", "reference_bvh"):
+                result = propagate_reference(self.scene, tile, seed=seed, max_steps=max_steps,
+                                             use_bvh=self.backend == "reference_bvh")
             else:
                 result = self._device.propagate(tile, seed=seed, max_steps=max_steps, timings=timings)
             states.append(result.final_state)

@@ -1,0 +1,258 @@
+{
+  "hardware": false,
+  "scenes": [
+    {
+      "scene": {
+        "name": "pmt",
+        "title": "TPB-coated PMT",
+        "manifest": "camera-pmt.json",
+        "sha256": "d23b31dfdb69354dbf2c6a5a723f18e8e03e93f2b126137e9eeb88d7dcd2ef00",
+        "byte_length": 2668772,
+        "scene_fingerprint": "785e04d3933fe8473afdd48cef92fd651b1571eededbf833def6f60b7c3cb277"
+      },
+      "photons": 4096,
+      "state": {
+        "count": 4096,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.007518768310546875,
+        "times_max_abs": 0.0009765625,
+        "wavelengths_max_abs": 3.0517578125e-05,
+        "direction_max_abs": 2.0563602447509766e-06,
+        "polarization_max_abs": 1.0728836059570312e-06,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 1.086266678829162e-07,
+        "polarization_norm_max_error": 1.093773722704583e-07,
+        "polarization_dot_max_abs": 2.4748653615347393e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 1947,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 6.605394951009202e-07,
+            "browser_sum": 4893.659956336021,
+            "cpu_sum": 4893.659957488764,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 692,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 2.4153478408450724e-06,
+            "browser_sum": 4716.159585475922,
+            "cpu_sum": 4716.158831112917,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 5805,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 4.316942831872339e-06,
+            "browser_sum": 6232.673945772978,
+            "cpu_sum": 6232.673509007346,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 1455,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 7.256814864575745e-07,
+            "browser_sum": 3019.53457570076,
+            "cpu_sum": 3019.5345836787583,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "wall_bin_boundaries": {
+        "valid": true,
+        "position_tolerance_mm": 0.02,
+        "ambiguities": [],
+        "scope": "Independent deposition at recorded GPU wall positions only for reported adjacent-bin crossings; interior collision records and packet energies remain CPU-derived.",
+        "deposition": {
+          "passed": true,
+          "atol": 0.0001,
+          "rtol": 0.0001,
+          "comparisons": {
+            "wall": {
+              "cells": 1947,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 6.605394951009202e-07,
+              "browser_sum": 4893.659956336021,
+              "cpu_sum": 4893.659957488764,
+              "disagreement_indices": []
+            },
+            "fill_wall": {
+              "cells": 692,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 2.4153478408450724e-06,
+              "browser_sum": 4716.159585475922,
+              "cpu_sum": 4716.158831112917,
+              "disagreement_indices": []
+            },
+            "volume": {
+              "cells": 5805,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 4.316942831872339e-06,
+              "browser_sum": 6232.673945772978,
+              "cpu_sum": 6232.673509007346,
+              "disagreement_indices": []
+            },
+            "wls": {
+              "cells": 1455,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 7.256814864575745e-07,
+              "browser_sum": 3019.53457570076,
+              "cpu_sum": 3019.5345836787583,
+              "disagreement_indices": []
+            }
+          }
+        },
+        "passed": true
+      },
+      "camera": {
+        "frame": {
+          "width": 48,
+          "height": 30,
+          "frame": 1,
+          "queue_ms": 2663.800000190735,
+          "photons": 4096,
+          "eye": [
+            -160,
+            -180,
+            90
+          ],
+          "target": [
+            80,
+            0,
+            -15
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 3.554618888301775e-05,
+        "bvhCameraMatchesBrute": true,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      },
+      "photocathode": {
+        "browser": 282,
+        "cpu": 282
+      },
+      "cutaway_controls": {
+        "sameMaps": true,
+        "sameEvent": true,
+        "cutChangesImage": true,
+        "uvChangesImage": true,
+        "restoringModeIsExact": true,
+        "finite": true
+      },
+      "bvh_transport": {
+        "terminal_states_exact": true,
+        "maps": {
+          "passed": true,
+          "atol": 0.0001,
+          "rtol": 0.0001,
+          "comparisons": {
+            "wall": {
+              "cells": 1947,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 0.0,
+              "browser_sum": 4893.659956336021,
+              "cpu_sum": 4893.659956336021,
+              "disagreement_indices": []
+            },
+            "fill_wall": {
+              "cells": 692,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 0.0,
+              "browser_sum": 4716.159585475922,
+              "cpu_sum": 4716.159585475922,
+              "disagreement_indices": []
+            },
+            "volume": {
+              "cells": 5805,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 9.5367431640625e-07,
+              "browser_sum": 6232.673940050932,
+              "cpu_sum": 6232.673945772978,
+              "disagreement_indices": []
+            },
+            "wls": {
+              "cells": 1455,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 4.76837158203125e-07,
+              "browser_sum": 3019.5345776081085,
+              "cpu_sum": 3019.53457570076,
+              "disagreement_indices": []
+            }
+          }
+        }
+      }
+    }
+  ],
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "3d16701930a4a3ead93b21940f48a3a8f2d6f6314559297735dc76d2a1f64fee",
+    "chroma-lar/chroma_lar/pmt_camera.py": "d11ca8faf65fb9a0449a868442a84794bda16fc135c037d9f15302fa3d626bb4",
+    "chroma-lar/chroma_lar/optical_showcase.py": "e1fa1fae941504f6d3e5a8ec76bf8e58489a5015a6bda4086c50fa410a1869be",
+    "chroma-lar/chroma_lar/webgpu_physics.py": "f2e8860279d6f0e421fa83b30902dcc0d989b392ba6cf251227c74bac3174b94",
+    "chroma-lar/benchmarks/check_photon_camera.py": "1d55779d21632f73748f04d55a49ac0d50393277264da6346d42f40674479a4f",
+    "chroma-lite/chroma/triton/spectral.py": "55f916bed15ef5a5e92e0a7bec21aff8f94a1e2e67bd6f9bd6bb995546c81b0c",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5"
+  },
+  "asset_hashes": {
+    "camera.html": "715c4c0f16fbd345d48433de28c2ed3605d85ae5cb4100574975c499484337c3",
+    "camera.js": "bb073f27ce60202de73a1d24449c8568add2e99b9ae8da42fa839ba5ff83d105",
+    "camera.wgsl": "b08f6cb046c980894845bf4bdae146f25ff865f680e5a8aa1805ffb95c45b84c",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "physics.html": "f6dcfb161cc96dd50070a997a22f31b0901a485dd08a432f7cebbf7801e71744",
+    "physics.js": "a9809d544258b3c30497fb77bf827576da01e202639e1a591a0a09db54fc9940",
+    "physics.wgsl": "ea4c6940e3f521522b02fae9e32971afe3e151cb9e5d34314c260859f88c0262"
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "page_errors": [],
+  "passed": true
+}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TriChroma · Detector viewer</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body class="detector-page">
+<main>
+<nav class="site-nav" aria-label="Viewer navigation">
+<a class="brand" href="index.html">TriChroma</a>
+<div class="page-links">
+<a href="camera.html">Photon camera</a>
+<a href="physics.html">Optical diagnostics</a>
+<a href="index.html" aria-current="page">Detector viewer</a>
+</div>
+</nav>
+<header>
+<h1>Detector viewer</h1>
+<p class="intro">Inspect detector geometry with camera rays rendered on your browser GPU.</p>
+</header>
+<nav class="controls" aria-label="Rendering controls">
+<label>Detector <select id="scene">
+</select>
+</label>
+<label>Full-frame rays <select id="rays">
+<option value="2500000">2.5 million</option>
+<option value="625000">625 thousand</option>
+<option value="10000000">10 million</option>
+</select>
+</label>
+<button id="reset">Reset view</button>
+<button id="render">Render</button>
+</nav>
+<canvas id="canvas" width="1000" height="625" aria-label="Interactive detector geometry">
+</canvas>
+<div id="status">Starting WebGPU…</div>
+<div id="error" role="alert">
+</div>
+<div class="muted">Drag to orbit · wheel to zoom · Shift-drag to move the view target. Motion uses a smaller ray budget; a full frame follows when you stop.</div>
+<details>
+<summary>Geometry and adapter details</summary>
+<pre id="details">
+</pre>
+</details>
+<footer class="muted">Opaque surface colors with headlight shading. These are camera rays, not simulated optical photons. PixelTPC retains its original area-averaged pixel faces. Analytic reflect3wires requires the Triton Jupyter viewer; this prototype does not omit or approximate its wires.</footer>
+</main>
+<script type="module" src="viewer.js">
+</script>
+</body>
+</html>

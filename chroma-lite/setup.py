@@ -1,6 +1,4 @@
-from setuptools import setup, find_packages, Extension
-import subprocess
-import os
+from setuptools import setup, find_packages
 
 setup(
     name = 'Chroma',
@@ -9,6 +7,7 @@ setup(
     include_package_data=True,
     package_data={
         'chroma': ['cuda/*.cu', 'cuda/*.h'],
+        'chroma.triton.webgpu': ['assets/*.html', 'assets/*.js', 'assets/*.wgsl', 'assets/*.css'],
     },
 
     scripts = ['bin/chroma-sim', 'bin/chroma-cam',

@@ -8,9 +8,13 @@ import numpy as np
 from chroma_lar.optical_calibration import OpticalCalibration
 from chroma_lar.optical_simulation import FastOpticalSimulation
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=["capture", "compare"])
+    parser.add_argument(
+        "--output-dir", type=Path, help="comparison report destination; baseline remains immutable"
+    )
     args = parser.parse_args()
     root = Path("chroma-lar/benchmarks/optical_validation/maintainability")
     root.mkdir(exist_ok=True)
@@ -52,7 +56,9 @@ def main():
             "comparison": "exact array equality, including terminal photon states, optical hits, PE, noisy ADC waveforms and metadata",
             "baseline_sha256": hashlib.sha256((root / "before.npz").read_bytes()).hexdigest(),
         }
-        (root / "equivalence.json").write_text(json.dumps(report, indent=2) + "\n")
+        destination = root if args.output_dir is None else args.output_dir
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / "equivalence.json").write_text(json.dumps(report, indent=2) + "\n")
         print(json.dumps(report), flush=True)
     print(args.mode, "passed", flush=True)
 

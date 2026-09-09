@@ -10,3 +10,8 @@ dist/
 .env
 *.simg
 .DS_Store
+notebooks/photon_camera_bundle/
+notebooks/photon_camera_bundle.zip
+chroma-lar/benchmarks/optical_validation/primitive_regions/**/*.npz
+chroma-lar/benchmarks/optical_validation/primitive_regions/**/validated_assets/
+chroma-lar/benchmarks/optical_validation/primitive_regions/**/cpu_oracles/*.json.gz

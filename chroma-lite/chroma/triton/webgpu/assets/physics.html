@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TriChroma · Optical diagnostics</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body class="physics-page">
+<main>
+<nav class="site-nav" aria-label="Viewer navigation">
+<a class="brand" href="index.html">TriChroma</a>
+<div class="page-links">
+<a href="camera.html">Photon camera</a>
+<a href="physics.html" aria-current="page">Optical diagnostics</a>
+<a href="index.html">Detector viewer</a>
+</div>
+</nav>
+<div class="adapter" id="adapter">Connecting to browser GPU…</div>
+<h1>Optical diagnostics</h1>
+<p class="intro">Simulate wavelength-dependent refraction, fluorescence, and polarized Rayleigh scattering. Inspect sampled photon paths and spectra and timing from the full event.</p>
+<div class="controls">
+<label>Experiment<select id="scene">
+<option value="prism">Dispersive prism</option>
+<option value="fluorescence">Fluorescent surface</option>
+<option value="rayleigh">Polarized Rayleigh</option>
+</select>
+</label>
+<label>Optical photons<input id="photons" type="number" min="1" max="30000000" step="1" value="2500000">
+</label>
+<label>Random seed<input id="seed" type="number" min="0" step="1" value="901">
+</label>
+<label>Polarization<select id="polarization">
+<option value="random">Random linear</option>
+<option value="y">y · in this plane</option>
+<option value="z">z · out of this plane</option>
+</select>
+</label>
+<label>Recorded paths<select id="pathsCount">
+<option>128</option>
+<option selected>512</option>
+<option>1024</option>
+<option>2048</option>
+</select>
+</label>
+<button id="run" disabled>Run optical event</button>
+</div>
+<div class="layout">
+<section class="panel">
+<div class="panelHeader">
+<p class="eyebrow">Photon paths · x–y projection</p>
+<h2 id="sceneTitle">Dispersive prism</h2>
+<p id="explanation">Each displayed flight comes from a simulated photon. Wavelength sets its display color.</p>
+</div>
+<canvas id="paths">
+</canvas>
+<div id="pathCaption">Waiting for an optical event.</div>
+<div class="gate">
+<span>Time gate</span>
+<input id="gate" type="range" min="0" max="10" value="10" step=".001">
+<span id="gateValue">all arrival times</span>
+<button id="allTimes">Show all</button>
+</div>
+</section>
+<aside class="metrics">
+<div class="metric">
+<p class="eyebrow">Simulated population</p>
+<strong id="eventCount">—</strong>
+<span>Optical photons · histograms include the entire population</span>
+</div>
+<div class="metric">
+<p class="eyebrow">Monitor detection</p>
+<strong id="detected">—</strong>
+<span>Ideal surrounding monitor; absorbed photons remain in event counts</span>
+</div>
+<div class="metric">
+<p class="eyebrow">GPU compute queue</p>
+<strong id="compute">—</strong>
+<span>Submission through completion · excludes plotting and readback</span>
+</div>
+<div class="metric">
+<p class="eyebrow">Optical throughput</p>
+<strong id="throughput">—</strong>
+<span>Full photon transport / compute time · adapter shown above</span>
+</div>
+</aside>
+</div>
+<div class="charts">
+<section class="panel chart">
+<h3>Source &amp; detected spectrum</h3>
+<canvas id="spectrum">
+</canvas>
+</section>
+<section class="panel chart">
+<h3 id="physicsTitle">Prism dispersion · forward monitor</h3>
+<canvas id="physicsChart">
+</canvas>
+</section>
+<section class="panel chart">
+<h3>Monitor arrival times</h3>
+<canvas id="arrival">
+</canvas>
+</section>
+</div>
+<div id="status" role="status">Loading optical tables and WGSL kernels…</div>
+<div class="scope">
+<span class="tag">Model scope</span>
+<br>Three synthetic demonstrations using the native simulation’s optical tables, Philox random streams, polarized Fresnel boundaries, polarized Rayleigh scattering, and effective fluorescent surface spectrum and delay. WGSL arithmetic is float32; validation records its differences from the CPU float64 intersection reference. This is not a general detector event backend. Time gating reveals completed flights without resimulating. UV is violet false color; path brightness is for visibility, not radiance. Browser GPU hardware and power settings determine performance.</div>
+</main>
+<script type="module" src="physics.js">
+</script>
+</body>
+</html>

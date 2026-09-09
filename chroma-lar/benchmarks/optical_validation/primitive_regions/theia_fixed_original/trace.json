@@ -1,0 +1,15 @@
+{
+  "mismatched_photons": [],
+  "traces": [],
+  "comparison": {
+    "detected": 153,
+    "flag_mismatches": 0,
+    "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+    "hit_time_rtol": 1e-05,
+    "hit_time_atol_ns": 0.003,
+    "wavelength_rtol": 0.0,
+    "wavelength_atol_nm": 0.0,
+    "maximum_hit_time_difference_ns": 0.00042724609375,
+    "maximum_hit_wavelength_difference_nm": 0.0
+  }
+}

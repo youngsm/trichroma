@@ -1,0 +1,258 @@
+{
+  "hardware": true,
+  "scenes": [
+    {
+      "scene": {
+        "name": "pmt",
+        "title": "TPB-coated PMT",
+        "manifest": "camera-pmt.json",
+        "sha256": "83138c42ecc427ee18c33b791c1a120c6b34372f632af887273878bb8f172122",
+        "byte_length": 2668772,
+        "scene_fingerprint": "4a1a4ce3a09591c05c0752bfa50d7faf3e89a451d86cfc583c44203d22b48527"
+      },
+      "photons": 4096,
+      "state": {
+        "count": 4096,
+        "mismatches": {
+          "flags": 0,
+          "channels": 0,
+          "pos": 0,
+          "times": 0,
+          "wavelengths": 0,
+          "direction": 0,
+          "polarization": 0,
+          "photon_ids": 0
+        },
+        "tolerances": {
+          "position_mm": 0.02,
+          "time_ns": 0.002,
+          "wavelength_nm": 0.002,
+          "vector": 0.001
+        },
+        "pos_max_abs": 0.0048980712890625,
+        "times_max_abs": 0.0009765625,
+        "wavelengths_max_abs": 6.103515625e-05,
+        "direction_max_abs": 2.562999725341797e-06,
+        "polarization_max_abs": 9.834766387939453e-07,
+        "all_within_tolerances": true,
+        "finite": true,
+        "direction_norm_max_error": 1.294283457076162e-07,
+        "polarization_norm_max_error": 1.2781379399307014e-07,
+        "polarization_dot_max_abs": 2.3677632016161354e-07
+      },
+      "maps": {
+        "passed": true,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "comparisons": {
+          "wall": {
+            "cells": 1947,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 6.984386473618542e-07,
+            "browser_sum": 4893.65994644165,
+            "cpu_sum": 4893.659957488764,
+            "disagreement_indices": []
+          },
+          "fill_wall": {
+            "cells": 692,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 2.134452136814957e-06,
+            "browser_sum": 4716.159288883209,
+            "cpu_sum": 4716.158831112917,
+            "disagreement_indices": []
+          },
+          "volume": {
+            "cells": 5805,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 3.885153714577871e-06,
+            "browser_sum": 6232.673283501848,
+            "cpu_sum": 6232.673509007346,
+            "disagreement_indices": []
+          },
+          "wls": {
+            "cells": 1455,
+            "mismatches": 0,
+            "finite": true,
+            "max_abs": 7.091327116626189e-07,
+            "browser_sum": 3019.534603834152,
+            "cpu_sum": 3019.5345836787583,
+            "disagreement_indices": []
+          }
+        }
+      },
+      "wall_bin_boundaries": {
+        "valid": true,
+        "position_tolerance_mm": 0.02,
+        "ambiguities": [],
+        "scope": "Independent deposition at recorded GPU wall positions only for reported adjacent-bin crossings; interior collision records and packet energies remain CPU-derived.",
+        "deposition": {
+          "passed": true,
+          "atol": 0.0001,
+          "rtol": 0.0001,
+          "comparisons": {
+            "wall": {
+              "cells": 1947,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 6.984386473618542e-07,
+              "browser_sum": 4893.65994644165,
+              "cpu_sum": 4893.659957488764,
+              "disagreement_indices": []
+            },
+            "fill_wall": {
+              "cells": 692,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 2.134452136814957e-06,
+              "browser_sum": 4716.159288883209,
+              "cpu_sum": 4716.158831112917,
+              "disagreement_indices": []
+            },
+            "volume": {
+              "cells": 5805,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 3.885153714577871e-06,
+              "browser_sum": 6232.673283501848,
+              "cpu_sum": 6232.673509007346,
+              "disagreement_indices": []
+            },
+            "wls": {
+              "cells": 1455,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 7.091327116626189e-07,
+              "browser_sum": 3019.534603834152,
+              "cpu_sum": 3019.5345836787583,
+              "disagreement_indices": []
+            }
+          }
+        },
+        "passed": true
+      },
+      "camera": {
+        "frame": {
+          "width": 48,
+          "height": 30,
+          "frame": 1,
+          "queue_ms": 114.09999990463257,
+          "photons": 4096,
+          "eye": [
+            -160,
+            -180,
+            90
+          ],
+          "target": [
+            80,
+            0,
+            -15
+          ],
+          "exposure": 100000,
+          "cutaway": false,
+          "uv_false_color": false
+        },
+        "scalingError": 0,
+        "maxSignal": 3.5546167055144906e-05,
+        "bvhCameraMatchesBrute": true,
+        "finite": true,
+        "exposurePreservesRaw": true,
+        "orbitChangesImage": true,
+        "sameMaps": true,
+        "displayedPhotonCount": true,
+        "passed": true
+      },
+      "photocathode": {
+        "browser": 282,
+        "cpu": 282
+      },
+      "cutaway_controls": {
+        "sameMaps": true,
+        "sameEvent": true,
+        "cutChangesImage": true,
+        "uvChangesImage": true,
+        "restoringModeIsExact": true,
+        "finite": true
+      },
+      "bvh_transport": {
+        "terminal_states_exact": true,
+        "maps": {
+          "passed": true,
+          "atol": 0.0001,
+          "rtol": 0.0001,
+          "comparisons": {
+            "wall": {
+              "cells": 1947,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 9.5367431640625e-07,
+              "browser_sum": 4893.659947395325,
+              "cpu_sum": 4893.65994644165,
+              "disagreement_indices": []
+            },
+            "fill_wall": {
+              "cells": 692,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 0.0,
+              "browser_sum": 4716.159288883209,
+              "cpu_sum": 4716.159288883209,
+              "disagreement_indices": []
+            },
+            "volume": {
+              "cells": 5805,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 9.5367431640625e-07,
+              "browser_sum": 6232.673283546552,
+              "cpu_sum": 6232.673283501848,
+              "disagreement_indices": []
+            },
+            "wls": {
+              "cells": 1455,
+              "mismatches": 0,
+              "finite": true,
+              "max_abs": 9.5367431640625e-07,
+              "browser_sum": 3019.5346052646637,
+              "cpu_sum": 3019.534603834152,
+              "disagreement_indices": []
+            }
+          }
+        }
+      }
+    }
+  ],
+  "source_hashes": {
+    "chroma-lar/chroma_lar/photon_camera.py": "f6f3080cc76282136bad43d59fc8fbcd1f4b7e5ff737adb9d7e60e4332b26e1b",
+    "chroma-lar/chroma_lar/pmt_camera.py": "d11ca8faf65fb9a0449a868442a84794bda16fc135c037d9f15302fa3d626bb4",
+    "chroma-lar/chroma_lar/optical_showcase.py": "e1fa1fae941504f6d3e5a8ec76bf8e58489a5015a6bda4086c50fa410a1869be",
+    "chroma-lar/chroma_lar/webgpu_physics.py": "f2e8860279d6f0e421fa83b30902dcc0d989b392ba6cf251227c74bac3174b94",
+    "chroma-lar/benchmarks/check_photon_camera.py": "1d55779d21632f73748f04d55a49ac0d50393277264da6346d42f40674479a4f",
+    "chroma-lite/chroma/triton/spectral.py": "55f916bed15ef5a5e92e0a7bec21aff8f94a1e2e67bd6f9bd6bb995546c81b0c",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5"
+  },
+  "asset_hashes": {
+    "camera.html": "8adae4e641fb112e2c5efbe35e9d3eba0c2642ea6cb5118bf645769103dd955f",
+    "camera.js": "330836a8645a75416fa60aa4fbdabd4fc64d4a8f2909dda21cb73e43b55fbc32",
+    "camera.wgsl": "b08f6cb046c980894845bf4bdae146f25ff865f680e5a8aa1805ffb95c45b84c",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "physics.html": "9c7c3d83b93b41805c254f609aa423f9d5c27e7f88b9b76df5a2b7daf7baf963",
+    "physics.js": "a9809d544258b3c30497fb77bf827576da01e202639e1a591a0a09db54fc9940",
+    "physics.wgsl": "ea4c6940e3f521522b02fae9e32971afe3e151cb9e5d34314c260859f88c0262"
+  },
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "page_errors": [],
+  "passed": true
+}

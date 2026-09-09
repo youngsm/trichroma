@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "reference": "/sdf/group/neutrino/youngsam/sim/chroma-lite, installed working tree; not the clean Git revision",
+  "scope": "Independent normalization and XORWOW evolution, original historical physics, actual native worker schedule. Every native kernel-launch output is compared as raw words; tail launches can contain multiple interactions.",
+  "cases": [
+    {
+      "case": "analytic_wires",
+      "photons": 81920,
+      "interactions": 126306,
+      "draws": 407876,
+      "native_launches": 2,
+      "different_photon_words": 0,
+      "different_rng_words": 0,
+      "unfinished": 0,
+      "report": "triton_schedule_final_81920_analytic_wires/replay.json",
+      "report_sha256": "7657a2b355b98fd0f7c0105b773dd07e59c45ae929081abd37431be07c5e2744"
+    },
+    {
+      "case": "reflect3wires",
+      "photons": 81920,
+      "interactions": 1344640,
+      "draws": 5023213,
+      "native_launches": 17,
+      "different_photon_words": 0,
+      "different_rng_words": 0,
+      "unfinished": 0,
+      "report": "triton_schedule_final_81920_reflect3wires/replay.json",
+      "report_sha256": "d618a890b8385f0c5e409edfc9403fa313c44086e5e0c876270c3c19fcb59d39"
+    },
+    {
+      "case": "reflect3wires_vuv",
+      "photons": 81920,
+      "interactions": 1362224,
+      "draws": 5106414,
+      "native_launches": 17,
+      "different_photon_words": 0,
+      "different_rng_words": 0,
+      "unfinished": 0,
+      "report": "triton_schedule_final_81920_reflect3wires_vuv/replay.json",
+      "report_sha256": "e31e8bf4b66e470d62a84b6d1391a88c1e52c341786ede87999a0a72e0a27841"
+    },
+    {
+      "case": "spectral_multibounce",
+      "photons": 81920,
+      "interactions": 3230709,
+      "draws": 13411702,
+      "native_launches": 16,
+      "different_photon_words": 0,
+      "different_rng_words": 0,
+      "unfinished": 0,
+      "report": "triton_schedule_final_81920_spectral_multibounce/replay.json",
+      "report_sha256": "42f41b127c279c993660bc45b15b2a2808bb54e56811404ce8071ca9aec7cb29"
+    }
+  ],
+  "photons": 327680,
+  "interactions": 6063879,
+  "draws": 23949205,
+  "limits": [
+    "Original atomic queue ordering is not seed-repeatable; observed worker assignments are required.",
+    "Finite tested fixtures do not prove correctness for arbitrary inputs.",
+    "Compatibility executor supports default/WLS surfaces and unit weights; complex films, dichroics, weighting and scatter-first controls are outside this certificate.",
+    "Corrected production physics and added TPB/PMT/readout laws are validated separately."
+  ],
+  "intermediate_state_audit": "triton_detectors_final/replay.json",
+  "memcheck": "memcheck_final/memcheck.json"
+}

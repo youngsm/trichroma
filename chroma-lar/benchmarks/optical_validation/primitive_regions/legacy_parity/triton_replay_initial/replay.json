@@ -1,0 +1,294 @@
+{
+  "scope": "Triton replay using captured native XORWOW words, exact original geometry, CUDA-normalized initial states",
+  "capture_report_sha256": "8be0489beb7437c4f12dae0c15838522170a148b405eed359c48bb162edd6250",
+  "source_sha256": {
+    "chroma-lar/benchmarks/replay_original_chroma.py": "259efaaa427757454a2464eebf765c1008d9cf92726ffbf573e557912ec0372e",
+    "chroma-lar/chroma_lar/triton_scene/legacy_spectral.py": "50c46dbf30a9b721bdb9e107c7e307886c7da19b8b3b770ab21e71520d912cff",
+    "chroma-lar/chroma_lar/triton_scene/chroma_global_traversal.py": "a1b6e46fa047f154c9f0e0e304b7d5860fd1a8edea2c99fb92c2c4614b015353",
+    "chroma-lar/chroma_lar/triton_backend.py": "28caa674cdca7c08f98fe729854a1fcb0f12659706ef7c9509e88be8ebcbc096",
+    "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b"
+  },
+  "cases": [
+    {
+      "case": "ballistic",
+      "photons": 8192,
+      "capture_archive_sha256": "3d96ea25099d2e53d2190963fbaab6d09a254d2a58238c7279b8a45f1c1dc719",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "absorption",
+      "photons": 8192,
+      "capture_archive_sha256": "987014eb32863de72957e8bfe32d6a944aa5076ac24f454f0f0f2e0952f807ef",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "competing_bulk",
+      "photons": 8192,
+      "capture_archive_sha256": "5bfe9ebeba37c2f07dd9eae3234d9a14a2a7b4dd09473f9329e2923275ad242a",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "rayleigh",
+      "photons": 8192,
+      "capture_archive_sha256": "a1148f64f78f2deb40505a156568d9c103ab7f76803843ce5ac45a337135ab1c",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "default_surface",
+      "photons": 8192,
+      "capture_archive_sha256": "55210eb3db200a95bd295aa04f22f88a0895a62cd69924d24653be7d3eae7058",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "diffuse",
+      "photons": 8192,
+      "capture_archive_sha256": "d64cd6720afc607299071db0fa1ad56d0861297c653865c1ee1f485e15a3c67e",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "specular",
+      "photons": 8192,
+      "capture_archive_sha256": "5649aefd4b240a59acfbb6652f7f4feff6e69c2ed3b24ff8c81e6af7789c96d9",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "fresnel_p_30",
+      "photons": 8192,
+      "capture_archive_sha256": "58a16b0412c5739e5f545ac014c82fd5db35a87e5c6109b6b1b37d133d9c8853",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "wls",
+      "photons": 8192,
+      "capture_archive_sha256": "8a9d5cac0daa073076e4a8c18054018a78da94e254b3983712262e7ca1f798a6",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "case": "wls_loss",
+      "photons": 8192,
+      "capture_archive_sha256": "03d7f9c10257487c0a1e7f27aee1b11a26f3335f4df3918be054ba2243475c53",
+      "comparisons": {
+        "final_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "state_words": {
+          "mismatches": 0,
+          "first": null
+        },
+        "draw_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "interaction_counts": {
+          "mismatches": 0,
+          "first": null
+        },
+        "overflow": {
+          "mismatches": 0,
+          "first": null
+        }
+      },
+      "passed": true
+    }
+  ],
+  "passed": true
+}

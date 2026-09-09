@@ -98,6 +98,7 @@ class FastOpticalSimulation:
         epochs_per_poll=2,
         block_size=128,
         fused_pmt=False,
+        region_mode="automatic",
     ):
         from .spectral_backend import SpectralDetectorSimulation
 
@@ -110,6 +111,7 @@ class FastOpticalSimulation:
             epochs_per_poll=epochs_per_poll,
             block_size=block_size,
             fused_pmt=fused_pmt,
+            region_mode=region_mode,
         )
         self.device = device
         self.readout = OpticalReadout(calibration, self.transport.channel_count, device=device)

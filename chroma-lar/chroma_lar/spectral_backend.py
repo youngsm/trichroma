@@ -40,7 +40,8 @@ class SpectralDetectorSimulation:
     """Full wavelength-dependent optics; geometry acceleration changes no tables.
 
     The full scene retains both detector halves and the outer cavity. This
-    initial source adapter accepts positions in its negative x component.
+    source adapter accepts the original negative-x component and source boxes
+    inside compiler-certified LAr regions, including the opposite component.
     PMT coating and glass remain explicit triangle boundaries.
     """
 
@@ -54,6 +55,7 @@ class SpectralDetectorSimulation:
         epochs_per_poll=2,
         block_size=128,
         fused_pmt=False,
+        region_mode="automatic",
     ):
         import torch
 
@@ -63,12 +65,18 @@ class SpectralDetectorSimulation:
         self.scene = compile_reflect3wires_scene(
             config_name, calibration=calibration, retain_all_geometry=True
         )
-        self.query = DetectorBoundaryQuery(self.scene, device=self.device, fused_pmt=fused_pmt)
-        self.model = CompiledSpectralModel(self.scene, calibration, self.device)
-        self.fingerprint = self.model.fingerprint
         self.lar_index = self.scene.tables.material_names.index(
             calibration.manifest["roles"]["lar"]
         )
+        self.query = DetectorBoundaryQuery(
+            self.scene,
+            device=self.device,
+            fused_pmt=fused_pmt,
+            region_mode=region_mode,
+            bulk_material=self.lar_index,
+        )
+        self.model = CompiledSpectralModel(self.scene, calibration, self.device)
+        self.fingerprint = self.model.fingerprint
         self.channel_count = self.scene.total_reference_channels
 
     def _empty_state(self, count):
@@ -109,10 +117,17 @@ class SpectralDetectorSimulation:
             self.scene.reachability.source_component_bounds_min,
             self.scene.reachability.source_component_bounds_max,
         )
-        if np.any(center - voxel_size / 2 <= lo) or np.any(center + voxel_size / 2 >= hi):
-            raise ValueError(
-                "source must be strictly within the compiled negative-x detector component"
-            )
+        if np.all(center - voxel_size / 2 > lo) and np.all(center + voxel_size / 2 < hi):
+            return
+        regions = () if self.query.regions is None else self.query.regions.regions
+        for region in regions:
+            if (
+                region.material == self.lar_index
+                and np.all(center - voxel_size / 2 > region.bounds.lower)
+                and np.all(center + voxel_size / 2 < region.bounds.upper)
+            ):
+                return
+        raise ValueError("source must be within the negative-x component or a certified LAr region")
 
     def simulate_voxel(
         self,
@@ -144,6 +159,7 @@ class SpectralDetectorSimulation:
         ):
             raise ValueError("event ID and birth time are invalid")
         self._check_source_box(center, voxel_size)
+        self.query.select_bulk_region([center])
         self.torch.cuda.synchronize(self.device)
         started = time.perf_counter()
         state = self._empty_state(count)
@@ -164,13 +180,22 @@ class SpectralDetectorSimulation:
 
     def simulate(self, photons, *, seed=1, max_steps=2048, keep_final_states=False):
         batch = as_photon_batch(photons)
+        # Selection is only a performance choice. Sample a bounded number of
+        # representatives; unselected photons retain the exact boundary path.
+        stride = max(1, batch.photon_count // 1024)
+        self.query.select_bulk_region(batch.pos[::stride])
         lo, hi = (
             self.scene.reachability.source_component_bounds_min,
             self.scene.reachability.source_component_bounds_max,
         )
-        if np.any(batch.pos <= lo) or np.any(batch.pos >= hi):
+        valid_sources = np.all((batch.pos > lo) & (batch.pos < hi), axis=1)
+        if not valid_sources.all() and self.query.regions is not None:
+            for region in self.query.regions.regions:
+                if region.material == self.lar_index:
+                    valid_sources |= region.bounds.contains(batch.pos)
+        if not valid_sources.all():
             raise ValueError(
-                "input photons must start strictly within the compiled negative-x detector component"
+                "input photons must start in the negative-x component or a certified LAr region"
             )
         if np.any(batch.last_hit_triangles != -1) or np.any(batch.flags & TERMINAL_FLAGS):
             raise ValueError("the detector source adapter requires fresh, live photons")
@@ -235,6 +260,7 @@ class SpectralDetectorSimulation:
         for position, n in zip(positions, counts):
             if n:
                 self._check_source_box(position, 0.0)
+        self.query.select_bulk_region(positions, weights=counts)
         state = self._empty_state(total)
         first = 0
         for position, birth, event, n in zip(positions, births, events, counts):

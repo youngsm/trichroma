@@ -1,0 +1,27 @@
+{
+  "pos": {
+    "max_absolute_difference": 9.1552734375e-05,
+    "exact": false
+  },
+  "direction": {
+    "max_absolute_difference": 1.0106575787067413,
+    "exact": false
+  },
+  "polarization": {
+    "max_absolute_difference": 0.47757744789123535,
+    "exact": false
+  },
+  "wavelengths": {
+    "max_absolute_difference": 0.0,
+    "exact": true
+  },
+  "times": {
+    "max_absolute_difference": 9.5367431640625e-07,
+    "exact": false
+  },
+  "flags": {
+    "max_absolute_difference": 0.0,
+    "exact": true
+  },
+  "passed": false
+}

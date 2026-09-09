@@ -77,7 +77,9 @@ def certified_empty_lar_bounds(scene, pmt_bounds_min, pmt_bounds_max):
 
 
 class DetectorBoundaryQuery:
-    def __init__(self, scene, *, device="cuda", fused_pmt=False):
+    def __init__(
+        self, scene, *, device="cuda", fused_pmt=False, region_mode="automatic", bulk_material=None
+    ):
         import torch
         from .device_geometry import DeviceBoundaryRayWorkspace, DeviceBoundaryMergeWorkspace
         from .intersect import prepare_scene_triton, allocate_split_intersection_workspace
@@ -90,14 +92,50 @@ class DetectorBoundaryQuery:
         self.fused_pmt = fused_pmt
         if fused_pmt and self.pmt_accelerator.grid_locator is None:
             raise ValueError("fused_pmt requires a compiler-certified regular PMT lattice")
-        self.safe_lower, self.safe_upper = certified_empty_lar_bounds(
-            scene, self.pmt_accelerator.host_bounds_min, self.pmt_accelerator.host_bounds_max
-        )
+        if region_mode not in ("automatic", "legacy", "disabled"):
+            raise ValueError("region_mode must be automatic, legacy, or disabled")
+        self.region_mode = region_mode
+        self.regions = None
+        self.bulk_region = None
+        self.bulk_material = bulk_material
+        if region_mode == "legacy":
+            self.safe_lower, self.safe_upper = certified_empty_lar_bounds(
+                scene, self.pmt_accelerator.host_bounds_min, self.pmt_accelerator.host_bounds_max
+            )
+        else:
+            if region_mode == "automatic":
+                from chroma.triton.regions import compile_regions
+                from .primitive_adapter import detector_primitives
+
+                self.primitives = detector_primitives(
+                    scene,
+                    self.pmt_accelerator.host_bounds_min,
+                    self.pmt_accelerator.host_bounds_max,
+                    mesh_exterior_material=bulk_material,
+                )
+                self.regions = compile_regions(self.primitives)
+            self.select_bulk_region([])
         self.analytic_workspace = allocate_split_intersection_workspace(0, self.device)
         self.ray_workspace = DeviceBoundaryRayWorkspace.allocate(0, self.device)
         self.merge_workspace = DeviceBoundaryMergeWorkspace.allocate(0, self.device)
         self.pmt_workspace = self.pmt_accelerator.allocate_workspace(0, candidate_capacity=0)
         self._positive_infinity = torch.tensor(float("inf"), device=self.device)
+
+    def select_bulk_region(self, positions, weights=None):
+        """Choose a compiled certificate once per source batch, before launches."""
+        if self.region_mode == "legacy":
+            return
+        self.bulk_region = (
+            None
+            if self.regions is None
+            else self.regions.select(positions, material=self.bulk_material, weights=weights)
+        )
+        if self.bulk_region is None:
+            # An empty box makes every photon fall through to exact geometry.
+            self.safe_lower = self.safe_upper = np.zeros(3, dtype=np.float64)
+        else:
+            self.safe_lower = self.bulk_region.bounds.lower
+            self.safe_upper = self.bulk_region.bounds.upper
 
     def begin_event(self):
         self.pmt_workspace.clear_sticky_overflow()

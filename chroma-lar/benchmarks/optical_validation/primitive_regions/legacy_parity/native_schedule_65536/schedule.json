@@ -1,0 +1,353 @@
+{
+  "reference": "/sdf/group/neutrino/youngsam/sim/chroma-lite",
+  "case": "spectral_multibounce",
+  "photons": 65536,
+  "seed": 99173,
+  "max_steps": 128,
+  "rng_slots": 262144,
+  "device": "NVIDIA A100-SXM4-40GB",
+  "cuda_options": [
+    "--use_fast_math",
+    "-Xptxas=-dlcm=ca",
+    "-diag-suppress=177,20044",
+    "-DCHROMA_FORCE_SCATTER_AT_PASS=0"
+  ],
+  "source_sha256": {
+    "chroma/__init__.py": "f82f7e31c33532e067ef5740204ec2d753cfcb3631794f434db5f46a90d84735",
+    "chroma/bvh/__init__.py": "7166bd48a018bd092886fc47a81c4df918e19261b3aec70ae9a71daa20cdabd5",
+    "chroma/bvh/bvh.py": "1d8ec51b508264a343ac44a7224ea92fadf07e814b0671974d2ac7bb09ad1b63",
+    "chroma/bvh/extbuilder.py": "ca8203650c06c1a5d61e026b3b588fec01d987a9d0d5dfe65f2fcbb007a2c947",
+    "chroma/bvh/grid.py": "e0537895935b2e8ca3c65ca8fd0fd5e407dd851b477ffbb04ad1dee456f7287a",
+    "chroma/bvh/simple.py": "006bf1b12ad364afebac8bcf21c5e471d183f1008c396eb93d43789a17a07e5c",
+    "chroma/cache.py": "490ffd9f39174e761555225bd6b40da325833fd97a927f74ea081b14f6a785fe",
+    "chroma/camera.py": "3d422edfef778279120c6050c8d86d1e3474877c7ca8a98d4051ea6daf48b39d",
+    "chroma/color/__init__.py": "88b08180a30f759142d917cf436aa5cdf93ac34c4810b46e48f03503011a4608",
+    "chroma/color/chromaticity.py": "5ee1775d608c5f68096c81a4efa7f9efc43bf2b9971757baec31ca7bc367d54b",
+    "chroma/color/colormap.py": "2f3b0ee4b1c6428c3cdf1bcc928d229656be363313668df5488b08f97ecd3437",
+    "chroma/cuda/__init__.py": "d327afc0cf2d7d0e9590cc805130f5213cd355a63f0a449b07ddfbaa5cde1544",
+    "chroma/cuda/bvh.cu": "613f90dbaebaec4f5fe5bea0208e226bbaefb3344ba3034c1059c2f5f7d40871",
+    "chroma/cuda/cx.h": "2320313546a346b6fc6cd0a7eed38df823e7855167fa952ddf3dfa58eb94b8a3",
+    "chroma/cuda/daq.cu": "feb7d98abcd77120a362b4ec0c074a963c27b142574068b500221ac0eb804b1f",
+    "chroma/cuda/detector.h": "c435747312fcec41a95ce0a914f534a9e9fff283ed94c876543764dbbc607b8a",
+    "chroma/cuda/geometry.h": "551a3d8ced2c841878cb594fd508c0e4382996ebd08c80dfaa5cedf3a71f3ddc",
+    "chroma/cuda/geometry_types.h": "32bc11b1480f9b52d2a67800842172a0a329e0bf5567137ffc7ac7fc320eb836",
+    "chroma/cuda/hybrid_render.cu": "b183bf2cf8ee2e0966e230effc7e4324982c8b6f1a025a3e81ff1c86528f978f",
+    "chroma/cuda/interpolate.h": "043f619261643b0e2ed5030af57f498ef5af35ca01b0d54f1a23f4e85e3ec674",
+    "chroma/cuda/intersect.h": "abb8024388cc2d7eefcf39a4f190717cbc2697fcae8a58ff07b05468e0a4613c",
+    "chroma/cuda/linalg.h": "80b89a7a801569d1325066efff04b41ab9880a144d5584d7b0460881c85ffe18",
+    "chroma/cuda/matrix.h": "36bd2da91a7fa8321eade84c1b20e10dab2a1332ac4e389fea5a803b0441cf1e",
+    "chroma/cuda/mesh.h": "c072ee894a94b88c7fb1f15423f7f93de90f730cbc2c1f3f3f6d0899263caa1f",
+    "chroma/cuda/pdf.cu": "a29fddd36e9fd5965545e22db736f0cdfa0025b6c028d3fa95261aa87140e46e",
+    "chroma/cuda/photon.h": "536fb902fa0952046cf7db02475e5dbf9db03575e1788e98ec04b2e81053fa48",
+    "chroma/cuda/physical_constants.h": "b76334b10d938405456c40e0671f64faf77efc2745c7ddd7c32325cb95cfceb0",
+    "chroma/cuda/profile.h": "c374944780fedad3a952ca5180536eb5b99a2db2bb1f1a0d7c4c0d138a399fb5",
+    "chroma/cuda/propagate.cu": "b1b4d3972589f25713b672fefc6b03f4a79f839f340cf4dfe3844c94127ebf2c",
+    "chroma/cuda/random.h": "3cacc335f4613de45ef44d1addfc91966ee6e4391efa7083cf3af2a49c4435aa",
+    "chroma/cuda/render.cu": "367ed0ba1f5344fbea6bbe85e3a472efe0f886ec62f23f13945ac5ed1bb3a6ef",
+    "chroma/cuda/rotate.h": "ed9b0d8dcdd1587744e634a597c317936810444dd07a81174652632ff468666a",
+    "chroma/cuda/sorting.h": "d73b79cf253ef3e8ed6de8a18b944b67400f0e817e7cd52357541ee5008e4136",
+    "chroma/cuda/tools.cu": "d88d932895fcc023c3ce2f48f7ee21fc5722ef96743294147627f5cd10ab2b2f",
+    "chroma/cuda/transform.cu": "34dfe6b2d315ab251415cc5561b14b31668fa93eb086d2d703f533efd0715d90",
+    "chroma/demo/__init__.py": "ac63786db06ae6e4aaf2906cb707169a9e2e2fdc7d0d553277a50b5d122a71cf",
+    "chroma/demo/checkerboard.py": "6a08205a1639dacb6e0bf28f1c0a0b8391bc481e9e4e54a797c506d18a4c84d2",
+    "chroma/demo/optics.py": "2e1547a2e7615343646077238d75324518e768902387460290439267bd334b76",
+    "chroma/demo/pmt.py": "8269abc8a79604bd1ae5f894ef862652c47b6e60b7f28d8d2aaa202f690b5dc6",
+    "chroma/detector.py": "50007f0b3dc8db0b2eef8234bced86e91d2612d72553e1d0bb9346a7283c7b9e",
+    "chroma/event.py": "2cf2a37193f3b36ebdbe6c0a5a9f16f4f36a1e113456587bc5b581a7099c97d5",
+    "chroma/gdml/__init__.py": "9394766075023d768dcbd8db1f7689fd8f1ac8029c4cac9f7d94dbfc995d7c4e",
+    "chroma/gdml/gen_mesh.py": "c6f343d46f699dbfc5f0b2807f7fe8ed0f2c5f0704b0edb41f2eb8361086ca1f",
+    "chroma/gdml/loader.py": "92fdc3fc311519b2a510d87e3a57edfa2e72a5bd70082f308ff0ea05e1d0a59b",
+    "chroma/gdml/loader_helper.py": "447e7387f635f744f7d6154fd70152419a75e844d4063df93b843ccaa6940863",
+    "chroma/geometry.py": "861fae80baf8035f73decc881ea9e5db99ec16221423c8c8257ba599a999e3d4",
+    "chroma/gpu/__init__.py": "4d969cd310a925e3ee0758abb2bb7fab40ec8dc3141c1cd54670dda2ac4c2ff1",
+    "chroma/gpu/bvh.py": "0abb4094acab7fb72585fe95706579c629bf96fde3070b8c34e44209e555e4b3",
+    "chroma/gpu/daq.py": "969957e997174a17ec12a395fbb27bd68de2ae3cadb367b7b099ac11a0dae8bb",
+    "chroma/gpu/detector.py": "a9fd42f089484ea038c64556c98df007bd150a830a9d8ab7291cbf58a1b4af8a",
+    "chroma/gpu/geometry.py": "bc29dc2b6bd7bab03be80d08877d23786037d6f8ad2b0c1251945e39bd1a17a3",
+    "chroma/gpu/pdf.py": "ec2635b99c044512639c990313b7f7bc83d4984c5249bf275f2c54336d6b1eb6",
+    "chroma/gpu/photon.py": "bf7272fb3fe146e29157b15dec230f7c0c34f336603e19f5100244c47837299c",
+    "chroma/gpu/profiler.py": "7cc1e3e9df23651b49611834979bd2d81ad19b2bbe437dd460ac8353fc11f13e",
+    "chroma/gpu/render.py": "3787b26530d6abbb681a1a15b11b067497df0797c138560f71b00bc9977397eb",
+    "chroma/gpu/tools.py": "d57cf0c361d588298c3bd85163ed3b4c5335a6425fc332eb9fff40d4683bd7a2",
+    "chroma/histogram/__init__.py": "086668f787801727f1107d2c6c70df60497b61c839f3e24cb6434f641a817b50",
+    "chroma/histogram/draw.py": "e1bb78857d65ed7515e73f5ee9c4aff3d4fe001a576185deba2ebdf4997273fd",
+    "chroma/histogram/graph.py": "558f853076a228d40fe97dfe54cf24172f2c9072d73779a77e604da7a1c7eafb",
+    "chroma/histogram/histogram.py": "ace6a276d890d00a280721680ec119214f4fe9a5b13dd420a95a6c334525e5c2",
+    "chroma/histogram/histogramdd.py": "bc7dc6faaf0c5733b3aa7b7cb6fbc4f1e415def3caf4e826f8408c51b5f5560a",
+    "chroma/histogram/root.py": "1355e8bfe0e475f0b2674bfe194025b53e229aeec7dc33a2fc9109cebed944ff",
+    "chroma/io/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "chroma/io/root.py": "90d490d098f277bd3bb056d81ff164bc094a38c0783b6d50a0814cfe381b6057",
+    "chroma/itertoolset.py": "a8dd03546c89ad22d31c12b30874bb261cbcb0e1333d7908e227e9d5c5e6b943",
+    "chroma/likelihood.py": "abfb526def937c8a792f67c136417bace3816bda92f0a27daf4018e328468408",
+    "chroma/loader.py": "d55b2d01a1f499729a0d1c91b2cf7835743a7cbaab0a795fef0881cdaef4fe32",
+    "chroma/log.py": "6b40f4d278d090d65055a77dd377f2c9bd85c9643d58e076ca6a4c30683d791e",
+    "chroma/make.py": "8a9f4cd5f85d36b3b1ca7916c68c479e7a6ec3aa0286ddf2acbacef7dd076b50",
+    "chroma/models/__init__.py": "61eff353db4773062d29b89cfda6ff8cd9b4651664eacc632283b6fa48f7e241",
+    "chroma/parabola.py": "a6f0b188df2b89949aa49997cc85098c09651121f2cdbc63af7b14d1cb252dc6",
+    "chroma/pi0.py": "aa6e3131b207af3a3a3e88e0839bf4780dc6189cf55f00e4d254a75267c3aa79",
+    "chroma/pmt.py": "5fb19a971c9740cd1d61c7c6d370e3bc276b75963aa67edec04ce5e2f368bb53",
+    "chroma/rootimport.py": "299f9c5ebfb85ac354a93f0fb4162296b717b5787f29acdf993a3e5bd58184da",
+    "chroma/sample.py": "b8dec73e5c67c8c3e98c3b2fb956d71504190d0fbc752fb3631c0869ee5ed43d",
+    "chroma/sim.py": "9c815a9f41264db30fce54ff9c0de9383444d084ec1bd263184c9c1b3aab7ba3",
+    "chroma/stl.py": "acbadaa1dbb6df4cccc18afc1c72366426afb6918d51d72c92c3234a11c8df3c",
+    "chroma/tools.py": "7d0d7cdd098ceb1aa4819e6e1dff1531eac0b543fcc2a0172777bc9960de2e63",
+    "chroma/transform.py": "4e685d1852355f6d4142f373f8ba06c0549431c2f6276502ad66a8e42880066e"
+  },
+  "harness_sha256": "65f5d482c135ee87c13b5a20613a201b9ebb0f064cab685013e6eba6e0a2a508",
+  "scene_array_sha256": {
+    "nodes": "2b7fe521c96d69249e45c26951e21266a289067235b823dc9a3dd0b90e18370d",
+    "vertices": "666bfe7051541a977f6b0cf8e7b6554a0029585dcbd8b81fee040324235a44d8",
+    "triangles": "ca29304258b9cab5790bc89ad77e6153207860981be9f1e9860a9c4262c9c0f5",
+    "world_origin": "bd5c9d70484a8fe749f10bcf91700f56eac22203c94ec777ffa69e1a068b4ad0",
+    "world_scale": "6f935a914aee015030b08e5e4fc7c0d48ed4f567c8041709dec88856fda6572b",
+    "solid_ids": "220cb1fcae87661869c959ad4073fc1c256be0d256fbb954bc0ebd0504c92fed",
+    "channel_ids": "667b26f877ceb700696dd8951a6e1d9324d8944fc090c7399c78b38b74eb672a",
+    "surface_ids": "416274dd61be9bb78c29a712de3555b9814deae0c70697105bea25244f75dfd1",
+    "material_inner": "83b21030082a72416001e3e485f0b43e12ba4547c8bd696a580827fc16a3c3c7",
+    "material_outer": "5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5",
+    "wavelength_grid": "ddb4bfa1e646139cb2abf4e0a25af3c209a55f4f05a7b43558e53f32db749378",
+    "wire_words": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rindex": "49fd3cfea6a86843f23c85352e2a27d7f24765c61c15684a7fe3cf526c506eb9",
+    "absorption": "44a7a6d79d074692bcd4a9dca8ebe916c684be71a98faeb8e9beed72d941647c",
+    "scattering": "836b88a13c0cba9e6524397b685739e873fb4328e8d36887a86d1e53a747592f",
+    "material_components": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+    "component_offsets": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+    "time_grid_spec": "0596148f46acf09908c2da33820c2d83054428f6e81826a498501d29415257c4",
+    "component_prob": "8e706a6dd3966311bc1da8892b452e81110e3b434cd62d6ec9aa2650474cb091",
+    "component_wavelength_cdf": "8e706a6dd3966311bc1da8892b452e81110e3b434cd62d6ec9aa2650474cb091",
+    "component_time_cdf": "f8c784aa6b57396e7c5e094c34d079d8252473e46e2f60593a921dbebf941fcc",
+    "component_absorption": "8e706a6dd3966311bc1da8892b452e81110e3b434cd62d6ec9aa2650474cb091",
+    "surface_detect": "7369396332cbbfd13e325de288c413060157120c3c177d9fa17c2bc430e4b192",
+    "surface_absorb": "465cbfbda3e6a04e3699422c1888d7cd6e2bf9b705574fac12ebd587a513ebe0",
+    "surface_reemit": "551020291861cb395ae5b5ae031b0d4e0a69ec428942ea3aa7359407805c1594",
+    "surface_diffuse": "b8c79e793f6ec43c894c3fd1769e56ad18ca3205b0b969281ee89950883c46bf",
+    "surface_specular": "fd91441d5ae7465d7701cbe1a73bf71fa62a5aa46f0f912ff3025d4870815d3f",
+    "surface_eta": "814841a831bf61f170b618644815fe83da251094b778be2ce026f67b9ca123cb",
+    "surface_k": "814841a831bf61f170b618644815fe83da251094b778be2ce026f67b9ca123cb",
+    "surface_reemission_cdf": "a1f860e09ddb012e78daad73ee3511f2ef2b89dcc942fbac49b1949509d25500",
+    "surface_models": "1016aafd4f7b762eec46c2f8618b9e8ecae73c7e106fd3f6675863c5e6ea4cb0"
+  },
+  "initial_photons_sha256": "2deafb4f0e3a8eb3b7eb9bc811b8ef789c2b3570ee7e970b3bbbe390c8af64ed",
+  "initial_rng_words_sha256": "bd42e37f16105bb478f7ba59e32d32107b8bf8213fbf6ed98991d1fd83c81ccc",
+  "scope": "observation of actual original public API/kernel launches; no substituted random generator or modified CUDA kernel",
+  "launches": [
+    {
+      "index": 0,
+      "first_photon": 0,
+      "threads": 65536,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        256,
+        1
+      ],
+      "archive_sha256": "cdd47a91d4a3591c2054711d7dd83c435e80d1de86e3fb05ba389bc2b47de2d6"
+    },
+    {
+      "index": 1,
+      "first_photon": 0,
+      "threads": 61677,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        241,
+        1
+      ],
+      "archive_sha256": "acdb93fb2be6cfdae6ebd71074d4b0b2fcb0fa9c9f79f730c58819c0eadf2c17"
+    },
+    {
+      "index": 2,
+      "first_photon": 0,
+      "threads": 58594,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        229,
+        1
+      ],
+      "archive_sha256": "f248a573c825a711464b4d9e15400cb023b6d9a78acccadbe1b064311b6d0586"
+    },
+    {
+      "index": 3,
+      "first_photon": 0,
+      "threads": 54529,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        214,
+        1
+      ],
+      "archive_sha256": "3bfb65186661412961e8d0664adb9a16d42f512db88c037ef69b3eb2fa4c6c39"
+    },
+    {
+      "index": 4,
+      "first_photon": 0,
+      "threads": 50484,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        198,
+        1
+      ],
+      "archive_sha256": "403e661c54519ace6cef65283f882da254552b142ab2f55b519ffbce206b46a7"
+    },
+    {
+      "index": 5,
+      "first_photon": 0,
+      "threads": 46915,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        184,
+        1
+      ],
+      "archive_sha256": "71b2e1c96e4b7fe4c9d7ba4b20fc82e395aaa3eb1ff1438e7d5954bb60ffebb7"
+    },
+    {
+      "index": 6,
+      "first_photon": 0,
+      "threads": 43686,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        171,
+        1
+      ],
+      "archive_sha256": "6fa71b8ae50096a003d01246ad7087d7b28e4db90aeec6232dae55e8a4a90bda"
+    },
+    {
+      "index": 7,
+      "first_photon": 0,
+      "threads": 40686,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        159,
+        1
+      ],
+      "archive_sha256": "1c32ef66f46b5458d3356b61c2e429e5a5a71ce9e26eac20f363b7f78ea8b125"
+    },
+    {
+      "index": 8,
+      "first_photon": 0,
+      "threads": 37999,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        149,
+        1
+      ],
+      "archive_sha256": "9deed586d4954775fd7dc88f0386de57ab2de8017d918858bb36d36dc659af24"
+    },
+    {
+      "index": 9,
+      "first_photon": 0,
+      "threads": 35606,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        140,
+        1
+      ],
+      "archive_sha256": "343dc2c9e568c6cec46a3d97366694489e17d0fa2de803ce6f23515b2dd29baa"
+    },
+    {
+      "index": 10,
+      "first_photon": 0,
+      "threads": 33486,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        131,
+        1
+      ],
+      "archive_sha256": "c1c92af22ed50dc569088d271db0ed7829ebc60847d8d15112f7a9312010f008"
+    },
+    {
+      "index": 11,
+      "first_photon": 0,
+      "threads": 31555,
+      "max_steps": 0,
+      "use_weights": 0,
+      "scatter_first": 140174195466752,
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "grid": [
+        124,
+        1
+      ],
+      "archive_sha256": "274eb8abca217cfe32df263ebbe8cd0271e261f171889b669d5316f2e15ed1a3"
+    }
+  ],
+  "final_words_sha256": "290dc248a1c1b2c019e457a50a5215bae24023135045572a3816aa7e7f4a973b",
+  "unfinished_photons": 4613
+}

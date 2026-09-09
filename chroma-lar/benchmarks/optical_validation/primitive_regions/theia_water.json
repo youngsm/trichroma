@@ -1,0 +1,391 @@
+{
+  "host": "sdfampere032",
+  "device": "NVIDIA A100-SXM4-40GB",
+  "python": "3.10.20",
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0",
+  "configuration": {
+    "size": [
+      25500.0
+    ],
+    "coverage": 0.81,
+    "diameter": 508.0,
+    "counts": [
+      100000,
+      1000000
+    ],
+    "repeats": 3,
+    "reference_count": 100000,
+    "reference_seeds": [
+      101
+    ],
+    "transport_reference": "chroma-lar/benchmarks/optical_validation/primitive_regions/theia_water_transport_131k.json",
+    "output": "chroma-lar/benchmarks/optical_validation/primitive_regions/theia_water.json"
+  },
+  "scope": "CPU Cherenkov source sampling, host-to-device input, general mesh spectral transport, terminal-state download, PMT response, GPU pulse superposition, CPU noise/ADC and host-readable hits/PE/waveforms",
+  "excluded": "geometry construction, compilation warmup and file writes",
+  "backend": "general flattened-mesh SpectralSimulation; region certificates not used in transport",
+  "calibration_status": "illustrative water detector; not a Theia calibration",
+  "optics": "bundled chroma.demo.optics water/glass/r7081hqe tables; black enclosure and PMT backs; scaled SNO demo PMT mesh with diameter from configuration",
+  "source": "fixed-count beta=1 Cherenkov track, 1 m long along +Z at center, 300--650 nm, wavelength-dependent cone and polarization",
+  "readout": {
+    "tts_sigma_ns": 2.0,
+    "transit_time_ns": 30.0,
+    "collection_efficiency": 0.9,
+    "charge_pdf": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.5,
+        0.4
+      ],
+      [
+        1.0,
+        1.0
+      ],
+      [
+        1.5,
+        0.4
+      ],
+      [
+        2.0,
+        0.0
+      ]
+    ],
+    "digitizer": {
+      "event_indices": [
+        0,
+        1
+      ],
+      "channel_count": 49684,
+      "start_ns": 0.0,
+      "sample_period_ns": 1.0,
+      "sample_count": 1024,
+      "pulse_times_ns": [
+        0.0,
+        2.0,
+        5.0,
+        10.0,
+        18.0
+      ],
+      "pulse_adc_per_pe": [
+        0.0,
+        4.0,
+        2.0,
+        0.5,
+        0.0
+      ],
+      "baseline": 200.0,
+      "noise_rms": 0.4,
+      "adc_bits": 12
+    }
+  },
+  "geometry": {
+    "channels": 49684,
+    "triangles": 32791840,
+    "shared_sensor_triangles": 660,
+    "packing": {
+      "validated": true,
+      "method": "separating projections of enclosing finite cylinders",
+      "candidate_pairs": 147804,
+      "rounding_guard_mm": 0.09824720001779497,
+      "minimum_separation_mm": 7.633725115279361,
+      "removed_edge_sensors": 582
+    }
+  },
+  "construction_seconds": {
+    "fixture": 4.124346814118326,
+    "regions": 7.013604778796434,
+    "mesh_compile_upload": 64.87789698410779
+  },
+  "compiled_regions": {
+    "fingerprint": "8acd068ee7976e05f67692a4b0f28658de1de654bde8ee1798a5a2836bb1092e",
+    "dropped_cells": 0,
+    "coarse_domains": [
+      "water"
+    ],
+    "rejected_domains": {},
+    "regions": [
+      {
+        "lower": [
+          -17855.8046875,
+          -17855.8046875,
+          -17855.8046875
+        ],
+        "upper": [
+          17855.8046875,
+          17855.8046875,
+          17855.8046875
+        ],
+        "material": 0,
+        "domain": "water"
+      }
+    ]
+  },
+  "scene_fingerprint": "02fea59fa73e8f902edb053ebc8adffb2fdcc57ef9a1271c807df5928a8c0a5e",
+  "counts": [
+    {
+      "photons": 100000,
+      "warmup": {
+        "seed": 1729,
+        "photons": 100000,
+        "event_seconds": 2.991738541983068,
+        "photons_per_second": 33425.38079337481,
+        "source_seconds": 0.028317964635789394,
+        "transport_seconds": 0.8177423602901399,
+        "readout_seconds": 2.1456782170571387,
+        "detected": 13638,
+        "photoelectrons": 12334,
+        "failure_count": 0,
+        "peak_torch_allocated_bytes": 3618276352,
+        "waveform_shape": [
+          2,
+          49684,
+          1024
+        ]
+      },
+      "runs": [
+        {
+          "seed": 901,
+          "photons": 100000,
+          "event_seconds": 2.4979122220538557,
+          "photons_per_second": 40033.432366881614,
+          "source_seconds": 0.0271531380712986,
+          "transport_seconds": 0.2936802846379578,
+          "readout_seconds": 2.1770787993445992,
+          "detected": 13665,
+          "photoelectrons": 12297,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 3618276352,
+          "waveform_shape": [
+            2,
+            49684,
+            1024
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 100000,
+          "event_seconds": 2.6672273939475417,
+          "photons_per_second": 37492.11643031242,
+          "source_seconds": 0.026363534852862358,
+          "transport_seconds": 0.3087593079544604,
+          "readout_seconds": 2.332104551140219,
+          "detected": 13719,
+          "photoelectrons": 12347,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 3618276352,
+          "waveform_shape": [
+            2,
+            49684,
+            1024
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 100000,
+          "event_seconds": 2.305598019156605,
+          "photons_per_second": 43372.69513988406,
+          "source_seconds": 0.029606408905237913,
+          "transport_seconds": 0.2820229511708021,
+          "readout_seconds": 1.993968659080565,
+          "detected": 13660,
+          "photoelectrons": 12348,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 3618276352,
+          "waveform_shape": [
+            2,
+            49684,
+            1024
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 40156.67724538624,
+      "minimum_photons_per_second": 37492.11643031242,
+      "maximum_photons_per_second": 43372.69513988406
+    },
+    {
+      "photons": 1000000,
+      "warmup": {
+        "seed": 1729,
+        "photons": 1000000,
+        "event_seconds": 3.100661940407008,
+        "photons_per_second": 322511.7794907803,
+        "source_seconds": 0.306376067455858,
+        "transport_seconds": 0.7671668576076627,
+        "readout_seconds": 2.0271190153434873,
+        "detected": 136122,
+        "photoelectrons": 122453,
+        "failure_count": 0,
+        "peak_torch_allocated_bytes": 3621360128,
+        "waveform_shape": [
+          2,
+          49684,
+          1024
+        ]
+      },
+      "runs": [
+        {
+          "seed": 901,
+          "photons": 1000000,
+          "event_seconds": 3.0737028578296304,
+          "photons_per_second": 325340.4919908586,
+          "source_seconds": 0.2921845759265125,
+          "transport_seconds": 0.748171313200146,
+          "readout_seconds": 2.033346968702972,
+          "detected": 136171,
+          "photoelectrons": 122546,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 3621362176,
+          "waveform_shape": [
+            2,
+            49684,
+            1024
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 1000000,
+          "event_seconds": 3.0560451969504356,
+          "photons_per_second": 327220.29144002165,
+          "source_seconds": 0.3102678479626775,
+          "transport_seconds": 0.7164122089743614,
+          "readout_seconds": 2.0293651400133967,
+          "detected": 137034,
+          "photoelectrons": 123110,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 3621378048,
+          "waveform_shape": [
+            2,
+            49684,
+            1024
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 1000000,
+          "event_seconds": 17.30692225601524,
+          "photons_per_second": 57780.34853380342,
+          "source_seconds": 0.3178158849477768,
+          "transport_seconds": 14.884536729194224,
+          "readout_seconds": 2.1045696418732405,
+          "detected": 136040,
+          "photoelectrons": 122740,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 3621367296,
+          "waveform_shape": [
+            2,
+            49684,
+            1024
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 128004.53136972072,
+      "minimum_photons_per_second": 57780.34853380342,
+      "maximum_photons_per_second": 327220.29144002165
+    }
+  ],
+  "source_sha256": {
+    "chroma-lite/chroma/triton/examples/theia.py": "c70f966b02e2d48f023f539429eb39d38c38d684cf1b4b36b9fd395fd001169d",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lite/chroma/triton/regions.py": "d2412fcaf513505ce55698cca1804a5319a3f3a9afce830867e5bd470203bdd9",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/bvh_kernels.py": "5d4a9ac0b4458e09e9a82b49632842c34c6c552658a6802d6759631c4c177738",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5",
+    "chroma-lite/chroma/triton/boundary_kernels.py": "cad6ab84967ca1cc28b601b200faf34cb36d7d42ffe12ddcd47a73cf70ce400f",
+    "chroma-lite/chroma/triton/spectral.py": "55f916bed15ef5a5e92e0a7bec21aff8f94a1e2e67bd6f9bd6bb995546c81b0c",
+    "chroma-lite/chroma/triton/spectral_kernels.py": "2b7ecb0323fd69167c95aee0ff154afba9ebf697102ce8f12c7720971b67cba3",
+    "chroma-lite/chroma/demo/optics.py": "2e1547a2e7615343646077238d75324518e768902387460290439267bd334b76",
+    "chroma-lite/chroma/demo/sno_pmt_reduced.txt": "84a6307940856d3c653e24c291a562cebdd1e45141bbc7bfd25cfde5b3fa8517",
+    "chroma-lite/chroma/triton/optical_response.py": "623198c7ecf19d03d0e540dfdc5fc772da286ae543a8dfb522ce308a09fb16ef",
+    "chroma-lite/chroma/triton/digitizer_kernels.py": "22c50cd6e615d32811189a43b2691799d0199a3ed7663573dbfcdb444dd676aa",
+    "chroma-lar/benchmarks/benchmark_theia.py": "523e7f691d5d91f0728f9d127a649b0713e4e652f81aec1a608f9481f72c8ad1",
+    "chroma-lar/benchmarks/optical_parity.py": "bb118b15ce11d713ce7004d509cab3707cd993231221ff98e1cb814aa547a562"
+  },
+  "cpu_comparisons": [
+    {
+      "detected": 135,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 0.0,
+      "wavelength_atol_nm": 0.0,
+      "maximum_hit_time_difference_ns": 9.1552734375e-05,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 1000,
+      "seed": 44,
+      "source_seed": 51,
+      "cpu_seconds": 4.063117956276983
+    },
+    {
+      "detected": 1314,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 0.0,
+      "wavelength_atol_nm": 0.0,
+      "maximum_hit_time_difference_ns": 0.00018310546875,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 10000,
+      "seed": 44,
+      "source_seed": 51,
+      "cpu_seconds": 37.8322087880224
+    },
+    {
+      "detected": 1336,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 0.0,
+      "wavelength_atol_nm": 0.0,
+      "maximum_hit_time_difference_ns": 0.00054931640625,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 10000,
+      "seed": 101,
+      "source_seed": 108,
+      "cpu_seconds": 37.94524005893618
+    },
+    {
+      "detected": 1345,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 0.0,
+      "wavelength_atol_nm": 0.0,
+      "maximum_hit_time_difference_ns": 0.00079345703125,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 10000,
+      "seed": 2027,
+      "source_seed": 2034,
+      "cpu_seconds": 37.74718773085624
+    },
+    {
+      "detected": 13492,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels and wavelengths",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 0.0,
+      "wavelength_atol_nm": 0.0,
+      "maximum_hit_time_difference_ns": 0.0045623779296875,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 100000,
+      "seed": 101,
+      "source_seed": 108,
+      "cpu_seconds": 378.75554411206394
+    }
+  ],
+  "transport_comparison_provenance": {
+    "method": "reused previously completed comparisons; not rerun in this invocation",
+    "path": "chroma-lar/benchmarks/optical_validation/primitive_regions/theia_water_transport_131k.json",
+    "sha256": "1cd4a0628b068ec048d36059e6c6335213744490d47fded37db163812a27dd6d",
+    "prior_harness_sha256": "81a1854f9579a8c9acf135af088936c112d59b47d51eedb41873eedffdf43c91",
+    "readout_change": "pulse times shifted +2 ns to make the synthetic template causal; transport unchanged"
+  }
+}

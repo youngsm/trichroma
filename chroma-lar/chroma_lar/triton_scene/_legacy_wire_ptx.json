@@ -1,0 +1,15 @@
+{
+  "reference": "/sdf/group/neutrino/youngsam/sim/chroma-lite",
+  "reference_photon_header_sha256": "536fb902fa0952046cf7db02475e5dbf9db03575e1788e98ec04b2e81053fa48",
+  "source_sha256": "bd44cb1b7e25ba24840c2bde10e73cbeb9502948397f5bc299094df57cc10536",
+  "ptx_sha256": "c7b62eda7b3a0b1fd9f9809c8166fecb614637315e186fa977595d8d4d761f29",
+  "adapter_sha256": "66fdee1b67fe9fcaf004c35c48ecb9d0cf5169dac87b2776ccef82288e096545",
+  "cuda_options": [
+    "--use_fast_math",
+    "-Xptxas=-dlcm=ca",
+    "-diag-suppress=177,20044"
+  ],
+  "architecture": "sm_80",
+  "arithmetic_contract": "quadratic A = fma.rn.ftz(dn,dn,mul.rn.ftz(dv,dv)), matching the audited integrated original transport lowering",
+  "scope": "NVCC lowering of the original numerical wire primitive, scheduled inside Triton; not a CUDA transport-kernel dispatch"
+}

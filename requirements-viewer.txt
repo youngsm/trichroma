@@ -1,0 +1,7 @@
+# Optional Jupyter viewer environment, pinned to the locally tested versions.
+-r requirements-triton.txt
+ipywidgets==8.1.8
+pillow==12.2.0
+ipykernel==7.3.0
+jupyterlab==4.6.1
+nbclient==0.11.0

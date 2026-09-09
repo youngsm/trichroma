@@ -1,0 +1,1157 @@
+{
+  "host": "sdfampere032",
+  "device": "NVIDIA A100-SXM4-40GB",
+  "python": "3.10.20",
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0",
+  "configuration": {
+    "calibration": "/sdf/group/neutrino/youngsam/sim/triton_chroma/trichroma-primitives/chroma-lar/benchmarks/optical_validation/primitive_regions/pixel_synthetic_calibration.json",
+    "counts": [
+      100000,
+      1000000
+    ],
+    "repeats": 3,
+    "reference_count": 1000,
+    "output": "chroma-lar/benchmarks/optical_validation/primitive_regions/pixel_tpc.json"
+  },
+  "scope": "CPU LAr spectrum/time/position sampling, host input, general mesh spectral transport, full terminal-state download, PMT response, GPU pulse superposition, CPU noise/ADC, host-readable hits/PE/waveforms",
+  "excluded": "geometry construction, compilation warmup, file writes; fixed photon counts do not time Poisson yield sampling",
+  "backend": "general flattened-mesh SpectralSimulation; region certificates not used in transport",
+  "pixel_model": {
+    "simplified": true,
+    "pixels_per_face": 1000000,
+    "pitch_mm": 4.32,
+    "pad_size_mm": 2.419,
+    "chamfer_radius_mm": 0.43,
+    "non_gold_fr4_fraction": 0.5,
+    "non_gold_copper_fraction": 0.5
+  },
+  "calibration_status": "synthetic",
+  "calibration_provenance": "Synthetic pixel-TPC validation. LAr, TPB, PMT and readout inputs inherited from full_detector_synthetic_calibration_noise.json; averaged pixel optical properties sampled from the repository pixel_simplified=True configuration. Not measured calibration.",
+  "calibration_fingerprint": "07b86ae6846ac64215850280cf90381fcb48e40f4e3968d4a9750d468a2b5969",
+  "scene_fingerprint": "91527892e814eb39ae51b30011bae4f369455a2eae9dedb324446c5baa0a158f",
+  "source": "equal populations in 30 mm voxels centered at (-1000,0,0) and (1000,0,0) mm; calibrated VUV spectrum, singlet/triplet time and isotropic polarization",
+  "geometry": {
+    "channels": 164,
+    "triangles": 839732
+  },
+  "compiled_regions": {
+    "fingerprint": "a3e8bfee931626320ee906d972ecf264be93b31924f90a83e598a31631bf2ca1",
+    "dropped_cells": 235,
+    "coarse_domains": [],
+    "rejected_domains": {
+      "solid:0": "inconsistent or unknown exterior material"
+    },
+    "regions": [
+      {
+        "lower": [
+          -2160.0,
+          -2169.99072265625,
+          -2160.0
+        ],
+        "upper": [
+          -3.0,
+          2169.99072265625,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2169.99072265625,
+          -2160.0
+        ],
+        "upper": [
+          2160.0,
+          2169.99072265625,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -3.0,
+          -2295.414794921875,
+          -2160.0
+        ],
+        "upper": [
+          3.0,
+          2295.414794921875,
+          2160.0
+        ],
+        "material": 2,
+        "domain": "solid:166"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          1525.303955078125
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          1525.303955078125
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          1525.303955078125
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          1525.303955078125
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          -2295.414794921875,
+          1035.3021240234375
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          2169.990966796875,
+          1035.3021240234375
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          1904.6942138671875,
+          -2169.990966796875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          1035.3021240234375
+        ],
+        "upper": [
+          1904.6942138671875,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          1904.6942138671875,
+          2295.414794921875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          1035.3021240234375
+        ],
+        "upper": [
+          1904.6942138671875,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1268.556396484375,
+          -2169.990966796875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1268.556396484375,
+          2295.414794921875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -2015.3057861328125,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -2015.3057861328125,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          2015.3057861328125,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          2015.3057861328125,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -844.4644775390625,
+          -2295.414794921875,
+          545.3001708984375
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -844.4644775390625,
+          2169.990966796875,
+          545.3001708984375
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          545.3001708984375
+        ],
+        "upper": [
+          844.4644775390625,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          545.3001708984375
+        ],
+        "upper": [
+          844.4644775390625,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          -2160.0
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          2015.3057861328125
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          -2160.0
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          2015.3057861328125
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -2160.0
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          2015.3057861328125
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -2160.0
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          2015.3057861328125
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -632.4185791015625,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -318.92529296875,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -632.4185791015625,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -318.92529296875,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          318.92529296875,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          632.4185791015625,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          318.92529296875,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          632.4185791015625,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          -955.0679931640625,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          -955.0679931640625,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          955.0679931640625,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          1268.556396484375,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          955.0679931640625,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          1268.556396484375,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1379.1630859375,
+          -2169.990966796875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          -1379.1630859375,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1379.1630859375,
+          2295.414794921875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          -1379.1630859375,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1692.648193359375,
+          -2169.990966796875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          1692.648193359375,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1692.648193359375,
+          2295.414794921875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          1692.648193359375,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1803.25830078125,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1803.25830078125,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1803.25830078125,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1904.6942138671875,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1803.25830078125,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1904.6942138671875,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -208.32672119140625,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -208.32672119140625,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          208.32672119140625,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          208.32672119140625,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -955.0679931640625,
+          -2169.990966796875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      }
+    ]
+  },
+  "region_materials": [
+    "liquid_argon",
+    "vacuum",
+    "steel"
+  ],
+  "construction_seconds": 2.754001707304269,
+  "counts": [
+    {
+      "photons": 100000,
+      "warmup": {
+        "seed": 1729,
+        "photons": 100000,
+        "event_seconds": 0.24689497705549002,
+        "photons_per_second": 405030.51618391107,
+        "source_seconds": 0.042274096980690956,
+        "transport_seconds": 0.10405849991366267,
+        "readout_seconds": 0.10056238016113639,
+        "detected": 213,
+        "photoelectrons": 195,
+        "failure_count": 0,
+        "peak_torch_allocated_bytes": 115521024,
+        "waveform_shape": [
+          2,
+          164,
+          16000
+        ]
+      },
+      "runs": [
+        {
+          "seed": 901,
+          "photons": 100000,
+          "event_seconds": 0.2573258173651993,
+          "photons_per_second": 388612.38652194396,
+          "source_seconds": 0.041933923959732056,
+          "transport_seconds": 0.10357991931959987,
+          "readout_seconds": 0.1118119740858674,
+          "detected": 193,
+          "photoelectrons": 177,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 100000,
+          "event_seconds": 0.26451142225414515,
+          "photons_per_second": 378055.5075762249,
+          "source_seconds": 0.04184706509113312,
+          "transport_seconds": 0.12199957808479667,
+          "readout_seconds": 0.10066477907821536,
+          "detected": 196,
+          "photoelectrons": 176,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 100000,
+          "event_seconds": 0.24314896296709776,
+          "photons_per_second": 411270.51820299856,
+          "source_seconds": 0.04142766399309039,
+          "transport_seconds": 0.10123153729364276,
+          "readout_seconds": 0.10048976168036461,
+          "detected": 208,
+          "photoelectrons": 186,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 392163.9357490248,
+      "minimum_photons_per_second": 378055.5075762249,
+      "maximum_photons_per_second": 411270.51820299856
+    },
+    {
+      "photons": 1000000,
+      "warmup": {
+        "seed": 1729,
+        "photons": 1000000,
+        "event_seconds": 1.1973317568190396,
+        "photons_per_second": 835190.4092619306,
+        "source_seconds": 0.7617096579633653,
+        "transport_seconds": 0.33810502709820867,
+        "readout_seconds": 0.0975170717574656,
+        "detected": 2049,
+        "photoelectrons": 1850,
+        "failure_count": 0,
+        "peak_torch_allocated_bytes": 316505088,
+        "waveform_shape": [
+          2,
+          164,
+          16000
+        ]
+      },
+      "runs": [
+        {
+          "seed": 901,
+          "photons": 1000000,
+          "event_seconds": 1.1017586658708751,
+          "photons_per_second": 907639.7862589618,
+          "source_seconds": 0.6995888422243297,
+          "transport_seconds": 0.3032656400464475,
+          "readout_seconds": 0.0989041836000979,
+          "detected": 1977,
+          "photoelectrons": 1744,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319291904,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 1000000,
+          "event_seconds": 1.0593143119476736,
+          "photons_per_second": 944006.8813583598,
+          "source_seconds": 0.6546414191834629,
+          "transport_seconds": 0.30411439295858145,
+          "readout_seconds": 0.10055849980562925,
+          "detected": 1992,
+          "photoelectrons": 1794,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319300096,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 1000000,
+          "event_seconds": 1.042452341876924,
+          "photons_per_second": 959276.4674493521,
+          "source_seconds": 0.6391946896910667,
+          "transport_seconds": 0.30064359307289124,
+          "readout_seconds": 0.10261405911296606,
+          "detected": 1970,
+          "photoelectrons": 1774,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319306752,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 936468.3280496688,
+      "minimum_photons_per_second": 907639.7862589618,
+      "maximum_photons_per_second": 959276.4674493521
+    }
+  ],
+  "source_sha256": {
+    "chroma-lite/chroma/triton/bvh.py": "6f1ea939148962f4a587317bbf4463182f27b350369fbf905f7f395eaed3902f",
+    "chroma-lite/chroma/triton/bvh_kernels.py": "f495490b5ae06bc4eff1bf46f1d6091428bd5cd00762a260a3679bb24bd716f0",
+    "chroma-lite/chroma/triton/spectral.py": "43074a51d454c09654c7b0678e7ebdd73019103a4b3727bf038d95c6e137a1b2",
+    "chroma-lite/chroma/triton/spectral_kernels.py": "ab1c7869e6423d45752cd70378500eb991aedc287aaeb8d813f8722afdd69efd",
+    "chroma-lite/chroma/triton/optical_response.py": "623198c7ecf19d03d0e540dfdc5fc772da286ae543a8dfb522ce308a09fb16ef",
+    "chroma-lite/chroma/triton/digitizer_kernels.py": "22c50cd6e615d32811189a43b2691799d0199a3ed7663573dbfcdb444dd676aa",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lite/chroma/triton/regions.py": "d2412fcaf513505ce55698cca1804a5319a3f3a9afce830867e5bd470203bdd9",
+    "chroma-lar/chroma_lar/triton_scene/pixel_adapter.py": "dc535929ed5a0c025ffcabdeedaaf0684dce8a56b2770ba76eba1e944682b641",
+    "chroma-lar/chroma_lar/geometry/build_larcube_pixel.py": "8bc24c41c566cb1250d61cb9332787fedf5786ca38a1f59251decf80be66636a",
+    "chroma-lar/chroma_lar/geometry/pixelplane.py": "9ab3710654e00e44213800baa29b65f4bdb4539b9a4cd2c81ca128cdd450922b",
+    "chroma-lar/chroma_lar/geometry/pmt.py": "ba4019abaffefdf53254fe64cdc6dae232ad9507d237fceaeef19498aa7bcb17",
+    "chroma-lar/chroma_lar/optical_calibration.py": "15a56639a1c8f31ebd9b7b5a1aa95d8fec91115e2a354492eb47215d57e58372",
+    "chroma-lar/chroma_lar/optical_readout.py": "384d165f89574718b28396c4ae6102b57f42b0db68aa1b6d2a465e42f5b50b17",
+    "chroma-lar/chroma_lar/generator/scintillation.py": "27bc10fb5cf2202d76a3cc26bd7c3f552fc2479a4796de74f0e0223eb7603416",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.py": "9d0db78013f629874b508a64d5bb3e1752c9d1663547269cdffb1cb8df978ee1",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.yaml": "f6fee4cd3ece48755f1f96be980d49d6da102604af6446cd1d351d3c8a5067c9",
+    "chroma-lar/benchmarks/benchmark_pixel.py": "2fc2292d3e8786148a7db63c45615ab946d98d59ade7386c6e00c7bc9d34e042"
+  },
+  "cpu_comparison": {
+    "photons": 1000,
+    "seed": 44,
+    "source_seed": 51,
+    "cpu_seconds": 11.094440813176334,
+    "detected": 1,
+    "exact": "terminal flags, detected photon IDs and channels",
+    "hit_time_rtol": 1e-05,
+    "hit_time_atol_ns": 0.003,
+    "wavelength_rtol": 1e-06,
+    "wavelength_atol_nm": 0.0001,
+    "maximum_hit_time_difference_ns": 0.0,
+    "maximum_hit_wavelength_difference_nm": 0.0
+  },
+  "readout_comparison": {
+    "input": "same GPU optical hits passed to GPU and CPU readout",
+    "exact": "PE times, charges, photon IDs, channels and event indices",
+    "maximum_adc_difference": 0,
+    "allowed_adc_difference": 1,
+    "waveform_shape": [
+      2,
+      164,
+      16000
+    ]
+  }
+}

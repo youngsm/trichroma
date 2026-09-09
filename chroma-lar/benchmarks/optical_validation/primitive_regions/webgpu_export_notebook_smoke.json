@@ -1,0 +1,13 @@
+{
+  "executed_code_cells": 3,
+  "source_sha256": "1add2f3634262fa5d93fdb59bdb1dd91d8033e15451fe7b60898e3c1305dec49",
+  "archive_bytes": 1710533,
+  "archive_sha256": "3fcf327f37c919f4760e7392968f72ccca5473b109018ab7f1a854c7bd4c30d6",
+  "asset_hashes": {
+    "index.html": "4840e8b5e2e1d6306f27acdd26497a762bbf96c8cfe5cb54c89700dcfcaea62f",
+    "viewer.js": "d3c50d02245bffa2e25d0a19536e5f598014519f87253118f1f0871b50ead9ee",
+    "trace.wgsl": "79e93480cf07c641b9b4585d6a32665a6f2228bf5f90d5e3829e00750bb60d76"
+  },
+  "export_cpu_only": true,
+  "browser_rendering_separately_verified": true
+}

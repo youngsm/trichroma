@@ -1,0 +1,59 @@
+{
+  "scope": "Final exported HTML, stylesheet, legend, exposure, and debug-decoder checks",
+  "assets": {
+    "camera.html": "8adae4e641fb112e2c5efbe35e9d3eba0c2642ea6cb5118bf645769103dd955f",
+    "camera.js": "7c8a89c2d4a8cc4431e716ed7870e0300fcc5b9756314c8a4b98c891a49674d3",
+    "camera.wgsl": "b08f6cb046c980894845bf4bdae146f25ff865f680e5a8aa1805ffb95c45b84c",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "physics.html": "9c7c3d83b93b41805c254f609aa423f9d5c27e7f88b9b76df5a2b7daf7baf963",
+    "physics.js": "a9809d544258b3c30497fb77bf827576da01e202639e1a591a0a09db54fc9940",
+    "physics.wgsl": "ea4c6940e3f521522b02fae9e32971afe3e151cb9e5d34314c260859f88c0262",
+    "theme.css": "0787a9eec7a0913852769c68dcedf2b81a49aa579c0b169af59a6b6dd0eddd1f",
+    "fonts.css": "b22f4255964ace317918fe6de9be5c19ee7dfa24f753f5ee1048daa26e04e533",
+    "physics-prism.json": "91c0d2dcad1409b0f6427bef7a0a73e77fea9a861c05a1f4b6c58de12130bd79",
+    "physics-fluorescence.json": "a087f7b904d791b2487c174efe5056758fe650dcd35928f750f1b4218a90c6d9",
+    "physics-rayleigh.json": "ac2383eda05b7c4b98b89963fb18eae6b26a431af3a49af36e47f5d72d880dcf",
+    "physics-catalog.json": "7a7f16ac4e6db075cd1da94959fe12ccf4a937136cad1d3969213d1832c380d9",
+    "camera-prism.json": "d3dfd3129b49014da5b0fd40a04a0b7d984309723f8cb9c9ba9fa585d96430d1",
+    "camera-fluorescence.json": "a836f8d6337fc890ee552b2fafbc0c0f590df1c339bf3849fb5b8cfb50fd3fe5",
+    "camera-rayleigh.json": "fb7e7453bd109a23b40a9f29eb00acee898f663c75ca958b04520f670e6f31c6",
+    "camera-pmt.json": "3cb42abf6c1178d8b4b108ae5ec74239e9b09c07fd4edc2d25f66fc55de14c15",
+    "camera-catalog.json": "564ae7bdcee44c3ce67f57ce4f0ff762e542e43ec547eac2038d37974b23960d"
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "pmt": {
+    "count": {
+      "detected": 92,
+      "absorbed": 36,
+      "escaped": 0,
+      "reemitted": 74,
+      "scattered": 40,
+      "max_steps": 25,
+      "beam": 104,
+      "fill": 24,
+      "boundary_roundings": 0,
+      "photocathode": 10
+    },
+    "triangle_ids": 128,
+    "legend_visible": true,
+    "exposure": 5.6,
+    "cutaway": true,
+    "uv_false_color": false,
+    "font": "\"Linux Libertine\", Georgia, serif",
+    "background": "rgb(253, 253, 252)",
+    "finite": true,
+    "missing_detector_links": 0
+  },
+  "prism_legend_hidden": true,
+  "page_errors": [],
+  "passed": true
+}

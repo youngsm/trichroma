@@ -1,0 +1,40 @@
+{
+  "headers": {
+    "content-length": "122",
+    "content-security-policy": "frame-ancestors 'self'; report-uri /studio-test/api/security/csp-report; default-src 'none'",
+    "content-type": "application/json",
+    "date": "Wed, 09 Sep 2026 08:01:58 GMT",
+    "etag": "\"537e5d4aaab343d6fd9e53a5e0a6249d1c63f3e2\"",
+    "server": "TornadoServer/6.5.7",
+    "x-content-type-options": "nosniff"
+  },
+  "errors": [],
+  "messages": [
+    {
+      "type": "error",
+      "text": "Applying inline style violates the following Content Security Policy directive 'default-src 'none''. Either the 'unsafe-inline' keyword, a hash ('sha256-wYj9wU4S3SUdH+XA8E3UJwGiMwLPbDz3vmmW6VIXkRQ='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. Note also that 'style-src' was not explicitly set, so 'default-src' is used as a fallback. The action has been blocked."
+    },
+    {
+      "type": "error",
+      "text": "Loading the stylesheet 'http://localhost:41001/studio-test/api/fonts.css' violates the following Content Security Policy directive: \"default-src 'none'\". Note that 'style-src-elem' was not explicitly set, so 'default-src' is used as a fallback. The action has been blocked."
+    },
+    {
+      "type": "error",
+      "text": "Loading the stylesheet 'http://localhost:41001/studio-test/api/theme.css' violates the following Content Security Policy directive: \"default-src 'none'\". Note that 'style-src-elem' was not explicitly set, so 'default-src' is used as a fallback. The action has been blocked."
+    },
+    {
+      "type": "error",
+      "text": "Executing inline script violates the following Content Security Policy directive 'default-src 'none''. Either the 'unsafe-inline' keyword, a hash ('sha256-4UwugBu6U7E2bHPyvE5ttcL+tObkAuno5tFjIoCy/mA='), or a nonce ('nonce-...') is required to enable inline execution. Note also that 'script-src' was not explicitly set, so 'default-src' is used as a fallback. The action has been blocked."
+    },
+    {
+      "type": "error",
+      "text": "Loading the script 'data:text/javascript;base64,aW1wb3J0IHsKICBPcHRpY2FsTGFiCn0gZnJvbSAiZGF0YTp0ZXh0L2phdmFzY3JpcHQ7YmFzZTY0LEx5OGdVMjFoYkd3dGMyTmxibVVnYjNCMGFXTmhiQ0JOYjI1MFpTQkRZWEpzYnk0Z1JuVnNiQzFqYjNWdWRDQnZZbk5sY25aaFlteGxjeUJ6ZEdGNUlHOXVJSFJvWlNCSFVGVTdDaTh2SUc5dWJIa2dhR2x6ZEc5bmNtRnRjeUJoYm1RZ1lTQmliM1Z1WkdWa0lITmxkQ0J2WmlCeVpXRnNJSEJvYjNSdmJpQndZWFJvY3lCaGNtVWdaRzkzYm14dllXUmxaQzRLWTI5dWMzUWdVMVJCVkY5WFQxSkVVeUE5SURFMU56ZzRPd3BqYjI1emRDQlRRMFZPUlZNZ1BTQmJKM0J5YVhOdEp5d2dKMlpzZFc5eVpYTmpaVzVqWlNjc0lDZHlZWGxzWldsbmFDZGR...kpID0+IE1hdGgubWF4KC1IQUxGW2ldICsgMiwgTWF0aC5taW4oSEFMRltpXSAtIDIsIGNhbWVyYQogICAgICAudGFyZ2V0W2ldICsgKHggLSBjYW1lcmEudGFyZ2V0W2ldKSAqIHNjYWxlKSkpOwogICAgc2NoZWR1bGUodHJ1ZSk7CiAgfTsKICBzdGF0dXMoJ1JlYWR5LiBTaW11bGF0ZSBhbiBvcHRpY2FsIGV2ZW50IHRvIGlsbHVtaW5hdGUgdGhlIHN0dWRpby4nKTsKICBpZiAoIW5ldyBVUkxTZWFyY2hQYXJhbXMoIj9tYW51YWw9MSZmYWxsYmFjaz0xIikuaGFzKCdtYW51YWwnKSkgJCgnc2ltdWxhdGUnKS5jbGljaygpOwogIHJldHVybiBpbmZvOwp9KS5jYXRjaChlcnJvciA9PiB7CiAgc3RhdHVzKGVycm9yLm1lc3NhZ2UsIHRydWUpOwogIHRocm93IGVycm9yOwp9KTsK' violates the following Content Security Policy directive: \"default-src 'none'\". Note that 'script-src-elem' was not explicitly set, so 'default-src' is used as a fallback. The action has been blocked."
+    },
+    {
+      "type": "error",
+      "text": " Note that 'script-src' was not explicitly set, so 'default-src' is used as a fallback."
+    }
+  ],
+  "html_byte_length": 1222728,
+  "note": "Superseded diagnostic: API responses intentionally deny scripts; final iframe smoke uses actual Jupyter HTML policy."
+}

@@ -1,0 +1,1325 @@
+{
+  "host": "sdfampere032",
+  "device": "NVIDIA A100-SXM4-40GB",
+  "python": "3.10.20",
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0",
+  "configuration": {
+    "calibration": "/sdf/group/neutrino/youngsam/sim/triton_chroma/trichroma-primitives/chroma-lar/benchmarks/optical_validation/primitive_regions/pixel_synthetic_calibration.json",
+    "counts": [
+      100000,
+      1000000
+    ],
+    "repeats": 3,
+    "reference_count": 10000,
+    "reference_seeds": [
+      44,
+      101,
+      2027
+    ],
+    "output": "chroma-lar/benchmarks/optical_validation/primitive_regions/pixel_tpc_final.json"
+  },
+  "scope": "CPU LAr spectrum/time/position sampling, host input, general mesh spectral transport, full terminal-state download, PMT response, GPU pulse superposition, CPU noise/ADC, host-readable hits/PE/waveforms",
+  "excluded": "geometry construction, compilation warmup, file writes; fixed photon counts do not time Poisson yield sampling",
+  "backend": "general flattened-mesh SpectralSimulation; region certificates not used in transport",
+  "pixel_model": {
+    "simplified": true,
+    "pixels_per_face": 1000000,
+    "pitch_mm": 4.32,
+    "pad_size_mm": 2.419,
+    "chamfer_radius_mm": 0.43,
+    "non_gold_fr4_fraction": 0.5,
+    "non_gold_copper_fraction": 0.5
+  },
+  "calibration_status": "synthetic",
+  "calibration_provenance": "Synthetic pixel-TPC validation. LAr, TPB, PMT and readout inputs inherited from full_detector_synthetic_calibration_noise.json; averaged pixel optical properties sampled from the repository pixel_simplified=True configuration. Not measured calibration.",
+  "calibration_fingerprint": "07b86ae6846ac64215850280cf90381fcb48e40f4e3968d4a9750d468a2b5969",
+  "scene_fingerprint": "42a8540bd9ef7ebe5a651a97306829a1a44ec4231278931e491866cf06f0379d",
+  "source": "equal populations in 30 mm voxels centered at (-1000,0,0) and (1000,0,0) mm; calibrated VUV spectrum, singlet/triplet time and isotropic polarization",
+  "geometry": {
+    "channels": 164,
+    "triangles": 839732
+  },
+  "compiled_regions": {
+    "fingerprint": "a3e8bfee931626320ee906d972ecf264be93b31924f90a83e598a31631bf2ca1",
+    "dropped_cells": 235,
+    "coarse_domains": [],
+    "rejected_domains": {
+      "solid:0": "inconsistent or unknown exterior material"
+    },
+    "regions": [
+      {
+        "lower": [
+          -2160.0,
+          -2169.99072265625,
+          -2160.0
+        ],
+        "upper": [
+          -3.0,
+          2169.99072265625,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2169.99072265625,
+          -2160.0
+        ],
+        "upper": [
+          2160.0,
+          2169.99072265625,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -3.0,
+          -2295.414794921875,
+          -2160.0
+        ],
+        "upper": [
+          3.0,
+          2295.414794921875,
+          2160.0
+        ],
+        "material": 2,
+        "domain": "solid:166"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          1525.303955078125
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          1525.303955078125
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          1525.303955078125
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -1904.6942138671875
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          -1525.303955078125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          1525.303955078125
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          1904.6942138671875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          -2295.414794921875,
+          1035.3021240234375
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          2169.990966796875,
+          1035.3021240234375
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          1904.6942138671875,
+          -2169.990966796875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          1035.3021240234375
+        ],
+        "upper": [
+          1904.6942138671875,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          1904.6942138671875,
+          2295.414794921875,
+          -1035.3021240234375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          1035.3021240234375
+        ],
+        "upper": [
+          1904.6942138671875,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1268.556396484375,
+          -2169.990966796875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1268.556396484375,
+          2295.414794921875,
+          -545.3001708984375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -2015.3057861328125,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          -2015.3057861328125,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          2015.3057861328125,
+          -2295.414794921875,
+          -1414.696044921875
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          2015.3057861328125,
+          2169.990966796875,
+          -1414.696044921875
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          1414.696044921875
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -844.4644775390625,
+          -2295.414794921875,
+          545.3001708984375
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -844.4644775390625,
+          2169.990966796875,
+          545.3001708984375
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          545.3001708984375
+        ],
+        "upper": [
+          844.4644775390625,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          545.3001708984375
+        ],
+        "upper": [
+          844.4644775390625,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          -2160.0
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          -2295.414794921875,
+          2015.3057861328125
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          -2160.0
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -2160.0,
+          2169.990966796875,
+          2015.3057861328125
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -2160.0
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          2015.3057861328125
+        ],
+        "upper": [
+          2160.0,
+          -2169.990966796875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -2160.0
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          -2015.3057861328125
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          2015.3057861328125
+        ],
+        "upper": [
+          2160.0,
+          2295.414794921875,
+          2160.0
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -632.4185791015625,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -318.92529296875,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -632.4185791015625,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -318.92529296875,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          318.92529296875,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          632.4185791015625,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          318.92529296875,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          632.4185791015625,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          -955.0679931640625,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          -955.0679931640625,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          955.0679931640625,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          1268.556396484375,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          955.0679931640625,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          1268.556396484375,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1379.1630859375,
+          -2169.990966796875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          -1379.1630859375,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1379.1630859375,
+          2295.414794921875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1692.648193359375,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          -1379.1630859375,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1692.648193359375,
+          -2169.990966796875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          -2295.414794921875,
+          55.29827880859375
+        ],
+        "upper": [
+          1692.648193359375,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1692.648193359375,
+          2295.414794921875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1379.1630859375,
+          2169.990966796875,
+          55.29827880859375
+        ],
+        "upper": [
+          1692.648193359375,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1803.25830078125,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1904.6942138671875,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          -1803.25830078125,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1803.25830078125,
+          -2295.414794921875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1904.6942138671875,
+          -2169.990966796875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          1803.25830078125,
+          2169.990966796875,
+          -924.6979370117188
+        ],
+        "upper": [
+          1904.6942138671875,
+          2295.414794921875,
+          924.6979370117188
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -208.32672119140625,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -3.0,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -208.32672119140625,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -3.0,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          208.32672119140625,
+          -2169.990966796875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          3.0,
+          2169.990966796875,
+          -434.6998291015625
+        ],
+        "upper": [
+          208.32672119140625,
+          2295.414794921875,
+          434.6998291015625
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      },
+      {
+        "lower": [
+          -1268.556396484375,
+          -2295.414794921875,
+          -434.6998291015625
+        ],
+        "upper": [
+          -955.0679931640625,
+          -2169.990966796875,
+          -55.29827880859375
+        ],
+        "material": 0,
+        "domain": "solid:165"
+      }
+    ]
+  },
+  "region_materials": [
+    "liquid_argon",
+    "vacuum",
+    "steel"
+  ],
+  "construction_seconds": 2.6818078197538853,
+  "counts": [
+    {
+      "photons": 100000,
+      "warmup": {
+        "seed": 1729,
+        "photons": 100000,
+        "event_seconds": 0.3153515011072159,
+        "photons_per_second": 317106.4657973553,
+        "source_seconds": 0.043282030150294304,
+        "transport_seconds": 0.17106662271544337,
+        "readout_seconds": 0.1010028482414782,
+        "detected": 214,
+        "photoelectrons": 196,
+        "failure_count": 0,
+        "peak_torch_allocated_bytes": 115521024,
+        "waveform_shape": [
+          2,
+          164,
+          16000
+        ]
+      },
+      "runs": [
+        {
+          "seed": 901,
+          "photons": 100000,
+          "event_seconds": 0.28371071396395564,
+          "photons_per_second": 352471.70825104835,
+          "source_seconds": 0.041234961710870266,
+          "transport_seconds": 0.14324141899123788,
+          "readout_seconds": 0.0992343332618475,
+          "detected": 193,
+          "photoelectrons": 177,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 100000,
+          "event_seconds": 0.31792128924280405,
+          "photons_per_second": 314543.2639574748,
+          "source_seconds": 0.041733331978321075,
+          "transport_seconds": 0.17719852924346924,
+          "readout_seconds": 0.09898942802101374,
+          "detected": 194,
+          "photoelectrons": 174,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 100000,
+          "event_seconds": 0.2895295759662986,
+          "photons_per_second": 345387.8577559899,
+          "source_seconds": 0.04183646012097597,
+          "transport_seconds": 0.14448549272492528,
+          "readout_seconds": 0.10320762312039733,
+          "detected": 208,
+          "photoelectrons": 186,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        }
+      ],
+      "seed_warmups": [
+        {
+          "seed": 901,
+          "photons": 100000,
+          "event_seconds": 0.28511441592127085,
+          "photons_per_second": 350736.38657265645,
+          "source_seconds": 0.04214330296963453,
+          "transport_seconds": 0.14295355509966612,
+          "readout_seconds": 0.1000175578519702,
+          "detected": 193,
+          "photoelectrons": 177,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 100000,
+          "event_seconds": 0.3215153347700834,
+          "photons_per_second": 311027.1554279372,
+          "source_seconds": 0.042156952898949385,
+          "transport_seconds": 0.17480061715468764,
+          "readout_seconds": 0.1045577647164464,
+          "detected": 194,
+          "photoelectrons": 174,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 100000,
+          "event_seconds": 0.29547832487151027,
+          "photons_per_second": 338434.29985426285,
+          "source_seconds": 0.0419072387740016,
+          "transport_seconds": 0.14606757136061788,
+          "readout_seconds": 0.10750351473689079,
+          "detected": 208,
+          "photoelectrons": 186,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 115519488,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 336639.28855458635,
+      "minimum_photons_per_second": 314543.2639574748,
+      "maximum_photons_per_second": 352471.70825104835
+    },
+    {
+      "photons": 1000000,
+      "warmup": {
+        "seed": 1729,
+        "photons": 1000000,
+        "event_seconds": 1.331128818448633,
+        "photons_per_second": 751242.0932824911,
+        "source_seconds": 0.7445948282256722,
+        "transport_seconds": 0.48800467280671,
+        "readout_seconds": 0.0985293174162507,
+        "detected": 2051,
+        "photoelectrons": 1852,
+        "failure_count": 0,
+        "peak_torch_allocated_bytes": 316505088,
+        "waveform_shape": [
+          2,
+          164,
+          16000
+        ]
+      },
+      "runs": [
+        {
+          "seed": 901,
+          "photons": 1000000,
+          "event_seconds": 1.2514592572115362,
+          "photons_per_second": 799067.1643822987,
+          "source_seconds": 0.6731974789872766,
+          "transport_seconds": 0.4840418533422053,
+          "readout_seconds": 0.09421992488205433,
+          "detected": 1981,
+          "photoelectrons": 1748,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319291904,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 1000000,
+          "event_seconds": 1.2347509968094528,
+          "photons_per_second": 809879.8888066987,
+          "source_seconds": 0.6453302050940692,
+          "transport_seconds": 0.49027649592608213,
+          "readout_seconds": 0.0991442957893014,
+          "detected": 1986,
+          "photoelectrons": 1788,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319300096,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 1000000,
+          "event_seconds": 1.249431817792356,
+          "photons_per_second": 800363.8019775407,
+          "source_seconds": 0.6650401437655091,
+          "transport_seconds": 0.4868588959798217,
+          "readout_seconds": 0.0975327780470252,
+          "detected": 1974,
+          "photoelectrons": 1778,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319306752,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        }
+      ],
+      "seed_warmups": [
+        {
+          "seed": 901,
+          "photons": 1000000,
+          "event_seconds": 1.31890182569623,
+          "photons_per_second": 758206.5476875914,
+          "source_seconds": 0.7391398679465055,
+          "transport_seconds": 0.48272910015657544,
+          "readout_seconds": 0.09703285759314895,
+          "detected": 1981,
+          "photoelectrons": 1748,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319291904,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 1910,
+          "photons": 1000000,
+          "event_seconds": 1.2759430990554392,
+          "photons_per_second": 783734.0087816489,
+          "source_seconds": 0.6869136104360223,
+          "transport_seconds": 0.4920060206204653,
+          "readout_seconds": 0.09702346799895167,
+          "detected": 1986,
+          "photoelectrons": 1788,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319300096,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        },
+        {
+          "seed": 2919,
+          "photons": 1000000,
+          "event_seconds": 1.2711983062326908,
+          "photons_per_second": 786659.323802585,
+          "source_seconds": 0.6915673562325537,
+          "transport_seconds": 0.48584806593135,
+          "readout_seconds": 0.0937828840687871,
+          "detected": 1974,
+          "photoelectrons": 1778,
+          "failure_count": 0,
+          "peak_torch_allocated_bytes": 319306752,
+          "waveform_shape": [
+            2,
+            164,
+            16000
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 803074.7974052419,
+      "minimum_photons_per_second": 799067.1643822987,
+      "maximum_photons_per_second": 809879.8888066987
+    }
+  ],
+  "source_sha256": {
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/bvh_kernels.py": "5d4a9ac0b4458e09e9a82b49632842c34c6c552658a6802d6759631c4c177738",
+    "chroma-lite/chroma/triton/boundary.py": "0ba25d0d01da7862f988dea0614777dbab828a61c53d0f5615efd8ed5d995bf5",
+    "chroma-lite/chroma/triton/boundary_kernels.py": "cad6ab84967ca1cc28b601b200faf34cb36d7d42ffe12ddcd47a73cf70ce400f",
+    "chroma-lite/chroma/triton/spectral.py": "55f916bed15ef5a5e92e0a7bec21aff8f94a1e2e67bd6f9bd6bb995546c81b0c",
+    "chroma-lite/chroma/triton/spectral_kernels.py": "2b7ecb0323fd69167c95aee0ff154afba9ebf697102ce8f12c7720971b67cba3",
+    "chroma-lite/chroma/triton/optical_response.py": "623198c7ecf19d03d0e540dfdc5fc772da286ae543a8dfb522ce308a09fb16ef",
+    "chroma-lite/chroma/triton/digitizer_kernels.py": "22c50cd6e615d32811189a43b2691799d0199a3ed7663573dbfcdb444dd676aa",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lite/chroma/triton/regions.py": "d2412fcaf513505ce55698cca1804a5319a3f3a9afce830867e5bd470203bdd9",
+    "chroma-lar/chroma_lar/triton_scene/pixel_adapter.py": "dc535929ed5a0c025ffcabdeedaaf0684dce8a56b2770ba76eba1e944682b641",
+    "chroma-lar/chroma_lar/geometry/build_larcube_pixel.py": "8bc24c41c566cb1250d61cb9332787fedf5786ca38a1f59251decf80be66636a",
+    "chroma-lar/chroma_lar/geometry/pixelplane.py": "9ab3710654e00e44213800baa29b65f4bdb4539b9a4cd2c81ca128cdd450922b",
+    "chroma-lar/chroma_lar/geometry/pmt.py": "ba4019abaffefdf53254fe64cdc6dae232ad9507d237fceaeef19498aa7bcb17",
+    "chroma-lar/chroma_lar/optical_calibration.py": "15a56639a1c8f31ebd9b7b5a1aa95d8fec91115e2a354492eb47215d57e58372",
+    "chroma-lar/chroma_lar/optical_readout.py": "384d165f89574718b28396c4ae6102b57f42b0db68aa1b6d2a465e42f5b50b17",
+    "chroma-lar/chroma_lar/generator/scintillation.py": "27bc10fb5cf2202d76a3cc26bd7c3f552fc2479a4796de74f0e0223eb7603416",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.py": "9d0db78013f629874b508a64d5bb3e1752c9d1663547269cdffb1cb8df978ee1",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.yaml": "f6fee4cd3ece48755f1f96be980d49d6da102604af6446cd1d351d3c8a5067c9",
+    "chroma-lar/benchmarks/benchmark_pixel.py": "e9d0d15fc90a4cfc8864a77657c0e64aa24028d1e4f2e7dee3888eb4a6ae25b7",
+    "chroma-lar/benchmarks/optical_parity.py": "bb118b15ce11d713ce7004d509cab3707cd993231221ff98e1cb814aa547a562"
+  },
+  "cpu_comparisons": [
+    {
+      "detected": 1,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 1e-06,
+      "wavelength_atol_nm": 0.0001,
+      "maximum_hit_time_difference_ns": 3.814697265625e-06,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 1000,
+      "seed": 44,
+      "source_seed": 51,
+      "cpu_seconds": 11.095710034947842
+    },
+    {
+      "detected": 21,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 1e-06,
+      "wavelength_atol_nm": 0.0001,
+      "maximum_hit_time_difference_ns": 0.00048828125,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 10000,
+      "seed": 44,
+      "source_seed": 51,
+      "cpu_seconds": 114.92577832192183
+    },
+    {
+      "detected": 29,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 1e-06,
+      "wavelength_atol_nm": 0.0001,
+      "maximum_hit_time_difference_ns": 0.000244140625,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 10000,
+      "seed": 101,
+      "source_seed": 108,
+      "cpu_seconds": 110.25923670921475
+    },
+    {
+      "detected": 20,
+      "flag_mismatches": 0,
+      "exact": "terminal flags, detected photon IDs, channels",
+      "hit_time_rtol": 1e-05,
+      "hit_time_atol_ns": 0.003,
+      "wavelength_rtol": 1e-06,
+      "wavelength_atol_nm": 0.0001,
+      "maximum_hit_time_difference_ns": 0.0001220703125,
+      "maximum_hit_wavelength_difference_nm": 0.0,
+      "photons": 10000,
+      "seed": 2027,
+      "source_seed": 2034,
+      "cpu_seconds": 110.30406768294051
+    }
+  ],
+  "readout_comparison": {
+    "input": "same GPU optical hits passed to GPU and CPU readout",
+    "exact": "PE times, charges, photon IDs, channels and event indices",
+    "maximum_adc_difference": 0,
+    "allowed_adc_difference": 1,
+    "waveform_shape": [
+      2,
+      164,
+      16000
+    ]
+  }
+}

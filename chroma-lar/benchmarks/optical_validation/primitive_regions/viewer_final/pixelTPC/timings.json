@@ -1,0 +1,162 @@
+{
+  "kind": "opaque_geometry_camera_rays",
+  "optical_transport": false,
+  "includes": [
+    "ray generation",
+    "nearest triangle/analytic boundary traversal",
+    "headlight shading",
+    "antialias sample reduction",
+    "overflow check",
+    "RGB image download"
+  ],
+  "excludes": [
+    "setup/JIT/warmup",
+    "PNG encoding (reported separately)",
+    "widget transfer",
+    "browser painting"
+  ],
+  "detector": {
+    "name": "pixelTPC",
+    "config": "detector_config_pixel",
+    "sensor_instances": 164,
+    "solid_instances": 167,
+    "triangles": 839732,
+    "active_dimensions_mm": {
+      "x": [
+        -2160.0,
+        2160.0
+      ],
+      "y": [
+        -2160.0,
+        2160.0
+      ],
+      "z": [
+        -2160.0,
+        2160.0
+      ]
+    },
+    "diameter_mm": 111.252,
+    "representation": "original pixel_simplified=True; area-averaged pixel faces",
+    "pixel_simplified": true,
+    "pads_per_face": 1000000,
+    "resolved_pad_triangles": false,
+    "pixel_pitch_mm": 4.32
+  },
+  "device": "NVIDIA A100-SXM4-40GB",
+  "python": "3.10.20",
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0",
+  "setup_seconds": 0.8437801939435303,
+  "warmup_seconds": 0.6136419288814068,
+  "records": [
+    {
+      "rays_per_frame": 100000,
+      "frames": [
+        {
+          "rays": 100000,
+          "render_seconds": 0.0010128188878297806,
+          "png_encode_seconds": 0.004613236058503389,
+          "png_bytes": 43770,
+          "image_sha256": "0188be63eccb94bae8638534d9aa23df46f640460b40f1e94d7d2d684e986146"
+        },
+        {
+          "rays": 100000,
+          "render_seconds": 0.0009637400507926941,
+          "png_encode_seconds": 0.004587005823850632,
+          "png_bytes": 43643,
+          "image_sha256": "e344b3720874acc56c02a38e9f1cf6fa096d8ae06557054871cccc2a423ed9c3"
+        },
+        {
+          "rays": 100000,
+          "render_seconds": 0.0009621400386095047,
+          "png_encode_seconds": 0.005273512098938227,
+          "png_bytes": 43092,
+          "image_sha256": "229d2f1c245a02ed28aca6a5f4979648e12222cdf0c718584a4c1f38bbbbc98b"
+        },
+        {
+          "rays": 100000,
+          "render_seconds": 0.0010234792716801167,
+          "png_encode_seconds": 0.004458059091120958,
+          "png_bytes": 43160,
+          "image_sha256": "c6c94227cbb3810dcbe664df65c47b7dd09de165cacff6bfeb784d0061666b2f"
+        },
+        {
+          "rays": 100000,
+          "render_seconds": 0.0009918292053043842,
+          "png_encode_seconds": 0.0058118319138884544,
+          "png_bytes": 43728,
+          "image_sha256": "a55c238c49cc0a2447a5922674bffb8e2664bfb461913f02ce5c0566e788893c"
+        }
+      ],
+      "sustained_rays_per_second": 100928390.72626697,
+      "mean_frame_seconds": 0.000990801490843296,
+      "median_frame_seconds": 0.0009918292053043842
+    },
+    {
+      "rays_per_frame": 2500000,
+      "frames": [
+        {
+          "rays": 2500000,
+          "render_seconds": 0.0055343168787658215,
+          "png_encode_seconds": 0.02859199559316039,
+          "png_bytes": 128706,
+          "image_sha256": "bf26dfcdf5d7c0c939ebf276cd491158193ccafc259275dded5be9b58a32db91"
+        },
+        {
+          "rays": 2500000,
+          "render_seconds": 0.004589226562529802,
+          "png_encode_seconds": 0.027803813107311726,
+          "png_bytes": 129338,
+          "image_sha256": "87e52323de7db3bf33c2b246bbed653b19731eb3499f9e6f2c76e5467de7519a"
+        },
+        {
+          "rays": 2500000,
+          "render_seconds": 0.0046715447679162025,
+          "png_encode_seconds": 0.02511751838028431,
+          "png_bytes": 130723,
+          "image_sha256": "437ce8167c1d567848d5649a430961ec86f29171ca9d989bdf889f83b12d7bf4"
+        },
+        {
+          "rays": 2500000,
+          "render_seconds": 0.004544257186353207,
+          "png_encode_seconds": 0.025055169127881527,
+          "png_bytes": 131332,
+          "image_sha256": "9efedb734612f3c644f0ba2855ee1ecaef8b0c2cdc311127800676d1ef24d395"
+        },
+        {
+          "rays": 2500000,
+          "render_seconds": 0.004650434944778681,
+          "png_encode_seconds": 0.027848741970956326,
+          "png_bytes": 132921,
+          "image_sha256": "c6ae6705ad586bbdf79f8fbc62f928fa76d8d9e7ba82946f0cb5d28c5102d289"
+        }
+      ],
+      "sustained_rays_per_second": 521055208.62059325,
+      "mean_frame_seconds": 0.004797956068068742,
+      "median_frame_seconds": 0.004650434944778681
+    }
+  ],
+  "source_hashes": {
+    "chroma-lite/chroma/triton/viewer.py": "ef15fce94a6c9f4a41a88e599e77e5756731e0ae70ebed910fddf0506e6905db",
+    "chroma-lar/chroma_lar/viewer_examples.py": "9ca597a02512cf667c9e7aca204db7c5090926c0ac081fe3a255f6f899628c88",
+    "chroma-lar/chroma_lar/viewer_analytic.py": "56d25e9858b7ca5e79644704e68da8d93a6bdb2608a7ca0015018e428d75c0fc",
+    "chroma-lar/chroma_lar/triton_scene/intersect.py": "60ee174152c81bcab651bed29d598231b4812dd1850b4874dfd348dd0dfc09df",
+    "chroma-lar/chroma_lar/triton_scene/compiler.py": "0a5b7a0671cf9b48dbead1b0f52f2b7813b1180142f77fdf306b45eb40995b25",
+    "chroma-lar/chroma_lar/geometry/build_larcube.py": "fbf0bd1a2348baddd20f5c765b472b22e452ba6aba3d3cd31a8d11e65ab36756",
+    "chroma-lar/chroma_lar/geometry/build_larcube_pixel.py": "8bc24c41c566cb1250d61cb9332787fedf5786ca38a1f59251decf80be66636a",
+    "chroma-lar/chroma_lar/geometry/pixelplane.py": "9ab3710654e00e44213800baa29b65f4bdb4539b9a4cd2c81ca128cdd450922b",
+    "chroma-lar/chroma_lar/geometry/wireplane.py": "1038f919ba94470d23e7155e0321d82c3bcec9d22d5055b13f3b50895f570ca0",
+    "chroma-lar/chroma_lar/config/detector_config_reflect_reflect3wires.py": "0149c5cb2c00e7cfefaaf5d75e1a5b79c502bd100462bc40f86068ea69e6cc6f",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.py": "9d0db78013f629874b508a64d5bb3e1752c9d1663547269cdffb1cb8df978ee1",
+    "chroma-lar/chroma_lar/config/detector_config.yaml": "4a42e02ad7835e0667042d6308978e0c05d2c110b282d7efc11f44892c35277d",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.yaml": "f6fee4cd3ece48755f1f96be980d49d6da102604af6446cd1d351d3c8a5067c9",
+    "chroma-lite/chroma/triton/examples/theia.py": "c70f966b02e2d48f023f539429eb39d38c38d684cf1b4b36b9fd395fd001169d",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lar/benchmarks/benchmark_viewer.py": "29afafffb353c74e546af78f101e5e633085666e86f3fcaceaf1a5386a640aad",
+    "chroma-lite/chroma/triton/viewer_kernels.py": "217e1566a99ba7ca7d014ff16649585f1d3edfac3b364708d2e470a09d8f75fb",
+    "chroma-lite/chroma/triton/bvh_kernels.py": "5d4a9ac0b4458e09e9a82b49632842c34c6c552658a6802d6759631c4c177738",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lar/chroma_lar/triton_scene/instances.py": "c13efc2779faa09e7b5be2531d5aaceb0c8a28663d8db32bad852820730cce34",
+    "chroma-lar/chroma_lar/triton_scene/primitive_adapter.py": "507b6f080a53cbb3deb8352c47343058b687d24dc67f6fb8202fcf19f9436c20"
+  }
+}

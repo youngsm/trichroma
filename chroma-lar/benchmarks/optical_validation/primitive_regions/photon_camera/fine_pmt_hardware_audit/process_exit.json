@@ -1,0 +1,6 @@
+{
+  "exit_code": 143,
+  "verification_report_complete": true,
+  "verification_passed": true,
+  "cleanup_signal_cause": "Not identified; no agent reports sending process signals. A fresh complete audit is required to verify normal cleanup."
+}

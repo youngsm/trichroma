@@ -1,0 +1,1197 @@
+{
+  "calibration_fingerprint": "6cec99620b559836eaae20f7d0dbb9c7bd678e2a748f355671d4e9c950507c07",
+  "calibration_status": "synthetic",
+  "compiled_regions": {
+    "coarse_domains": [],
+    "dropped_cells": 405,
+    "fingerprint": "a399da25a827b989edf31271a1b69ad6dcfdad2d73ffc8bc0be3d5138f7ff81a",
+    "regions": [
+      {
+        "domain": "box:163",
+        "lower": [
+          -2153.9248046875,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -3.0,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          3.0,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2153.9248046875,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -786.7688598632812,
+          -1357.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          -997.3010864257812
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -786.7688598632812,
+          -1357.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          -997.3010864257812
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -786.7688598632812,
+          -886.6987915039062
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          -526.3010864257812
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -786.7688598632812,
+          997.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          1357.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -786.7688598632812,
+          -886.6987915039062
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          -526.3010864257812
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -786.7688598632812,
+          997.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          1357.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -786.7688598632812,
+          526.3012084960938
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          886.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -786.7688598632812,
+          526.3012084960938
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          886.6988525390625
+        ]
+      },
+      {
+        "domain": "box:164",
+        "lower": [
+          -3.0,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 3,
+        "upper": [
+          3.0,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -1728.768798828125,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          -1548.2451171875,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -1728.768798828125,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          -1548.2451171875,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          -2019.2451171875,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          -2019.2451171875,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2159.9248046875,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2157.0751953125,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2156.9248046875,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2154.0751953125,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2154.0751953125,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2156.9248046875,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2157.0751953125,
+          -2160.0,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2159.9248046875,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -1257.768798828125,
+          -886.6987915039062
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          -1077.2451171875,
+          886.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -1257.768798828125,
+          -886.6987915039062
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          -1077.2451171875,
+          886.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -495.6429443359375,
+          55.301090240478516
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          335.75494384765625,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -495.6429443359375,
+          55.301090240478516
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          335.75494384765625,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -495.6429443359375,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          335.75494384765625,
+          -55.301029205322266
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -495.6429443359375,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          335.75494384765625,
+          -55.301029205322266
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          917.3571166992188,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          1277.7548828125,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          917.3571166992188,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          1277.7548828125,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -495.6429443359375,
+          -1828.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          335.75494384765625,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -495.6429443359375,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          335.75494384765625,
+          1828.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -495.6429443359375,
+          -1828.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          335.75494384765625,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -495.6429443359375,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          335.75494384765625,
+          1828.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          446.35711669921875,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          806.7548217773438,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          1388.357177734375,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          1748.7548828125,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          446.35711669921875,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          806.7548217773438,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          1388.357177734375,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          1748.7548828125,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -1257.768798828125,
+          -1828.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          -897.3711547851562,
+          -997.3010864257812
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -1257.768798828125,
+          -1828.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          -897.3711547851562,
+          -997.3010864257812
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -1257.768798828125,
+          997.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          -897.3711547851562,
+          1828.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -1257.768798828125,
+          997.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          -897.3711547851562,
+          1828.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -1908.642822265625,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          -1839.37109375,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -1437.642822265625,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          -1368.37109375,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -1908.642822265625,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          -1839.37109375,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -1437.642822265625,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          -1368.37109375,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          1388.357177734375,
+          -1828.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          1388.357177734375,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          1828.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          1388.357177734375,
+          -1828.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          1388.357177734375,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          1828.6988525390625
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          1859.357177734375,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          1859.357177734375,
+          -415.6988525390625
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          415.698974609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          917.3571166992188,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          1277.7548828125,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          917.3571166992188,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          1277.7548828125,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          917.3571166992188,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          1277.7548828125,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          917.3571166992188,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          1277.7548828125,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          446.35711669921875,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          806.7548217773438,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          446.35711669921875,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          806.7548217773438,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          446.35711669921875,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          806.7548217773438,
+          -1468.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          446.35711669921875,
+          1468.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          806.7548217773438,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -495.6429443359375,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          335.75494384765625,
+          -1939.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          -495.6429443359375,
+          1939.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          335.75494384765625,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -495.6429443359375,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          335.75494384765625,
+          -1939.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          -495.6429443359375,
+          1939.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          335.75494384765625,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          1388.357177734375,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          -1939.3011474609375
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          -2295.414794921875,
+          1388.357177734375,
+          1939.3011474609375
+        ],
+        "material": 0,
+        "upper": [
+          -2160.0751953125,
+          2160.0,
+          2160.0
+        ]
+      },
+      {
+        "domain": "box:163",
+        "lower": [
+          2160.0751953125,
+          1388.357177734375,
+          -2160.0
+        ],
+        "material": 0,
+        "upper": [
+          2295.414794921875,
+          2160.0,
+          -1939.3011474609375
+        ]
+      }
+    ],
+    "rejected_domains": {
+      "box:0": "inconsistent or unknown exterior material"
+    }
+  },
+  "configuration": {
+    "block_size": 128,
+    "calibration": "chroma-lar/benchmarks/optical_validation/full_detector_synthetic_calibration_noise.json",
+    "counts": [
+      30000000
+    ],
+    "depositions": true,
+    "epochs_per_poll": 2,
+    "fused_pmt": false,
+    "history_length": 8,
+    "output": "chroma-lar/benchmarks/optical_validation/primitive_regions/automatic_30m.json",
+    "region_mode": "automatic",
+    "repeats": 5
+  },
+  "counts": [
+    {
+      "maximum_photons_per_second": 26453464.4298591,
+      "median_photons_per_second": 26032797.35261718,
+      "minimum_photons_per_second": 23680696.071058925,
+      "photons": 30000000,
+      "runs": [
+        {
+          "detected": 115457,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115457,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1019982,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.1896413597278297,
+          "peak_torch_allocated_bytes": 15403166208,
+          "peak_torch_reserved_bytes": 18886950912,
+          "photoelectrons": 103935,
+          "photons": 30002201,
+          "photons_per_second": 25219534.235817093,
+          "seed": 901,
+          "stages": [
+            {
+              "event_seconds": 1.0575533132068813,
+              "photons": 30002201,
+              "source_seconds": 0.0037228651344776154,
+              "transport_output_seconds": 1.0538300978951156
+            },
+            {
+              "digitization_seconds": 0.10156191419810057,
+              "pmt_response_seconds": 0.03015077020972967
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 115811,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115811,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1019435,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.2663152683526278,
+          "peak_torch_allocated_bytes": 14966163456,
+          "peak_torch_reserved_bytes": 18886950912,
+          "photoelectrons": 104196,
+          "photons": 29987227,
+          "photons_per_second": 23680696.071058925,
+          "seed": 1910,
+          "stages": [
+            {
+              "event_seconds": 1.1321958927437663,
+              "photons": 29987227,
+              "source_seconds": 0.003653686959296465,
+              "transport_output_seconds": 1.1285418258048594
+            },
+            {
+              "digitization_seconds": 0.10312085319310427,
+              "pmt_response_seconds": 0.03056326089426875
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 115758,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115758,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1020518,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.152518171351403,
+          "peak_torch_allocated_bytes": 16362137600,
+          "peak_torch_reserved_bytes": 21091057664,
+          "photoelectrons": 104033,
+          "photons": 30003272,
+          "photons_per_second": 26032797.35261718,
+          "seed": 2919,
+          "stages": [
+            {
+              "event_seconds": 1.021523892879486,
+              "photons": 30003272,
+              "source_seconds": 0.0036617759615182877,
+              "transport_output_seconds": 1.0178617467172444
+            },
+            {
+              "digitization_seconds": 0.10033335909247398,
+              "pmt_response_seconds": 0.030309876892715693
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 115424,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 115424,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1022741,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.1342737008817494,
+          "peak_torch_allocated_bytes": 16362358272,
+          "peak_torch_reserved_bytes": 23295164416,
+          "photoelectrons": 103787,
+          "photons": 30005469,
+          "photons_per_second": 26453464.4298591,
+          "seed": 3928,
+          "stages": [
+            {
+              "event_seconds": 0.9996449747122824,
+              "photons": 30005469,
+              "source_seconds": 0.0036742649972438812,
+              "transport_output_seconds": 0.9959702398627996
+            },
+            {
+              "digitization_seconds": 0.10306100407615304,
+              "pmt_response_seconds": 0.031183239072561264
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        },
+        {
+          "detected": 114877,
+          "diagnostics": {
+            "aborted": 0,
+            "detected": 114877,
+            "escaped": 0,
+            "nonfinite": 0,
+            "reemitted": 1018952,
+            "step_limit": 0,
+            "unfinished": 0
+          },
+          "event_seconds": 1.1389005770906806,
+          "peak_torch_allocated_bytes": 14968066560,
+          "peak_torch_reserved_bytes": 23295164416,
+          "photoelectrons": 103385,
+          "photons": 30000273,
+          "photons_per_second": 26341432.784796406,
+          "seed": 4937,
+          "stages": [
+            {
+              "event_seconds": 1.0057530817575753,
+              "photons": 30000273,
+              "source_seconds": 0.0037301951088011265,
+              "transport_output_seconds": 1.0020225667394698
+            },
+            {
+              "digitization_seconds": 0.10198276629671454,
+              "pmt_response_seconds": 0.03081855596974492
+            }
+          ],
+          "waveform_shape": [
+            2,
+            162,
+            16000
+          ]
+        }
+      ],
+      "sustained_photons_per_second": 25502786.72290286,
+      "target_reached": true,
+      "warmup": {
+        "detected": 115355,
+        "diagnostics": {
+          "aborted": 0,
+          "detected": 115355,
+          "escaped": 0,
+          "nonfinite": 0,
+          "reemitted": 1020985,
+          "step_limit": 0,
+          "unfinished": 0
+        },
+        "event_seconds": 2.0545905116014183,
+        "peak_torch_allocated_bytes": 12844826624,
+        "peak_torch_reserved_bytes": 13748928512,
+        "photoelectrons": 103764,
+        "photons": 29991791,
+        "photons_per_second": 14597454.252148459,
+        "seed": 1729,
+        "stages": [
+          {
+            "event_seconds": 1.8785791653208435,
+            "photons": 29991791,
+            "source_seconds": 0.5173908481374383,
+            "transport_output_seconds": 1.3611878771334887
+          },
+          {
+            "digitization_seconds": 0.11945617198944092,
+            "pmt_response_seconds": 0.05569434305652976
+          }
+        ],
+        "waveform_shape": [
+          2,
+          162,
+          16000
+        ]
+      }
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-40GB",
+  "electronics_noise_rms_adc": 0.4,
+  "events": [
+    11,
+    99
+  ],
+  "excluded": "detector construction, compilation warmup, file writes and optional full dead-photon debugging states",
+  "geometry": {
+    "all_box_faces": true,
+    "pmts": 162,
+    "wire_planes": 6
+  },
+  "host": "sdfampere032",
+  "python": "3.10.20",
+  "scene_fingerprint": "8761dd4ea89addc765c524d760898e7c8aa7173a8f1d38c4a2587630d96b8747",
+  "scope": "GPU scintillation generation, spectral transport, PMT collection/TTS/charge, waveform superposition, noise/ADC and CPU-readable optical hits/PE/waveforms",
+  "setup_seconds": 1.7459296500310302,
+  "source": "Poisson scintillation yield from an energy deposition at (-1000,0,0) mm",
+  "source_sha256": {
+    "chroma-lar/chroma_lar/generator/scintillation.py": "27bc10fb5cf2202d76a3cc26bd7c3f552fc2479a4796de74f0e0223eb7603416",
+    "chroma-lar/chroma_lar/optical_calibration.py": "15a56639a1c8f31ebd9b7b5a1aa95d8fec91115e2a354492eb47215d57e58372",
+    "chroma-lar/chroma_lar/optical_readout.py": "384d165f89574718b28396c4ae6102b57f42b0db68aa1b6d2a465e42f5b50b17",
+    "chroma-lar/chroma_lar/optical_simulation.py": "a760994cacd9741d7333e1786210c94041152eea6b82ac990480cb715452c0ad",
+    "chroma-lar/chroma_lar/spectral_backend.py": "d62ff34f715636087fe444f55d1c1380a55fd7fca9fa781e94e92bd328826e39",
+    "chroma-lar/chroma_lar/spectral_kernels.py": "e054cabb4badea0324b87f8126d5b4e5855899ba152f0cbbf9316f1439928d28",
+    "chroma-lar/chroma_lar/spectral_model.py": "ad244e8e51aebc86a0af4f913081bd01806287ed3566df69b6ae0a0bd62ad140",
+    "chroma-lar/chroma_lar/spectral_state.py": "5e5280bae6e42c6468ec47f0fb44cbaf10ba9e34386fb7fe5dff4b1179dbdad5",
+    "chroma-lar/chroma_lar/triton_scene/compiler.py": "0a5b7a0671cf9b48dbead1b0f52f2b7813b1180142f77fdf306b45eb40995b25",
+    "chroma-lar/chroma_lar/triton_scene/detector_query.py": "e5a1e33e153387ce761214e5800a2e74c4983c8f220d39be5f0e75da705b5608",
+    "chroma-lar/chroma_lar/triton_scene/device_geometry.py": "505f76e1672d745c3249b1d80699fb371653536e9de336333249e9fde6e993f9",
+    "chroma-lar/chroma_lar/triton_scene/instances.py": "c13efc2779faa09e7b5be2531d5aaceb0c8a28663d8db32bad852820730cce34",
+    "chroma-lar/chroma_lar/triton_scene/intersect.py": "60ee174152c81bcab651bed29d598231b4812dd1850b4874dfd348dd0dfc09df",
+    "chroma-lar/chroma_lar/triton_scene/primitive_adapter.py": "507b6f080a53cbb3deb8352c47343058b687d24dc67f6fb8202fcf19f9436c20",
+    "chroma-lite/chroma/triton/digitizer_kernels.py": "22c50cd6e615d32811189a43b2691799d0199a3ed7663573dbfcdb444dd676aa",
+    "chroma-lite/chroma/triton/optical_response.py": "623198c7ecf19d03d0e540dfdc5fc772da286ae543a8dfb522ce308a09fb16ef",
+    "chroma-lite/chroma/triton/optics.py": "abdd246d19e602e79a139363cad3d7de812d6dd0a8ded233060380faea6d683d",
+    "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lite/chroma/triton/regions.py": "d2412fcaf513505ce55698cca1804a5319a3f3a9afce830867e5bd470203bdd9",
+    "chroma-lite/chroma/triton/spectral.py": "26957c2927cde01d648853a5ec1e280f8f9f35b6fb846bd319403509ba81a4df",
+    "chroma-lite/chroma/triton/spectral_kernels.py": "ab1c7869e6423d45752cd70378500eb991aedc287aaeb8d813f8722afdd69efd"
+  },
+  "target_sustained_photons_per_second": 20000000,
+  "torch": "2.5.0+cu124",
+  "triton": "3.1.0"
+}

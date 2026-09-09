@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TriChroma · Photon camera</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body class="camera-page">
+<main>
+<nav class="site-nav" aria-label="Viewer navigation">
+<a class="brand" href="index.html">TriChroma</a>
+<div class="page-links">
+<a href="camera.html" aria-current="page">Photon camera</a>
+<a href="physics.html">Optical diagnostics</a>
+<a href="index.html">Detector viewer</a>
+</div>
+</nav>
+<div class="adapter" id="adapter">Connecting to browser GPU…</div>
+<h1>Photon camera</h1>
+<p class="intro">View illumination from simulated optical photons. Choose a glass prism, fluorescent coating, scattering volume, or TPB-coated PMT, then orbit the camera to inspect the scene.</p>
+<section class="controls">
+<label>Optical scene<select id="scene">
+<option value="prism">Dispersive prism</option>
+<option value="fluorescence">Fluorescent coating</option>
+<option value="rayleigh">Rayleigh scattering</option>
+<option value="pmt">TPB-coated PMT</option>
+</select>
+</label>
+<label>Simulated photons<input id="photons" type="number" min="1" max="30000000" value="2500000">
+</label>
+<label>Seed<input id="seed" type="number" min="0" value="901">
+</label>
+<label>Source polarization<select id="polarization">
+<option value="random">Random linear</option>
+<option value="y">y</option>
+<option value="z">z</option>
+</select>
+</label>
+<button id="simulate" disabled>Simulate photons</button>
+</section>
+<p id="scene_note" class="muted"></p>
+<canvas id="camera" width="640" height="400" aria-label="Physical photon camera render">
+</canvas>
+<p id="pmt_legend" class="muted" hidden><strong>PMT layers:</strong> TPB coats the outer glass surface; the glass envelope is 3 mm thick; the photocathode lines the inner surface and absorbs light. The cutaway opens the view without removing any forward-transport geometry.</p>
+<aside>
+<span>Drag to orbit · wheel to zoom</span>
+<label>Exposure<input id="exposure" type="range" min="3" max="7" step=".05" value="5">
+</label>
+<label>Camera quality<select id="quality">
+<option value="320">320 px</option>
+<option value="640" selected>640 px</option>
+<option value="960">960 px</option>
+</select>
+</label>
+<label><input id="cutaway" type="checkbox" disabled>PMT cutaway (diagnostic)</label>
+<label><input id="uv_false_color" type="checkbox" disabled>UV in violet (false color)</label>
+<button id="reset">Reset camera</button>
+<span id="samples">No photon map yet</span>
+</aside>
+<div id="status" role="status">Loading spectral transport and photon camera…</div>
+<details>
+<summary>How this image is formed</summary>
+<p>Every simulated photon contributes to wavelength-binned light maps: incident energy on diffuse room walls, polarization moments at volume-scattering collisions, and actual fluorescent emission. The camera gathers these maps with geometric visibility, wavelength-dependent Fresnel refraction, polarized Rayleigh weighting and Beer attenuation. Brightness is normalized by the number of launched photons; increasing that count reduces sampling noise. Orbiting reuses the event maps.</p>
+<p>The view is a finite-resolution photon-density estimate, with 64 wavelength bins and bounded spatial maps. The beam and ceiling area light are a weighted source mixture; both are fully transported through glass and the scattering volume. Broad ceiling illumination uses a coarser wall-density map than the focused beam. It includes the first diffuse wall reflection, and uses weak Rayleigh haze in the prism and fluorescent scenes. Fluorescence spectra and lifetimes are modeled in transport; this camera shows steady-state illumination. The image uses Chroma's CIE color tables and exposure. UV is invisible. There are no sampled trajectory lines or added glow overlays. The optical diagnostics page shows spectra, timing distributions, and sampled trajectories.</p>
+<p>The PMT example uses a curved R5912 mesh with a 126–130 nm source and explicitly synthetic calibration tables. Forward transport keeps the complete PMT. The optional cutaway hides part of the PMT for inspection; that clipped image is a diagnostic view of the unchanged photon maps. Photocathode detections are counted separately and do not emit light. UV stays invisible unless its false-color control is enabled.</p>
+</details>
+<footer>Browser WebGPU · no Python rendering server after export · map discretization and finite camera sampling are documented estimator limits.</footer>
+</main>
+<script type="module" src="camera.js">
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "count": 40960,
+  "cpu_transport_completed": true,
+  "browser_transport_completed": true,
+  "failure": "KeyError: last_hit_triangles in wall_bin_boundary_oracle; camera debug decoder omitted packed word14",
+  "scope": "Audit API omission, not an optical transport failure; no comparison verdict was produced by this attempt."
+}
