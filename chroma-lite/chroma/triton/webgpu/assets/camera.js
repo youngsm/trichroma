@@ -773,7 +773,7 @@ async function drainViews() {
         activePreview = false;
         if (next.preview || next.version !== request || pendingView) continue;
         const quality = Number($('quality').value), height = Math.round(quality*.625);
-        for (let sample=0;sample<(camera.software?2:16) && next.version===request && !pendingView;sample++) {
+        for (let sample=0;sample<(camera.software?2:8) && next.version===request && !pendingView;sample++) {
           const begin = performance.now();
           updateInfo(await camera.render({width:quality,height,reset:sample===0,interactive:sample===0}));
           // Limit refinement of cheap scenes to 30 frames/s (10 in Low mode).

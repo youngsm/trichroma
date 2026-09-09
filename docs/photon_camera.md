@@ -70,7 +70,7 @@ These controls reuse the current photon maps; rerunning the same scene preserves
 the composed camera view. Motion coalesces to the newest view while a small
 preview finishes; changing the view cancels older full-resolution refinement.
 The first image is a quick preview before the selected quality refines.
-The hardware view accumulates 16 camera passes per pixel (two on a software
+The hardware view accumulates 8 camera passes per pixel (two on a software
 adapter). Each pass jitters the pixel ray and samples optical interactions
 across the 64 wavelength bins, skipping bins with negligible color response.
 These passes reuse the same forward photon maps: more passes reduce camera
