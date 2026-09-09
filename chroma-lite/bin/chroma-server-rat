@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+#--*-python-*-
+
+import argparse
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Serves a chroma geometry on a ZeroMQ socket that speaks a language RAT understands')
+    #See also: https://github.com/BenLand100/rat-pac/tree/chroma
+    parser.add_argument('detector', help='A chroma geometry identifier string')
+    parser.add_argument('--address', '-a', default='ipc:///tmp/ipc_chroma')
+    args = parser.parse_args()
+
+    from chroma.sim import Simulation
+    from chroma.event import Photons
+    from chroma.loader import load_geometry_from_string
+    import zmq
+    import numpy as np
+    import ctypes as ct
+    
+    zmq_context = zmq.Context()
+    socket = zmq_context.socket(zmq.REP)
+    socket.bind(args.address)
+    
+    #build some geometry, should have numbered photosensitive surfaces (channels)
+    geo = load_geometry_from_string(args.detector)
+    sim = Simulation(geo)
+    
+    while True:
+        #packed photon data from c++
+        msg = socket.recv()
+        #parse it into a Photons object to propagate
+        numphotons,eventid = np.fromstring(msg[:8],dtype=np.uint32)
+        x,y,z,dx,dy,dz,polx,poly,polz,wavelen,t = np.split(np.fromstring(msg[8:8+8*11*numphotons],dtype=np.double),11)
+        trackid = np.fromstring(msg[8*11*numphotons:],dtype=np.uint32)
+        pos = np.vstack((x,y,z)).T
+        dir = np.vstack((dx,dy,dz)).T
+        pol = np.vstack((polx,poly,polz)).T
+        photons = Photons(pos,dir,pol,wavelen,t)
+        print('Recieved to propagate',photons,'for event',eventid)
+        
+        #Propagate with GPU geometry, extract all hits on the channels (rat-side will do DAQ)
+        #Simulation returns an iterator, Photons are packed into a single event
+        ev = next(sim.simulate(photons, keep_photons_beg=False, keep_photons_end=False, keep_hits=True, run_daq=False, max_steps=1000))
+        
+        #build reply (this could be faster!)
+        hits = ev.hits
+        chans = list(hits.keys())
+        hitphotons = Photons()
+        chanidxes = np.empty(shape=(0),dtype=np.uint32)
+        for chan in chans:
+            hitphotons = hitphotons + hits[chan]
+            chanidx = np.empty(len(hits[chan]),dtype=np.uint32)
+            chanidx.fill(chan)
+            chanidxes = np.concatenate((chanidxes,chanidx))
+        reply = np.asarray([len(hitphotons),eventid],dtype=np.uint32).tobytes()
+        reply += hitphotons.pos[:,0].tobytes()
+        reply += hitphotons.pos[:,1].tobytes()
+        reply += hitphotons.pos[:,2].tobytes()
+        reply += hitphotons.dir[:,0].tobytes()
+        reply += hitphotons.dir[:,1].tobytes()
+        reply += hitphotons.dir[:,2].tobytes()
+        reply += hitphotons.pol[:,0].tobytes()
+        reply += hitphotons.pol[:,1].tobytes()
+        reply += hitphotons.pol[:,2].tobytes()
+        reply += hitphotons.wavelengths.tobytes()
+        reply += hitphotons.t.tobytes()
+        reply += chanidxes.tobytes() ##FIXME standin for track id
+        reply += chanidxes.tobytes()
+        #always gets sent to the client we recv()'d
+        socket.send(reply)
+        
+

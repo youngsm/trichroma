@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "status": "synthetic",
+  "provenance": "Synthetic full-detector software validation; not measured. Wall and wire tables copied from repository configuration. Diagnostic: lossless wire/active/cathode reflections, absorbing steel, PMT detection and an absorbing outer cavity.",
+  "wavelength_grid_nm": {
+    "start": 120,
+    "stop": 500,
+    "step": 1
+  },
+  "materials": {
+    "liquid_argon": {
+      "refractive_index": 1.0,
+      "group_velocity": [
+        [
+          120,
+          135
+        ],
+        [
+          160,
+          145
+        ],
+        [
+          400,
+          215
+        ],
+        [
+          500,
+          220
+        ]
+      ],
+      "absorption_length": 1e+30,
+      "scattering_length": 1e+30
+    },
+    "vacuum": {
+      "refractive_index": 1.0,
+      "absorption_length": 1e+30,
+      "scattering_length": 1e+30
+    },
+    "glass": {
+      "refractive_index": 1.0,
+      "absorption_length": 1e+30,
+      "scattering_length": 1e+30
+    },
+    "steel": {
+      "refractive_index": 1.0,
+      "absorption_length": 0.0,
+      "scattering_length": 1e+30
+    }
+  },
+  "surfaces": {
+    "reflect00": {
+      "detect": 0.0,
+      "absorb": 1.0,
+      "reflect_diffuse": 0.0,
+      "reflect_specular": 0.0,
+      "model": "default",
+      "reemit": 0.0
+    },
+    "perfect_pmt_photocathode": {
+      "detect": 1.0,
+      "absorb": 0.0,
+      "model": "default",
+      "reflect_diffuse": 0.0,
+      "reflect_specular": 0.0,
+      "reemit": 0.0
+    },
+    "glossy_surface": {
+      "detect": 1.0,
+      "absorb": 0.0,
+      "reflect_diffuse": 0.0,
+      "reflect_specular": 0.0,
+      "model": "default",
+      "reemit": 0.0
+    },
+    "polished_steel": {
+      "detect": 0.0,
+      "absorb": 0.0,
+      "reflect_diffuse": 1.0,
+      "reflect_specular": 0.0,
+      "model": "default",
+      "reemit": 0.0
+    },
+    "validation_tpb": {
+      "model": "default",
+      "absorb": 0.0,
+      "reemit": 0.0,
+      "escape_to_material1": 0.5,
+      "emission_spectrum": {
+        "kind": "pdf",
+        "values": [
+          [
+            400,
+            0
+          ],
+          [
+            420,
+            1
+          ],
+          [
+            440,
+            0.5
+          ],
+          [
+            460,
+            0
+          ]
+        ]
+      },
+      "emission_time": {
+        "kind": "cdf",
+        "values": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            0.6
+          ],
+          [
+            20,
+            0.85
+          ],
+          [
+            1000,
+            0.95
+          ],
+          [
+            10000,
+            1
+          ]
+        ]
+      },
+      "detect": 1.0,
+      "reflect_diffuse": 0.0,
+      "reflect_specular": 0.0
+    }
+  },
+  "scintillation": {
+    "spectrum": {
+      "kind": "pdf",
+      "values": [
+        [
+          120,
+          0
+        ],
+        [
+          128,
+          1
+        ],
+        [
+          136,
+          0
+        ]
+      ]
+    },
+    "lifetimes_ns": [
+      6,
+      1600
+    ],
+    "fractions": [
+      0.3,
+      0.7
+    ],
+    "yield_per_mev": 20000
+  },
+  "pmt_response": {
+    "tts_sigma_ns": 1.0,
+    "transit_time_ns": 30.0,
+    "gain": 1.0,
+    "collection_efficiency": 0.9,
+    "charge_distribution": {
+      "kind": "pdf",
+      "values": [
+        [
+          0.4,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1.6,
+          0
+        ]
+      ]
+    }
+  },
+  "digitizer": {
+    "start_ns": 0,
+    "sample_period_ns": 2,
+    "sample_count": 16000,
+    "baseline": 100,
+    "noise_rms": 0,
+    "adc_bits": 12,
+    "pulse": [
+      [
+        0,
+        0
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        6,
+        12
+      ],
+      [
+        12,
+        6
+      ],
+      [
+        30,
+        1
+      ],
+      [
+        60,
+        0
+      ]
+    ]
+  },
+  "roles": {
+    "lar": "liquid_argon",
+    "glass": "glass",
+    "photocathode": "perfect_pmt_photocathode",
+    "tpb": "validation_tpb"
+  }
+}

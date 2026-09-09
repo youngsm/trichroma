@@ -1,0 +1,604 @@
+{
+  "all_configurations_physics_matched": true,
+  "benchmark": "reflect3wires Triton hotspot and launch-policy sweep",
+  "best_configuration": {
+    "block_size": 128,
+    "history_length": 8,
+    "maximum_photons_per_second": 2223233.109070704,
+    "median_cuda_end_to_end_ms": 127.72686386108398,
+    "median_photons_per_second": 2064409.3761452548,
+    "minimum_photons_per_second": 1905585.6432198058,
+    "p95_latency_photons_per_second": 1919296.7504018103,
+    "sustained_photons_per_second": 2052190.3955342118
+  },
+  "command": [
+    "/sdf/home/y/youngsam/sw/dune/.conda/envs/py310_torch/bin/python",
+    "/sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/benchmarks/profile_triton_hotspots.py",
+    "--nphotons",
+    "262144",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "65536",
+    "--profile-photons",
+    "262144",
+    "--diagnostic-photons",
+    "0",
+    "--history-lengths",
+    "8",
+    "--block-sizes",
+    "128",
+    "--history-epochs-per-poll",
+    "2",
+    "--device-scheduler",
+    "--device-round-batch",
+    "8",
+    "--fused-pmt",
+    "--kernel-profile",
+    "best",
+    "--json",
+    "benchmarks/triton_hotspot_best_device_fused_262k.json"
+  ],
+  "configuration": {
+    "block_sizes": [
+      128
+    ],
+    "center_mm": [
+      -1000.0,
+      0.0,
+      0.0
+    ],
+    "device_round_batch": 8,
+    "device_scheduler": true,
+    "diagnostic_photons": 0,
+    "fused_pmt": true,
+    "history_epochs_per_poll": 2,
+    "history_lengths": [
+      8
+    ],
+    "max_steps": 1000,
+    "nphotons": 262144,
+    "portal_boundary": false,
+    "profile_photons": 262144,
+    "replicates": 2,
+    "reservoir_rounds": 128,
+    "seed": 8123,
+    "tile_size": null,
+    "voxel_size_mm": 30.0,
+    "warmup_photons": 65536
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "cuda_visible_devices": null,
+    "device_count_visible": 1,
+    "free_memory_bytes_at_start": 41961127936,
+    "index": 0,
+    "name": "NVIDIA A100-SXM4-40GB",
+    "properties": {
+      "major": 8,
+      "max_threads_per_multi_processor": 2048,
+      "minor": 0,
+      "multi_processor_count": 108,
+      "regs_per_multiprocessor": 65536,
+      "total_memory": 42405855232,
+      "uuid": "503baa09-51e4-3570-bd4e-02c202b862ff",
+      "warp_size": 32
+    },
+    "requested": "cuda:0",
+    "total_memory_bytes_runtime": 42405855232
+  },
+  "diagnostic_passes": [],
+  "host": "sdfampere001",
+  "kernel_profiles": [
+    {
+      "block_size": 128,
+      "boundary_trace": {
+        "boundary_events": 1605515,
+        "boundary_queue_max": 259657,
+        "boundary_queue_median": 470.0,
+        "boundary_queue_p95": 128986.00000000007,
+        "rounds": 77,
+        "surviving_events": 1343371,
+        "terminated_events": 262144,
+        "weighted_survival_fraction": 0.836722796112151
+      },
+      "cuda_event_count": 1654,
+      "cuda_span_ms": 144.70748901367188,
+      "families": [
+        {
+          "calls": 80,
+          "cuda_time_ms": 40.29095999999995,
+          "family": "pmt_fused_lattice_blas",
+          "fraction_of_summed_cuda_activity": 0.7014212590443164
+        },
+        {
+          "calls": 240,
+          "cuda_time_ms": 7.763213999999939,
+          "family": "analytic_geometry",
+          "fraction_of_summed_cuda_activity": 0.13514900955724132
+        },
+        {
+          "calls": 160,
+          "cuda_time_ms": 4.527475000000051,
+          "family": "bulk_collision",
+          "fraction_of_summed_cuda_activity": 0.07881835565078882
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 1.2826549999999206,
+          "family": "boundary_physics",
+          "fraction_of_summed_cuda_activity": 0.022329611531207823
+        },
+        {
+          "calls": 320,
+          "cuda_time_ms": 1.0392609999999094,
+          "family": "other_cuda",
+          "fraction_of_summed_cuda_activity": 0.018092389933017053
+        },
+        {
+          "calls": 417,
+          "cuda_time_ms": 0.9070609999998781,
+          "family": "memory_initialization_elementwise",
+          "fraction_of_summed_cuda_activity": 0.015790933466214553
+        },
+        {
+          "calls": 160,
+          "cuda_time_ms": 0.5527320000000645,
+          "family": "pmt_reduce_finalize",
+          "fraction_of_summed_cuda_activity": 0.009622455641516828
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.5371540000000141,
+          "family": "boundary_gather",
+          "fraction_of_summed_cuda_activity": 0.009351259810654825
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.3817900000000391,
+          "family": "pmt_union_broadphase",
+          "fraction_of_summed_cuda_activity": 0.006646543604087798
+        },
+        {
+          "calls": 3,
+          "cuda_time_ms": 0.06195199999999977,
+          "family": "host_queue_bookkeeping",
+          "fraction_of_summed_cuda_activity": 0.0010785161197527531
+        },
+        {
+          "calls": 25,
+          "cuda_time_ms": 0.05299100000003818,
+          "family": "host_rendezvous_transfer",
+          "fraction_of_summed_cuda_activity": 0.0009225149745264
+        },
+        {
+          "calls": 8,
+          "cuda_time_ms": 0.03257699999999022,
+          "family": "queue_scan_compaction",
+          "fraction_of_summed_cuda_activity": 0.0005671297074053303
+        },
+        {
+          "calls": 1,
+          "cuda_time_ms": 0.012064000000000305,
+          "family": "source_generation",
+          "fraction_of_summed_cuda_activity": 0.0002100209592700412
+        }
+      ],
+      "history_length": 8,
+      "hits": {
+        "canonical_raw_sha256": "a79b834a3f689d61f1807a5cd85ab55bbd4441389f11509e6d613f8173042ef4",
+        "hit_count": 11242
+      },
+      "photons": 262144,
+      "profiler_warning": "Profiler activity is a separate diagnostic run and may add overhead; use family shares and call counts, not its throughput, for decisions.",
+      "summed_activity_over_cuda_span": 0.39695171543314334,
+      "summed_cuda_activity_ms": 57.4418859999998,
+      "top_kernels": [
+        {
+          "calls": 80,
+          "cuda_time_ms": 40.29095999999995,
+          "family": "pmt_fused_lattice_blas",
+          "name": "_nearest_pmt_fused_grid_kernel"
+        },
+        {
+          "calls": 160,
+          "cuda_time_ms": 7.379082999999956,
+          "family": "analytic_geometry",
+          "name": "_analytic_boundary_kernel"
+        },
+        {
+          "calls": 160,
+          "cuda_time_ms": 4.527475000000051,
+          "family": "bulk_collision",
+          "name": "collision_first_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 1.2826549999999206,
+          "family": "boundary_physics",
+          "name": "boundary_step_kernel"
+        },
+        {
+          "calls": 411,
+          "cuda_time_ms": 0.8731729999999073,
+          "family": "memory_initialization_elementwise",
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<int>, at::detail::Array<char*, 1> >(int, at::native::FillFunctor<int>, at::detail::Array<char*, 1>)"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.5371540000000141,
+          "family": "boundary_gather",
+          "name": "_gather_boundary_rays_device_count_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.4104299999999821,
+          "family": "other_cuda",
+          "name": "_merge_boundaries_device_count_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.384130999999983,
+          "family": "analytic_geometry",
+          "name": "_compact_wire_x_candidates_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.3817900000000391,
+          "family": "pmt_union_broadphase",
+          "name": "_compact_union_candidates_device_count_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.3161210000000628,
+          "family": "pmt_reduce_finalize",
+          "name": "_finalize_instance_hits_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.2366110000000017,
+          "family": "pmt_reduce_finalize",
+          "name": "_initialize_instance_results_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.2180809999999574,
+          "family": "other_cuda",
+          "name": "snapshot_round_counts_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.2169589999999289,
+          "family": "other_cuda",
+          "name": "_nextafter_positive_inf_device_count_kernel"
+        },
+        {
+          "calls": 80,
+          "cuda_time_ms": 0.1937910000000411,
+          "family": "other_cuda",
+          "name": "Memcpy DtoD (Device -> Device)"
+        },
+        {
+          "calls": 3,
+          "cuda_time_ms": 0.06195199999999977,
+          "family": "host_queue_bookkeeping",
+          "name": "void at::native::(anonymous namespace)::CatArrayBatchedCopy_aligned16_contig<at::native::(anonymous namespace)::OpaqueType<4u>, unsigned int, 2, 128, 1>(at::native::(anonymous namespace)::OpaqueType<4u>*, at::native::(anonymous namespace)::CatArrInputTensorMetadata<at::native::(anonymous namespace)::OpaqueType<4u>, unsigned int, 128, 1>, at::native::(anonymous namespace)::TensorSizeStride<unsigned int, 4u>, int, unsigned int)"
+        },
+        {
+          "calls": 22,
+          "cuda_time_ms": 0.04633400000006077,
+          "family": "host_rendezvous_transfer",
+          "name": "Memcpy DtoH (Device -> Pageable)"
+        },
+        {
+          "calls": 2,
+          "cuda_time_ms": 0.016672999999980676,
+          "family": "memory_initialization_elementwise",
+          "name": "void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native::index_kernel_impl<at::native::OpaqueType<4> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1}>(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>, at::native::index_kernel_impl<at::native::OpaqueType<4> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1} const&)::{lambda(int)#1}>(long, at::native::gpu_index_kernel<at::native::index_kernel_impl<at::native::OpaqueType<4> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1}>(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>, at::native::index_kernel_impl<at::native::OpaqueType<4> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1} const&)::{lambda(int)#1})"
+        },
+        {
+          "calls": 2,
+          "cuda_time_ms": 0.016511999999987894,
+          "family": "queue_scan_compaction",
+          "name": "void at_cuda_detail::cub::DeviceSelectSweepKernel<at_cuda_detail::cub::detail::device_select_policy_hub<long, bool, int, false, false>::Policy900, at_cuda_detail::cub::CountingInputIterator<long, long>, at_cuda_detail::cub::TransformInputIterator<bool, at::native::(anonymous namespace)::NonZeroOp<bool>, bool const*, long>, long*, int*, at_cuda_detail::cub::ScanTileState<int, true>, at_cuda_detail::cub::NullType, at_cuda_detail::cub::NullType, int, false>(at_cuda_detail::cub::CountingInputIterator<long, long>, at_cuda_detail::cub::TransformInputIterator<bool, at::native::(anonymous namespace)::NonZeroOp<bool>, bool const*, long>, long*, int*, at_cuda_detail::cub::ScanTileState<int, true>, at_cuda_detail::cub::NullType, at_cuda_detail::cub::NullType, int, int)"
+        },
+        {
+          "calls": 1,
+          "cuda_time_ms": 0.012064000000000305,
+          "family": "source_generation",
+          "name": "generate_photon_bomb_kernel"
+        },
+        {
+          "calls": 3,
+          "cuda_time_ms": 0.006656999999977415,
+          "family": "host_rendezvous_transfer",
+          "name": "Memcpy DtoH (Device -> Pinned)"
+        },
+        {
+          "calls": 2,
+          "cuda_time_ms": 0.006271999999997206,
+          "family": "queue_scan_compaction",
+          "name": "void at_cuda_detail::cub::DeviceReduceKernel<at_cuda_detail::cub::DeviceReducePolicy<int, unsigned int, cuda::std::__4::plus<void> >::Policy600, at_cuda_detail::cub::TransformInputIterator<bool, at::native::(anonymous namespace)::NonZeroOp<bool>, bool const*, long>, unsigned int, cuda::std::__4::plus<void>, int>(at_cuda_detail::cub::TransformInputIterator<bool, at::native::(anonymous namespace)::NonZeroOp<bool>, bool const*, long>, int*, unsigned int, at_cuda_detail::cub::GridEvenShare<unsigned int>, cuda::std::__4::plus<void>)"
+        },
+        {
+          "calls": 1,
+          "cuda_time_ms": 0.005920000000000073,
+          "family": "memory_initialization_elementwise",
+          "name": "void (anonymous namespace)::elementwise_kernel_with_index<int, at::native::arange_cuda_out(c10::Scalar const&, c10::Scalar const&, c10::Scalar const&, at::Tensor&)::{lambda()#1}::operator()() const::{lambda()#3}::operator()() const::{lambda(long)#1}>(int, at::native::arange_cuda_out(c10::Scalar const&, c10::Scalar const&, c10::Scalar const&, at::Tensor&)::{lambda()#1}::operator()() const::{lambda()#3}::operator()() const::{lambda(long)#1}, function_traits<at::native::arange_cuda_out(c10::Scalar const&, c10::Scalar const&, c10::Scalar const&, at::Tensor&)::{lambda()#1}::operator()() const::{lambda()#3}::operator()() const::{lambda(long)#1}>::result_type*)"
+        },
+        {
+          "calls": 2,
+          "cuda_time_ms": 0.005504000000015366,
+          "family": "queue_scan_compaction",
+          "name": "void at_cuda_detail::cub::DeviceReduceSingleTileKernel<at_cuda_detail::cub::DeviceReducePolicy<int, unsigned int, cuda::std::__4::plus<void> >::Policy600, int*, int*, int, cuda::std::__4::plus<void>, int, int>(int*, int*, int, cuda::std::__4::plus<void>, int)"
+        },
+        {
+          "calls": 1,
+          "cuda_time_ms": 0.004735000000000127,
+          "family": "memory_initialization_elementwise",
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<long>, at::detail::Array<char*, 1> >(int, at::native::FillFunctor<long>, at::detail::Array<char*, 1>)"
+        },
+        {
+          "calls": 2,
+          "cuda_time_ms": 0.004288999999989756,
+          "family": "queue_scan_compaction",
+          "name": "void at_cuda_detail::cub::DeviceCompactInitKernel<at_cuda_detail::cub::ScanTileState<int, true>, int*>(at_cuda_detail::cub::ScanTileState<int, true>, int, int*)"
+        },
+        {
+          "calls": 1,
+          "cuda_time_ms": 0.0038079999999899882,
+          "family": "memory_initialization_elementwise",
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::compare_scalar_kernel<int>(at::TensorIteratorBase&, at::native::(anonymous namespace)::OpType, int)::{lambda(int)#1}, at::detail::Array<char*, 2> >(int, at::native::compare_scalar_kernel<int>(at::TensorIteratorBase&, at::native::(anonymous namespace)::OpType, int)::{lambda(int)#1}, at::detail::Array<char*, 2>)"
+        },
+        {
+          "calls": 1,
+          "cuda_time_ms": 0.002751999999999953,
+          "family": "memory_initialization_elementwise",
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<float>, at::detail::Array<char*, 1> >(int, at::native::FillFunctor<float>, at::detail::Array<char*, 1>)"
+        }
+      ],
+      "unreadable_cuda_event_count": 0
+    }
+  ],
+  "optimization_evidence_map": {
+    "1_branch_specialization": [
+      "kernel_profiles[].families[boundary_classification|boundary_physics]",
+      "diagnostic_passes[].final_state.photons_ever_with_history_bit",
+      "records[].runs[].boundary_trace.weighted_survival_fraction"
+    ],
+    "2_collision_unroll_and_block_size": [
+      "records[].history_length",
+      "records[].block_size",
+      "kernel_profiles[].families[bulk_collision]"
+    ],
+    "3_common_path_fusion": [
+      "records[].runs[].backend_stats.boundary_rounds",
+      "records[].runs[].cuda_event_timing.phases_inclusive",
+      "kernel_profiles[].families[].calls"
+    ],
+    "4_exact_pmt_locator": [
+      "kernel_profiles[].families[pmt_grid_broadphase|pmt_tlas_traversal|pmt_blas_traversal]",
+      "diagnostic_passes[].boundary_candidates"
+    ],
+    "5_device_resident_scheduling": [
+      "kernel_profiles[].families[host_rendezvous_transfer|host_queue_bookkeeping|queue_scan_compaction]",
+      "kernel_profiles[].summed_activity_over_cuda_span",
+      "records[].runs[].cuda_event_timing.derived.collision_queue_scheduler_residual_ms"
+    ]
+  },
+  "records": [
+    {
+      "block_size": 128,
+      "history_length": 8,
+      "physics_matches_first_configuration": true,
+      "runs": [
+        {
+          "backend_stats": {
+            "boundary_events": 1605515,
+            "boundary_rounds": 77,
+            "dense_rounds": 77,
+            "detections": 11242,
+            "elapsed_seconds": 0.11761979479342699,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 1605515,
+            "boundary_queue_max": 259657,
+            "boundary_queue_median": 470.0,
+            "boundary_queue_p95": 128986.00000000007,
+            "rounds": 77,
+            "surviving_events": 1343371,
+            "terminated_events": 262144,
+            "weighted_survival_fraction": 0.836722796112151
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.1592639982700348,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.04481603790472191,
+              "boundary_resolution_fraction_of_simulation_span": 0.0,
+              "collision_queue_scheduler_residual_ms": 109.73951756954193,
+              "top_level_unattributed_ms": 0.6907258667051792
+            },
+            "end_to_end_span_ms": 117.89997100830078,
+            "phases_inclusive": {
+              "boundary_physics": {
+                "calls": 80,
+                "maximum_ms": 0.749567985534668,
+                "mean_ms": 0.06595840007066726,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 5.276672005653381
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.2725119888782501,
+                "mean_ms": 0.2725119888782501,
+                "minimum_ms": 0.2725119888782501,
+                "total_ms": 0.2725119888782501
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 115.01618957519531,
+                "mean_ms": 115.01618957519531,
+                "minimum_ms": 115.01618957519531,
+                "total_ms": 115.01618957519531
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.01228800043463707,
+                "mean_ms": 0.01228800043463707,
+                "minimum_ms": 0.01228800043463707,
+                "total_ms": 0.01228800043463707
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.7489919662475586,
+                "mean_ms": 1.7489919662475586,
+                "minimum_ms": 1.7489919662475586,
+                "total_ms": 1.7489919662475586
+              }
+            },
+            "simulation_span_ms": 117.74070739746094
+          },
+          "hits": {
+            "canonical_raw_sha256": "a79b834a3f689d61f1807a5cd85ab55bbd4441389f11509e6d613f8173042ef4",
+            "hit_count": 11242
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 91150848,
+            "allocated_before_bytes": 22576128,
+            "peak_allocated_bytes": 110197248,
+            "peak_reserved_bytes": 127926272,
+            "reserved_after_bytes": 127926272,
+            "reserved_before_bytes": 41943040
+          },
+          "photons_per_second_wall": 2223233.109070704,
+          "replicate": 0,
+          "seed": 8123,
+          "wall_seconds_source_through_host_hits": 0.11791116232052445
+        },
+        {
+          "backend_stats": {
+            "boundary_events": 1603289,
+            "boundary_rounds": 83,
+            "dense_rounds": 83,
+            "detections": 11415,
+            "elapsed_seconds": 0.137325590942055,
+            "reservoir_photons": 0,
+            "reservoir_rounds": 0,
+            "tiles": 1
+          },
+          "boundary_trace": {
+            "boundary_events": 1603289,
+            "boundary_queue_max": 259654,
+            "boundary_queue_median": 307.0,
+            "boundary_queue_p95": 122197.39999999983,
+            "rounds": 83,
+            "surviving_events": 1341145,
+            "terminated_events": 262144,
+            "weighted_survival_fraction": 0.8364961026988896
+          },
+          "cuda_event_timing": {
+            "compact_hit_transfer_span_ms": 0.1319359987974167,
+            "derived": {
+              "boundary_physics_fraction_of_simulation_span": 0.03807721130932706,
+              "boundary_resolution_fraction_of_simulation_span": 0.0,
+              "collision_queue_scheduler_residual_ms": 130.2742722015828,
+              "top_level_unattributed_ms": 0.6014769934117794
+            },
+            "end_to_end_span_ms": 137.5537567138672,
+            "phases_inclusive": {
+              "boundary_physics": {
+                "calls": 88,
+                "maximum_ms": 0.14028799533843994,
+                "mean_ms": 0.059461818521165034,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 5.232640029862523
+              },
+              "hit_selection": {
+                "calls": 1,
+                "maximum_ms": 0.23721599578857422,
+                "mean_ms": 0.23721599578857422,
+                "minimum_ms": 0.23721599578857422,
+                "total_ms": 0.23721599578857422
+              },
+              "propagation_inclusive": {
+                "calls": 1,
+                "maximum_ms": 135.5069122314453,
+                "mean_ms": 135.5069122314453,
+                "minimum_ms": 135.5069122314453,
+                "total_ms": 135.5069122314453
+              },
+              "reservoir_compaction": {
+                "calls": 1,
+                "maximum_ms": 0.011264000087976456,
+                "mean_ms": 0.011264000087976456,
+                "minimum_ms": 0.011264000087976456,
+                "total_ms": 0.011264000087976456
+              },
+              "source_generation": {
+                "calls": 1,
+                "maximum_ms": 1.06496000289917,
+                "mean_ms": 1.06496000289917,
+                "minimum_ms": 1.06496000289917,
+                "total_ms": 1.06496000289917
+              }
+            },
+            "simulation_span_ms": 137.4218292236328
+          },
+          "hits": {
+            "canonical_raw_sha256": "08f93d8663419b17ef81114722e09953acd6d485d5f291c873f090e5a618ae78",
+            "hit_count": 11415
+          },
+          "matches_first_configuration": true,
+          "memory": {
+            "allocated_after_bytes": 91152896,
+            "allocated_before_bytes": 91060736,
+            "peak_allocated_bytes": 119372288,
+            "peak_reserved_bytes": 136314880,
+            "reserved_after_bytes": 136314880,
+            "reserved_before_bytes": 127926272
+          },
+          "photons_per_second_wall": 1905585.6432198058,
+          "replicate": 1,
+          "seed": 2654443884,
+          "wall_seconds_source_through_host_hits": 0.13756610779091716
+        }
+      ],
+      "summary": {
+        "maximum_photons_per_second": 2223233.109070704,
+        "median_cuda_end_to_end_ms": 127.72686386108398,
+        "median_photons_per_second": 2064409.3761452548,
+        "minimum_photons_per_second": 1905585.6432198058,
+        "p95_latency_photons_per_second": 1919296.7504018103,
+        "sustained_photons_per_second": 2052190.3955342118
+      },
+      "tile_plan": {
+        "available_bytes": 41790375424,
+        "estimated_peak_bytes": 134217728,
+        "explicit": false,
+        "tile_capacity": 262144,
+        "tile_count": 1
+      }
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  },
+  "timing_contract": {
+    "candidate_counters": "separate reduction pass, excluded from all performance timing",
+    "kernel_profile": "separate intrusive PyTorch-profiler run, excluded from throughput ranking",
+    "phase_events": "inclusive CUDA-event stream spans around unmodified backend methods",
+    "throughput": "wall clock from source generation through host-readable compact hits"
+  }
+}

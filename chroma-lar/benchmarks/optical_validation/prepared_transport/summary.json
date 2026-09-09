@@ -1,0 +1,86 @@
+{
+  "comparison_limit": "Same prepared photons and output fields; existing geometry accelerations and RNG algorithms remain different. No exact legacy/physical equivalence claim.",
+  "completed_series_all_runs_finite_and_terminated": true,
+  "device": "NVIDIA A100-SXM4-40GB",
+  "identical_host_and_resident_inputs": true,
+  "initial_cuda_failure": {
+    "aborted": 1,
+    "escaped": 1,
+    "nonfinite_components": 3,
+    "note": "Initial audit stopped on this invalid run; rerun records all invalid states explicitly.",
+    "photons": 1000000,
+    "seed": 1910,
+    "unfinished": 0
+  },
+  "matching_output_fields": [
+    "pos",
+    "dir",
+    "pol",
+    "t",
+    "flags"
+  ],
+  "output_bytes_per_photon": 44,
+  "overall_correctness_signoff": false,
+  "timings": [
+    {
+      "cuda_detected_total": 21704,
+      "cuda_median": {
+        "event_photons_per_second": 1864189.17583365,
+        "event_seconds": 0.05364262452349067,
+        "transport_photons_per_second": 1956138.7521871233,
+        "transport_seconds": 0.051121118012815714
+      },
+      "cuda_peak_transport_photons_per_second": 1969528.4418672677,
+      "cuda_transport_range_seconds": [
+        0.050773574970662594,
+        0.05555851478129625
+      ],
+      "photons": 100000,
+      "repeats": 5,
+      "triton_detected_total": 21700,
+      "triton_median": {
+        "event_photons_per_second": 704572.3603472895,
+        "event_seconds": 0.14193006372079253,
+        "transport_photons_per_second": 715347.1908148548,
+        "transport_seconds": 0.13979225931689143
+      },
+      "triton_peak_transport_photons_per_second": 765540.6207394978,
+      "triton_prepared_event_speedup": 0.37795110575739216,
+      "triton_transport_range_seconds": [
+        0.1306266412138939,
+        0.20295817498117685
+      ],
+      "triton_transport_speedup": 0.36569348161782395
+    },
+    {
+      "cuda_detected_total": 213254,
+      "cuda_median": {
+        "event_photons_per_second": 3595571.191657062,
+        "event_seconds": 0.27811992773786187,
+        "transport_photons_per_second": 4004241.0633828193,
+        "transport_seconds": 0.2497352142818272
+      },
+      "cuda_peak_transport_photons_per_second": 4058727.610522508,
+      "cuda_transport_range_seconds": [
+        0.24638263415545225,
+        1.5328110931441188
+      ],
+      "photons": 1000000,
+      "repeats": 5,
+      "triton_detected_total": 213324,
+      "triton_median": {
+        "event_photons_per_second": 4956210.406371244,
+        "event_seconds": 0.2017670595087111,
+        "transport_photons_per_second": 5223770.501208311,
+        "transport_seconds": 0.19143260596320033
+      },
+      "triton_peak_transport_photons_per_second": 5510322.691187683,
+      "triton_prepared_event_speedup": 1.3784208800736093,
+      "triton_transport_range_seconds": [
+        0.18147757509723306,
+        0.24801799980923533
+      ],
+      "triton_transport_speedup": 1.3045594454783453
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "demo": {
+    "backend": "triton",
+    "calibration_files": {},
+    "calibration_fingerprint": "6bb18244010405b19546fe1773a8842725855355e9ccd923a0f7c6a8b9b9abe8",
+    "calibration_provenance": "Controlled software example only. These values are not a detector calibration or measured TPB/PMT dataset.",
+    "calibration_status": "synthetic",
+    "detected_photons": 214,
+    "max_steps": 1000,
+    "pe_after_sample_window": 0,
+    "pe_before_sample_window": 0,
+    "photoelectrons": 214,
+    "photons": 976,
+    "rng": "philox4x32-10-id64-stream32-seed64-v1",
+    "scene_fingerprint": "cb435b8b5621249848d68758cfa16388b65747a07549a82fb26d307ecb3cfc88",
+    "schema_version": 1,
+    "seed": 1,
+    "step_limit_count": 0,
+    "units": {
+      "charge": "PE",
+      "position": "mm",
+      "time": "ns",
+      "waveform": "ADC",
+      "wavelength": "nm"
+    }
+  },
+  "device": "local NVIDIA A100-SXM4-40GB",
+  "full_report": "REPORT.md",
+  "measurement_validation": "Pending: no measured calibration or matched detector observations supplied.",
+  "overall_physics_signoff": false,
+  "unresolved_issue": "Both CUDA and spectral Triton mesh paths spuriously absorb photons in the lossless-wire diagnostic; native/mesh full-detector yield differs.",
+  "validation": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 116
+  },
+  "waveform_shape": [
+    2,
+    1,
+    16000
+  ]
+}

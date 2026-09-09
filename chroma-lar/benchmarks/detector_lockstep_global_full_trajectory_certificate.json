@@ -1,0 +1,211 @@
+{
+  "complete_population_ledger": {
+    "by_process": {
+      "bulk_absorb": {
+        "count": 380,
+        "draws_total": 760,
+        "maximum_draws": 2,
+        "minimum_draws": 2
+      },
+      "bulk_scatter": {
+        "count": 95509,
+        "draws_total": 382036,
+        "maximum_draws": 4,
+        "minimum_draws": 4
+      },
+      "dielectric_reflect": {
+        "count": 248,
+        "draws_total": 992,
+        "maximum_draws": 4,
+        "minimum_draws": 4
+      },
+      "dielectric_transmit": {
+        "count": 1877,
+        "draws_total": 7508,
+        "maximum_draws": 4,
+        "minimum_draws": 4
+      },
+      "surface_absorb": {
+        "count": 7467,
+        "draws_total": 22401,
+        "maximum_draws": 3,
+        "minimum_draws": 3
+      },
+      "surface_detect": {
+        "count": 345,
+        "draws_total": 1035,
+        "maximum_draws": 3,
+        "minimum_draws": 3
+      },
+      "surface_diffuse": {
+        "count": 471,
+        "draws_total": 5172,
+        "maximum_draws": 50,
+        "minimum_draws": 8
+      },
+      "surface_specular": {
+        "count": 29983,
+        "draws_total": 89949,
+        "maximum_draws": 3,
+        "minimum_draws": 3
+      }
+    },
+    "committed_interactions": 136280,
+    "photon_rows": 8192,
+    "random_draws": 509853
+  },
+  "complete_population_state_ledger": {
+    "committed_state_records": 136280,
+    "fields": [
+      "position_x",
+      "position_y",
+      "position_z",
+      "direction_x",
+      "direction_y",
+      "direction_z",
+      "polarization_x",
+      "polarization_y",
+      "polarization_z",
+      "wavelength",
+      "time",
+      "history",
+      "last_triangle",
+      "weight",
+      "evidx"
+    ],
+    "ordered_raw_words_sha256": "2aa7f1c3272c40a91b50a4f3697024f7bc1aa022753b7a7b6a8e8a6061a1c446",
+    "photon_rows": 8192,
+    "raw_words_per_record": 15
+  },
+  "detector": "detector_config_reflect_reflect3wires",
+  "draw_consumption_certified": true,
+  "global_bvh_certificate": {
+    "mesh_md5": "9a4f1d85f358cfdbd759117fefb449a7",
+    "optical_semantics_sha256": "aae153bf619d231df5fc20053a789e8db194c0b2873d5d38c4bdc43549bf4003",
+    "traversal_sha256": "e4c38552d318d3c45e09b5204291fae3a0d8e54dc388f9514082dc13c1c2ea58"
+  },
+  "input_sha256": {
+    "composer": "f6f879bcb1c69b06ce0247040ea1422efa45613e0487a4daf69b6324d5e77807",
+    "prefix_cuda_npz": "2dad0a233dd996e73b7d44f1838a628c5411a5dce2f4ac9e458eb88ad782a055",
+    "prefix_global_bvh": "f44236889d3c86559a21aaebda5c0c7a81bd5fcd7e9d4376a9d4984f572a598d",
+    "prefix_report": "36a9439106ed7e651b4d297cf6534ebc5e00db010e13068cd93cdda02c0726b4",
+    "prefix_triton_npz": "23eb91c573d2843f3f6181db0c51989b051177625347aee70a98249d5f823055",
+    "tail_cuda_npz": "48ad305c0ddf8f165ac1ebd16f36bfcc5665f83c500db3aae9f01a61039897b6",
+    "tail_global_bvh": "d8a760addb4ac5716f75fcee0069cf64061c4022eaeee68465b402c33482c4e2",
+    "tail_report": "097bf6a5ea72076515a61041e63f5b866f177b7ace8c29264c5595f8583546e3",
+    "tail_triton_npz": "3c296cbfc16d61a2605f148852af2f13d9d2de47cecdd15ae62901e4d62bf9a3"
+  },
+  "intermediate_state_words_certified": true,
+  "matched_bitwise": true,
+  "population_photons": 8192,
+  "prefix": {
+    "active_after_prefix": 89,
+    "ledger_shape": [
+      8192,
+      65
+    ],
+    "max_steps": 64
+  },
+  "prefix_tail_continuity": {
+    "post_interaction_state_prefix_equal": true,
+    "process_draw_prefix_equal": true,
+    "rechecked_prefix_interactions": 5696,
+    "source_words_equal": true,
+    "survivor_photons": 89
+  },
+  "provenance": {
+    "chroma_cuda_worker": {
+      "container": "/sdf/group/neutrino/youngsam/sim/chroma-lar/installation/chroma3.lar-plib/chroma.simg",
+      "container_mtime_ns": 1751615499920255212,
+      "container_size_bytes": 7026487296,
+      "cuda_driver": "12090",
+      "cuda_runtime": "12.4.0",
+      "force_scatter_at_pass": 0,
+      "gpu": "NVIDIA A100-SXM4-40GB",
+      "numpy": "2.3.1",
+      "pycuda": "2025.1.1",
+      "python": "3.11.10",
+      "tape_compile_backend": "nvcc",
+      "tape_compile_options": [
+        "--use_fast_math",
+        "-Xptxas=-dlcm=ca",
+        "-diag-suppress=177,20044",
+        "-DCHROMA_FORCE_SCATTER_AT_PASS=0"
+      ]
+    },
+    "coordinator": {
+      "numpy": "2.4.3",
+      "python": "3.12.8"
+    },
+    "source_sha256": {
+      "chroma-lar/benchmarks/validate_detector_lockstep.py": "5804a142eafbaef3d16b901bf9c7ff5bff93946054bedab7fc22f781ace7d24b",
+      "chroma-lar/chroma_lar/triton_backend.py": "34aa627423ecc35ac395aede543bcf3b38069737c49a15002a2a61607e719342",
+      "chroma-lar/chroma_lar/triton_scene/chroma_global_bvh.py": "74436a02cc042ba379fb188596f76a94a6516231a423b569a7d157834810de0d",
+      "chroma-lar/chroma_lar/triton_scene/chroma_global_traversal.py": "a1b6e46fa047f154c9f0e0e304b7d5860fd1a8edea2c99fb92c2c4614b015353",
+      "chroma-lar/chroma_lar/triton_scene/intersect.py": "a0a89f46224802efabffcf9d2609430a53b2732bb30ad57de3534c05d7d3579d",
+      "chroma-lite/chroma/cuda/propagate_tape.cu": "b1b738cf019eecc39d1dc89dc9cae78fd7e24c2741d52c0cce9dce2dcd0da1a8",
+      "chroma-lite/chroma/cuda/rng_alignment.h": "7f2a0d9fed15b459ffe2caa3c5ee68400f16ab6e3eb8751066ef7e98c431b8a3",
+      "chroma-lite/chroma/gpu/tools.py": "d57cf0c361d588298c3bd85163ed3b4c5335a6425fc332eb9fff40d4683bd7a2",
+      "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b",
+      "chroma-lite/chroma/triton/rng_alignment.py": "81f90c276aab21618afaee714a818ad4283eadd0269bef5d8129c529560b4dee",
+      "chroma-lite/chroma/triton/transport.py": "22ede96dbc50d8b254bf537cb4e06ef7226378d3007cb5e6514f4d25898906f1"
+    },
+    "triton_worker": {
+      "gpu": "NVIDIA A100-SXM4-40GB",
+      "numpy": "2.4.3",
+      "python": "3.12.8",
+      "torch": "2.5.1+cu124",
+      "torch_cuda": "12.4",
+      "triton": "3.1.0"
+    }
+  },
+  "qualification": "This is an exhaustive post-interaction raw-state and process/draw certificate for the specified 8,192-photon population. It is not a mathematical proof over every possible IEEE-754 input, source, or unsupported Chroma feature.",
+  "schema_version": 3,
+  "scope": "complete post-interaction trajectories for one fixed source/tape population",
+  "source_configuration": {
+    "center": [
+      -1000.0,
+      0.0,
+      0.0
+    ],
+    "draws_per_interaction": 64,
+    "source_population": 8192,
+    "voxel_size": 30.0
+  },
+  "source_seed": 8123,
+  "strict_compatibility_policy": {
+    "chroma_global_bvh": true,
+    "legacy_specular_reflection": true,
+    "representable_progress_guard": false,
+    "wire_scan_source_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "tail": {
+    "active_after_tail": 0,
+    "ledger_shape": [
+      89,
+      257
+    ],
+    "max_steps": 256,
+    "maximum_committed_interactions": 126,
+    "selected_original_global_ids": 89
+  },
+  "tape_seed": 99173,
+  "terminal_histories": {
+    "outcomes": {
+      "bulk_absorb": 380,
+      "invalid": 0,
+      "no_hit": 0,
+      "surface_absorb": 7467,
+      "surface_detect": 345
+    },
+    "total": 8192
+  },
+  "terminal_histories_certified": true
+}

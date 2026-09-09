@@ -1,0 +1,187 @@
+{
+  "benchmark": "reflect3wires fixed-round device scheduler ablation",
+  "command": [
+    "chroma-lar/benchmarks/benchmark_device_scheduler.py",
+    "--nphotons",
+    "5000000",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "262144",
+    "--round-batches",
+    "8",
+    "--pmt-programs-per-sm",
+    "uncapped",
+    "--fused-pmt",
+    "--json",
+    "chroma-lar/benchmarks/fused_pmt_direct_5m.json"
+  ],
+  "configuration": {
+    "block_size": 128,
+    "fused_pmt": true,
+    "fused_pmt_compact_union": false,
+    "fused_pmt_max_candidates": 81,
+    "fused_pmt_routing_diagnostics": false,
+    "history_epochs": 2,
+    "history_length": 8,
+    "nphotons": 5000000,
+    "pmt_programs_per_sm": [
+      0
+    ],
+    "portal_batches": [],
+    "replicates": 2,
+    "round_batches": [
+      8
+    ],
+    "seeds": [
+      8123,
+      2654443884
+    ],
+    "warmup_photons": 262144
+  },
+  "cpu_thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "name": "NVIDIA A100-SXM4-40GB",
+    "total_memory_bytes": 42405855232
+  },
+  "host": "sdfampere001",
+  "records": [
+    {
+      "device_round_batch": 1,
+      "device_scheduler": false,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": false,
+      "fused_pmt_compact_union": null,
+      "fused_pmt_max_candidates": null,
+      "median_photons_per_second": 15678558.744591223,
+      "name": "synchronized",
+      "p95_latency_photons_per_second": 15062494.285243522,
+      "pmt_grid_mode": "not_applicable",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.33339960779994726,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 14997018.241845667,
+          "replicate": 0,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.30441412003710866,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 16424993.687515186,
+          "replicate": 1,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 1,
+      "device_scheduler": false,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": false,
+      "fused_pmt_max_candidates": 81,
+      "median_photons_per_second": 14829341.328496689,
+      "name": "synchronized_fused_pmt",
+      "p95_latency_photons_per_second": 14787993.436182035,
+      "pmt_grid_mode": "not_applicable",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.33612190233543515,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 14875555.461453434,
+          "replicate": 0,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.3382168817333877,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 14783413.454628915,
+          "replicate": 1,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "fused_pmt": true,
+      "fused_pmt_compact_union": false,
+      "fused_pmt_max_candidates": 81,
+      "median_photons_per_second": 4750337.869773017,
+      "name": "device_batch_8_pmt_uncapped_fused_pmt_c81",
+      "p95_latency_photons_per_second": 2883400.7694654516,
+      "pmt_grid_mode": "uncapped",
+      "pmt_programs_per_sm": null,
+      "portal_boundary": false,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 1.8097864650189877,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 2762756.8758215583,
+          "replicate": 0,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.29532695515081286,
+          "fused_pmt_routing_counts": null,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 16930388.211420387,
+          "replicate": 1,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  }
+}

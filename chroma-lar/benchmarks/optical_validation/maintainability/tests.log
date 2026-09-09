@@ -1,0 +1,86 @@
+........................................................................ [ 43%]
+........................................................................ [ 86%]
+...F...................                                                  [100%]
+=================================== FAILURES ===================================
+__________ test_wls_boundary_retains_spectrum_time_and_material_side ___________
+
+simulation = <chroma_lar.spectral_backend.SpectralDetectorSimulation object at 0x7f6c9d663d00>
+
+    def test_wls_boundary_retains_spectrum_time_and_material_side(simulation):
+        import triton
+        from chroma.triton.transport import DeviceQueue
+        from chroma.triton.optical_response import uniform, TabulatedCDF
+        from chroma_lar.spectral_kernels import boundary_step
+        s, n, seed = simulation, 32768, 391
+        state = s._empty_state(n)
+        s._source(state, n, (-1000, 0, 0), 0, seed, 0, 0, 0)
+        state.direction.copy_(torch.tensor([0., 0., 1.], device="cuda"))
+        state.polarization.copy_(torch.tensor([1., 0., 0.], device="cuda"))
+        state.times.zero_(); state.wavelengths.fill_(128)
+        sid = s.scene.tables.surface_names.index(s.calibration.manifest["roles"]["tpb"])
+        glass = s.scene.tables.material_names.index(s.calibration.manifest["roles"]["glass"])
+        tri = int(np.flatnonzero(s.scene.pmt.scene_surface_index == sid)[0])
+        q, output = [DeviceQueue.allocate(n) for _ in range(2)]
+        q.buffer.copy_(torch.arange(n, dtype=torch.int32, device="cuda")); q.count.fill_(n)
+        def full(value, dtype=torch.int32):
+            return torch.full((n,), value, dtype=dtype, device="cuda")
+        normals = torch.tensor([0., 0., -1.], device="cuda").repeat(n, 1)
+        hit = (full(1., torch.float32), normals, full(s.lar_index), full(glass), full(sid), full(0), full(tri), full(-1))
+        arrays = list(s.model.properties)
+        arrays[1] = torch.full_like(arrays[1], 1.e30)
+        arrays[2] = torch.full_like(arrays[2], 1.e30)
+        g = s.model.optics.wavelength_grid
+        boundary_step[(triton.cdiv(n, 128),)](*state, q.buffer, q.count, n, output.buffer, output.count,
+            *hit, s.query.scene_device["pmt_scene_material1_index"], *arrays, seed, 200,
+            float(g.start), float(g.step), NW=g.count, BLOCK=128, enable_fp_fusion=False)
+        flags, wavelength, time, direction = (state[i].cpu().numpy() for i in (4, 10, 3, 1))
+        ids = np.arange(n, dtype=np.int64)
+>       reemit_probability = np.interp(128, s.calibration.wavelengths, s.model.optics.model.surfaces.reemit[sid])
+E       AttributeError: 'OpticalTableIR' object has no attribute 'model'
+
+chroma-lar/test/test_fast_spectral.py:120: AttributeError
+=============================== warnings summary ===============================
+chroma-lar/test/test_pmt_coating.py: 28 warnings
+chroma-lar/test/test_triton_scene_compiler.py: 66 warnings
+chroma-lar/test/test_triton_scene_instances.py: 154 warnings
+chroma-lar/test/test_triton_scene_intersect.py: 22 warnings
+chroma-lar/test/test_triton_backend.py: 22 warnings
+chroma-lar/test/test_fast_spectral.py: 88 warnings
+chroma-lar/test/test_triton_device_geometry.py: 22 warnings
+  /sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lite/chroma/tools.py:115: DeprecationWarning: Arrays of 2-dimensional vectors are deprecated. Use arrays of 3-dimensional vectors instead. (deprecated in NumPy 2.0)
+    v1 = np.cross(points[i] - points[i - 1], (0, 0, 1))[:2]
+
+chroma-lar/test/test_pmt_coating.py: 28 warnings
+chroma-lar/test/test_triton_scene_compiler.py: 66 warnings
+chroma-lar/test/test_triton_scene_instances.py: 154 warnings
+chroma-lar/test/test_triton_scene_intersect.py: 22 warnings
+chroma-lar/test/test_triton_backend.py: 22 warnings
+chroma-lar/test/test_fast_spectral.py: 88 warnings
+chroma-lar/test/test_triton_device_geometry.py: 22 warnings
+  /sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lite/chroma/tools.py:122: DeprecationWarning: Arrays of 2-dimensional vectors are deprecated. Use arrays of 3-dimensional vectors instead. (deprecated in NumPy 2.0)
+    v2 = np.cross(points[i + 1] - points[i], (0, 0, 1))[:2]
+
+chroma-lar/test/test_pmt_coating.py: 2 warnings
+chroma-lar/test/test_triton_scene_compiler.py: 6 warnings
+chroma-lar/test/test_triton_scene_instances.py: 14 warnings
+chroma-lar/test/test_triton_scene_intersect.py: 2 warnings
+chroma-lar/test/test_triton_backend.py: 2 warnings
+chroma-lar/test/test_fast_spectral.py: 8 warnings
+chroma-lar/test/test_triton_device_geometry.py: 2 warnings
+  /sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/chroma_lar/geometry/pmt.py:394: DeprecationWarning: The numpy.linalg.linalg has been made private and renamed to numpy.linalg._linalg. All public functions exported by it are available from numpy.linalg. Please use numpy.linalg.LinAlgError instead.
+    offset_profile = tools.offset(profile, -glass_thickness)
+
+chroma-lar/test/test_triton_scene_instances.py::test_exact_reflect3wires_scene_randomized_targeted_rays
+chroma-lar/test/test_triton_scene_instances.py::test_exact_reflect3wires_pmt_two_boundary_self_hit_and_optical_sides
+  /sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/chroma_lar/triton_scene/instances.py:4303: RuntimeWarning: invalid value encountered in multiply
+    delta = np.multiply(
+
+chroma-lar/test/test_triton_scene_instances.py::test_exact_reflect3wires_scene_randomized_targeted_rays
+chroma-lar/test/test_triton_scene_instances.py::test_exact_reflect3wires_pmt_two_boundary_self_hit_and_optical_sides
+  /sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/chroma_lar/triton_scene/instances.py:4314: RuntimeWarning: invalid value encountered in add
+    & ((u + v) <= np.float32(1.0) + epsilon)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED chroma-lar/test/test_fast_spectral.py::test_wls_boundary_retains_spectrum_time_and_material_side
+1 failed, 166 passed, 844 warnings in 43.63s

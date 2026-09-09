@@ -1,0 +1,153 @@
+{
+  "benchmark": "reflect3wires fixed-round device scheduler ablation",
+  "command": [
+    "benchmarks/benchmark_device_scheduler.py",
+    "--nphotons",
+    "5000000",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "262144",
+    "--round-batches",
+    "4,8",
+    "--json",
+    "benchmarks/triton_device_scheduler_union_ablation_5m.json"
+  ],
+  "configuration": {
+    "block_size": 128,
+    "history_epochs": 2,
+    "history_length": 8,
+    "nphotons": 5000000,
+    "replicates": 2,
+    "round_batches": [
+      4,
+      8
+    ],
+    "seeds": [
+      8123,
+      2654443884
+    ],
+    "warmup_photons": 262144
+  },
+  "cpu_thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "name": "NVIDIA A100-SXM4-40GB",
+    "total_memory_bytes": 42405855232
+  },
+  "host": "sdfampere001",
+  "records": [
+    {
+      "device_round_batch": 1,
+      "device_scheduler": false,
+      "exact_hit_signatures_match_synchronized": true,
+      "median_photons_per_second": 15900431.523005232,
+      "name": "synchronized",
+      "p95_latency_photons_per_second": 15301458.415372962,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.3281339448876679,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 15237679.849647012,
+          "replicate": 0,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.3007798041217029,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 16623456.533593848,
+          "replicate": 1,
+          "scheduler_host_syncs": 0,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 4,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "median_photons_per_second": 13528041.211674912,
+      "name": "device_batch_4",
+      "p95_latency_photons_per_second": 13507771.611752443,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.37021890468895435,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 13505523.182833772,
+          "replicate": 0,
+          "scheduler_host_syncs": 29,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.36898641288280487,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 13550634.455442857,
+          "replicate": 1,
+          "scheduler_host_syncs": 29,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    },
+    {
+      "device_round_batch": 8,
+      "device_scheduler": true,
+      "exact_hit_signatures_match_synchronized": true,
+      "median_photons_per_second": 13610538.541446863,
+      "name": "device_batch_8",
+      "p95_latency_photons_per_second": 13600373.80903499,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "detections": 213823,
+          "elapsed_seconds": 0.36705732392147183,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 13621850.523461286,
+          "replicate": 0,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 114,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "detections": 213435,
+          "elapsed_seconds": 0.3676674608141184,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 13599245.331443267,
+          "replicate": 1,
+          "scheduler_host_syncs": 15,
+          "scheduler_rounds": 116,
+          "seed": 2654443884
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "law": "triangular PDF on 410..450 nm with mode 430 nm",
+  "grid_convergence": [
+    {
+      "wavelength_step_nm": 2,
+      "maximum_cdf_interpolation_error": 0.0012500000000000844
+    },
+    {
+      "wavelength_step_nm": 1,
+      "maximum_cdf_interpolation_error": 0.00031250000000004885
+    },
+    {
+      "wavelength_step_nm": 0.5,
+      "maximum_cdf_interpolation_error": 7.812500000015099e-05
+    },
+    {
+      "wavelength_step_nm": 0.25,
+      "maximum_cdf_interpolation_error": 1.953125000009326e-05
+    }
+  ]
+}

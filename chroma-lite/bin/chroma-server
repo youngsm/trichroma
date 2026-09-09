@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+#--*-python-*-
+
+import sys
+import optparse
+import zmq
+from chroma import Simulation
+from chroma.tools import enable_debug_on_crash
+from chroma.loader import load_geometry_from_string
+
+class ChromaServer(object):
+    '''A ZeroMQ socket server which listens for incoming Photons objects
+    and replies with propagated Photons.
+
+    :param address: Socket address on which to listen
+    :param detector: Detector to progagate photons in
+    '''
+    def __init__(self, address, detector):
+        # set up zeromq socket
+        self.address = address
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.bind(address)
+
+        # set up simulation
+        self.detector = detector
+        self.sim = Simulation(self.detector)
+
+    def serve_forever(self):
+        '''Listen for photons, propagate them, and return the final states.'''
+        while True:
+            photons_in = self.socket.recv_pyobj()
+            print('Processing', len(photons_in), 'photons')
+
+            # propagate in chroma simulation
+            photons_end = next(self.sim.simulate(photons_in, keep_photons_end=True))
+
+            # return final photon vertices to client
+            self.socket.send_pyobj(photons_end)
+
+
+if __name__ == '__main__':
+    enable_debug_on_crash()
+    parser = optparse.OptionParser('%prog <detector> <options>')
+    parser.add_option('--address', dest='address', default='tcp://*:5024')
+    options, args = parser.parse_args()
+
+    if len(args) < 1:
+        sys.exit(parser.format_help())
+
+    print('reticulating splines...')
+    detector = load_geometry_from_string(args[0])
+
+    print('starting chroma server listening on', options.address)
+    server = ChromaServer(options.address, detector)
+    server.serve_forever()
+

@@ -1,0 +1,251 @@
+{
+  "active_set": {
+    "chroma": 0,
+    "chroma_unique": true,
+    "exact": true,
+    "triton": 0,
+    "triton_unique": true
+  },
+  "chroma_global_bvh_compatibility": true,
+  "chroma_mesh_box_compatibility": true,
+  "detector": "detector_config_reflect_reflect3wires",
+  "draw_consumption_certified": true,
+  "field_agreement": {
+    "boundary_kind": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "detected_channel": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "direction": {
+      "exact_fraction": 1.0,
+      "exact_rows": 89,
+      "maximum_absolute_difference": 0.0
+    },
+    "draw_cursor": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "global_ids": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "history": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "interaction_cursor": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "last_triangle": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "overflow": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    },
+    "polarization": {
+      "exact_fraction": 1.0,
+      "exact_rows": 89,
+      "maximum_absolute_difference": 0.0
+    },
+    "position": {
+      "exact_fraction": 1.0,
+      "exact_rows": 89,
+      "maximum_absolute_difference": 0.0
+    },
+    "time": {
+      "exact": 89,
+      "exact_fraction": 1.0
+    }
+  },
+  "first_certificate_difference": null,
+  "global_bvh_certificate": {
+    "artifact_sha256": "79032918e857dc0251b4abaf234367ff1b42278f3399b9f25b7afc16ad0973a0",
+    "mesh_md5": "9a4f1d85f358cfdbd759117fefb449a7",
+    "optical_semantics_sha256": "aae153bf619d231df5fc20053a789e8db194c0b2873d5d38c4bdc43549bf4003",
+    "traversal_sha256": "e4c38552d318d3c45e09b5204291fae3a0d8e54dc388f9514082dc13c1c2ea58"
+  },
+  "global_photon_ids": [
+    1961,
+    4700,
+    1560,
+    4060,
+    636,
+    6475,
+    934,
+    6881,
+    8073,
+    7622,
+    1707,
+    325,
+    5755,
+    1775,
+    86,
+    1936,
+    3810,
+    4312,
+    6771,
+    8059,
+    4391,
+    2302,
+    814,
+    6964,
+    2635,
+    2654,
+    6043,
+    1084,
+    682,
+    5549,
+    5501,
+    497,
+    313,
+    317,
+    6994,
+    1512,
+    1531,
+    2372,
+    2391,
+    5136,
+    6849,
+    6863,
+    3644,
+    3880,
+    1393,
+    1,
+    1447,
+    6637,
+    1250,
+    1255,
+    1298,
+    418,
+    440,
+    4532,
+    6532,
+    1792,
+    6516,
+    4244,
+    1149,
+    6150,
+    6162,
+    5101,
+    6613,
+    5231,
+    5244,
+    2214,
+    7308,
+    1635,
+    1647,
+    5161,
+    4494,
+    4509,
+    2986,
+    4715,
+    6244,
+    6255,
+    6256,
+    3048,
+    3058,
+    4930,
+    3933,
+    3935,
+    4821,
+    7397,
+    870,
+    878,
+    2240,
+    2242,
+    7732
+  ],
+  "interaction_certificate": {
+    "cursor_equal": true,
+    "draw_consumption_certified": true,
+    "draw_cursor_equal": true,
+    "exact_fraction": 1.0,
+    "exact_words": 22873,
+    "first_difference": null,
+    "interaction_cursor_equal": true,
+    "ledger_equal": true,
+    "overflow_free": true,
+    "prefix_errors": {},
+    "prefix_valid": {
+      "chroma": true,
+      "triton": true
+    },
+    "shape": [
+      89,
+      257
+    ],
+    "shapes_equal": true,
+    "total_words": 22873
+  },
+  "interaction_cursor_range": {
+    "maximum": 126,
+    "minimum": 65
+  },
+  "last_instance_invariant": {
+    "exact": 89,
+    "required_value": -1,
+    "satisfied": true,
+    "total": 89
+  },
+  "legacy_specular_reflection": true,
+  "matched_bitwise": true,
+  "max_steps": 256,
+  "photons": 89,
+  "provenance": {
+    "chroma_cuda_worker": {
+      "container": "/sdf/group/neutrino/youngsam/sim/chroma-lar/installation/chroma3.lar-plib/chroma.simg",
+      "container_mtime_ns": 1751615499920255212,
+      "container_size_bytes": 7026487296,
+      "cuda_driver": "12090",
+      "cuda_runtime": "12.4.0",
+      "gpu": "NVIDIA A100-SXM4-40GB",
+      "numpy": "2.3.1",
+      "pycuda": "2025.1.1",
+      "python": "3.11.10"
+    },
+    "coordinator": {
+      "numpy": "2.4.3",
+      "python": "3.12.8"
+    },
+    "source_sha256": {
+      "chroma-lar/benchmarks/validate_detector_lockstep.py": "70fbc9c7e58e198e19c85ed793196b466b7023a5f5613d29bdff9e19bde7dbfe",
+      "chroma-lar/chroma_lar/triton_backend.py": "caa1a61f3d40afdd35ee0f6855d5e10b25f247df95deea75d648ee0cf28ece75",
+      "chroma-lar/chroma_lar/triton_scene/chroma_global_bvh.py": "74436a02cc042ba379fb188596f76a94a6516231a423b569a7d157834810de0d",
+      "chroma-lar/chroma_lar/triton_scene/chroma_global_traversal.py": "a1b6e46fa047f154c9f0e0e304b7d5860fd1a8edea2c99fb92c2c4614b015353",
+      "chroma-lar/chroma_lar/triton_scene/intersect.py": "a0a89f46224802efabffcf9d2609430a53b2732bb30ad57de3534c05d7d3579d",
+      "chroma-lite/chroma/cuda/propagate_tape.cu": "17c1a4d73d80a1250c4322aff07a9866ca1a2579780e7db550695cfcd2a10c75",
+      "chroma-lite/chroma/cuda/rng_alignment.h": "7f2a0d9fed15b459ffe2caa3c5ee68400f16ab6e3eb8751066ef7e98c431b8a3",
+      "chroma-lite/chroma/triton/physics_kernels.py": "747c73606958d3972b0d8b4e1a0e6d16ea8b250fe3a24508c1d6e06370c0311b",
+      "chroma-lite/chroma/triton/rng_alignment.py": "af7db30a0388098243bdb9abfb68299ffa04815e89f1bbe2af91997783b03841",
+      "chroma-lite/chroma/triton/transport.py": "e4691991fcb1774ac814bb98e31878c255e621a2df74cf0dce562f576a74466f"
+    },
+    "triton_worker": {
+      "gpu": "NVIDIA A100-SXM4-40GB",
+      "numpy": "2.4.3",
+      "python": "3.12.8",
+      "torch": "2.5.1+cu124",
+      "torch_cuda": "12.4",
+      "triton": "3.1.0"
+    }
+  },
+  "representable_progress_guard": false,
+  "schema_version": 3,
+  "scope": "complete resident state after bounded full-history replay",
+  "source_seed": 8123,
+  "tape_overflow_free": true,
+  "tape_seed": 99173,
+  "wire_scan_source_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ]
+}

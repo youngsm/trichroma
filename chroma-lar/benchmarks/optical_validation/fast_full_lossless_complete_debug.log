@@ -1,0 +1,11 @@
+WARNING: PyCUDA backend unavailable; Triton is configured separately.
+Traceback (most recent call last):
+  File "/sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/benchmarks/validate_fast_lossless.py", line 79, in <module>
+    main()
+  File "/sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/benchmarks/validate_fast_lossless.py", line 49, in main
+    result = simulation.simulate_voxel(args.photons, center, voxel_size=0., seed=seed,
+  File "/sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/chroma_lar/spectral_backend.py", line 164, in simulate_voxel
+    result = self._transport(state, seed, max_steps, keep_final_states)
+  File "/sdf/group/neutrino/youngsam/sim/triton_chroma/chroma-lar/chroma_lar/spectral_backend.py", line 289, in _transport
+    raise RuntimeError(f"invalid spectral transport result: {diagnostic}")
+RuntimeError: invalid spectral transport result: {'detected': 9991, 'reemitted': 0, 'escaped': 0, 'step_limit': 9, 'aborted': 0, 'unfinished': 0, 'nonfinite': 0}

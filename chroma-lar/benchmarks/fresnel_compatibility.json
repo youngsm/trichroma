@@ -1,0 +1,197 @@
+{
+  "decision_agreement": {
+    "exact_rows": 4096,
+    "mismatched_components": 0,
+    "mismatched_rows": 0
+  },
+  "input": "generated",
+  "intermediate_raw_word_agreement": {
+    "incidence_axis_x": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "incidence_axis_y": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "incidence_axis_z": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "incident_angle": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "incident_cosine": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "normal_probability": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "outgoing_angle": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "raw_axis_length": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "reflectance": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "reflection_coefficient": {
+      "exact_row_fraction": 0.9599609375,
+      "exact_rows": 3932,
+      "first_difference": {
+        "component": 0,
+        "cuda_value": -0.0,
+        "cuda_word": "0x80000000",
+        "row": 12,
+        "triton_value": 0.0,
+        "triton_word": "0x00000000"
+      },
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 164,
+      "mismatched_rows": 164
+    },
+    "refracted_angle": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "refracted_argument": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    }
+  },
+  "operation": "Chroma propagate_at_boundary Fresnel step",
+  "pinned_detector_regression_row_0": {
+    "input_words": {
+      "direction": [
+        "0xbf4b3748",
+        "0xbf0760ff",
+        "0x3e99c6f0"
+      ],
+      "n1": [
+        "0x3fb06f69"
+      ],
+      "n2": [
+        "0x3fc33333"
+      ],
+      "normal": [
+        "0x3f1df2c4",
+        "0x3f4748df",
+        "0xbdec80dd"
+      ],
+      "polarization": [
+        "0xbef80c73",
+        "0x3f59308a",
+        "0x3e5a7472"
+      ],
+      "u_polarization": [
+        "0x3f7f3bfc"
+      ],
+      "u_reflect": [
+        "0x3d806590"
+      ]
+    },
+    "required_groups_exact": {
+      "incident_angle": true,
+      "normalized_incidence_axis": true,
+      "output_direction": true,
+      "output_polarization": true,
+      "refracted_argument_and_angle": true
+    }
+  },
+  "rays": 4096,
+  "required_group_raw_word_agreement": {
+    "incident_angle": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "normalized_incidence_axis": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "output_direction": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "output_polarization": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    },
+    "refracted_argument_and_angle": {
+      "exact_row_fraction": 1.0,
+      "exact_rows": 4096,
+      "first_difference": null,
+      "maximum_absolute_difference": 0.0,
+      "mismatched_components": 0,
+      "mismatched_rows": 0
+    }
+  },
+  "schema_version": 1,
+  "seed": 20260902
+}

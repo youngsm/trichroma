@@ -1,0 +1,122 @@
+{
+  "nphotons": 15000000,
+  "replicates": 1,
+  "history_length": 8,
+  "tile_size": 15000000,
+  "records": [
+    {
+      "history_epochs_per_poll": 1,
+      "reservoir_cutoff_rounds": 64,
+      "median_photons_per_second": 548840.5390094556,
+      "minimum_photons_per_second": 548840.5390094556,
+      "runs": [
+        {
+          "seed": 8123,
+          "elapsed_seconds": 27.330342665780336,
+          "photons_per_second": 548840.5390094556,
+          "detections": 641416,
+          "boundary_rounds": 373,
+          "dense_rounds": 64,
+          "reservoir_rounds": 309,
+          "reservoir_photons": 409,
+          "boundary_events": 91806847
+        }
+      ]
+    },
+    {
+      "history_epochs_per_poll": 1,
+      "reservoir_cutoff_rounds": 96,
+      "median_photons_per_second": 11192164.233347595,
+      "minimum_photons_per_second": 11192164.233347595,
+      "runs": [
+        {
+          "seed": 8123,
+          "elapsed_seconds": 1.3402233640663326,
+          "photons_per_second": 11192164.233347595,
+          "detections": 641416,
+          "boundary_rounds": 373,
+          "dense_rounds": 96,
+          "reservoir_rounds": 277,
+          "reservoir_photons": 11,
+          "boundary_events": 91806847
+        }
+      ]
+    },
+    {
+      "history_epochs_per_poll": 1,
+      "reservoir_cutoff_rounds": 128,
+      "median_photons_per_second": 11621560.543541666,
+      "minimum_photons_per_second": 11621560.543541666,
+      "runs": [
+        {
+          "seed": 8123,
+          "elapsed_seconds": 1.2907044577877969,
+          "photons_per_second": 11621560.543541666,
+          "detections": 641416,
+          "boundary_rounds": 373,
+          "dense_rounds": 128,
+          "reservoir_rounds": 245,
+          "reservoir_photons": 7,
+          "boundary_events": 91806847
+        }
+      ]
+    },
+    {
+      "history_epochs_per_poll": 2,
+      "reservoir_cutoff_rounds": 64,
+      "median_photons_per_second": 11197901.0655024,
+      "minimum_photons_per_second": 11197901.0655024,
+      "runs": [
+        {
+          "seed": 8123,
+          "elapsed_seconds": 1.339536749990657,
+          "photons_per_second": 11197901.0655024,
+          "detections": 641416,
+          "boundary_rounds": 373,
+          "dense_rounds": 64,
+          "reservoir_rounds": 309,
+          "reservoir_photons": 409,
+          "boundary_events": 91806847
+        }
+      ]
+    },
+    {
+      "history_epochs_per_poll": 2,
+      "reservoir_cutoff_rounds": 96,
+      "median_photons_per_second": 11009036.182491632,
+      "minimum_photons_per_second": 11009036.182491632,
+      "runs": [
+        {
+          "seed": 8123,
+          "elapsed_seconds": 1.3625170951709151,
+          "photons_per_second": 11009036.182491632,
+          "detections": 641416,
+          "boundary_rounds": 373,
+          "dense_rounds": 96,
+          "reservoir_rounds": 277,
+          "reservoir_photons": 11,
+          "boundary_events": 91806847
+        }
+      ]
+    },
+    {
+      "history_epochs_per_poll": 2,
+      "reservoir_cutoff_rounds": 128,
+      "median_photons_per_second": 11096833.382222211,
+      "minimum_photons_per_second": 11096833.382222211,
+      "runs": [
+        {
+          "seed": 8123,
+          "elapsed_seconds": 1.3517369760666043,
+          "photons_per_second": 11096833.382222211,
+          "detections": 641416,
+          "boundary_rounds": 373,
+          "dense_rounds": 128,
+          "reservoir_rounds": 245,
+          "reservoir_photons": 7,
+          "boundary_events": 91806847
+        }
+      ]
+    }
+  ]
+}

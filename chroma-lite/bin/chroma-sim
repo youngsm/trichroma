@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+#--*-python-*-
+from chroma.tools import profile_if_possible
+
+@profile_if_possible
+def main():
+    import optparse
+    import sys
+    import imp
+    import os
+    import inspect
+    import numpy as np
+    import itertools
+    import time
+
+    from chroma import event
+    from chroma import itertoolset
+    from chroma import Simulation
+    from chroma.io import root
+    from chroma.rootimport import ROOT
+    from chroma.tools import enable_debug_on_crash
+    import chroma.loader
+
+    ROOT.gROOT.SetBatch()
+
+    from chroma.generator.vertex import constant_particle_gun
+
+    from chroma.log import logger, logging
+    logger.setLevel(logging.INFO)
+
+
+    parser = optparse.OptionParser('%prog <detector>')
+    parser.add_option('-o', dest='output_filename',
+                      help='output filename', default='out.root')
+    parser.add_option('-j', type='int', dest='device',
+                      help='CUDA device number', default=None)
+    parser.add_option('-s', type='int', dest='seed',
+                      help='random number generator seed')
+    parser.add_option('-g', type='int', dest='ngenerators',
+                      help='number of GEANT4 processes', default=4)
+    parser.add_option('-n', '--nevents', type='int', dest='nevents',
+                      default=100)
+    parser.add_option('-p', '--particle', dest='particle',
+                      help='particle name', default='e-')
+    parser.add_option('-k', '--ke', type='float', dest='ke',
+                      help='kinetic energy (MeV)', default=100.0)
+    parser.add_option('--pos', dest='pos',
+                      help='particle vertex origin', default='0,0,0')
+    parser.add_option('--dir', dest='dir',
+                      help='particle vertex direction', default='1,0,0')
+    parser.add_option('--save-photons-beg', action='store_true',
+                      dest='save_photons_beg',
+                      help='save initial photons to disk', default=False)
+    parser.add_option('--save-photons-end', action='store_true',
+                      dest='save_photons_end',
+                      help='save final photons to disk', default=False)
+    parser.add_option('--debug', dest='debug', 
+                      action='store_true', default=False,
+                      help='Start python debugger on exception')
+    parser.add_option('--rootlogon', dest='rootlogon',
+                      action='store_true', default=False,
+                      help='Write a .rootlogon.C file to the current directory for reading Chroma ROOT files.')
+
+    options, args = parser.parse_args()
+
+    if options.rootlogon:
+        if os.path.exists('.rootlogon.C'):
+            print(".rootlogon.C file already exists!", file=sys.stderr)
+            sys.exit(1)
+        else:
+            with open('.rootlogon.C', 'w') as f:
+                print('{\ngROOT->ProcessLine(".L ~/.chroma/root.C+");\n}', file=f)
+            print('.rootlogon.C created', file=sys.stderr)
+            sys.exit(0)
+
+    if len(args) < 1:
+        sys.exit(parser.format_help())
+
+    if options.debug:
+        enable_debug_on_crash()
+
+    detector = chroma.loader.load_geometry_from_string(args[0])
+
+    pos = np.array([float(s) for s in options.pos.split(',')], dtype=float)
+    dir = np.array([float(s) for s in options.dir.split(',')], dtype=float)
+
+    ev_gen = constant_particle_gun(particle_name=options.particle, 
+                                   pos=pos, dir=dir, ke=options.ke)
+
+    sim = Simulation(detector, seed=options.seed, cuda_device=options.device,
+                     geant4_processes=options.ngenerators)
+    
+    print('RNG seed: %i' % sim.seed)
+
+    writer = root.RootWriter(options.output_filename)
+
+    start = time.time()
+    for i, ev in \
+            enumerate(sim.simulate(itertools.islice(ev_gen, 
+                                                    options.nevents),
+                                   keep_photons_beg=options.save_photons_beg,
+                                   keep_photons_end=options.save_photons_end)):
+        print('\rEvent: %i' % (i+1), end=' ')
+        sys.stdout.flush()
+
+        assert ev.nphotons > 0, 'Geant4 generated event with no photons!'
+
+        writer.write_event(ev)
+    print()
+
+    writer.close()
+    print('Events per second: %1.1f' % (options.nevents / (time.time() - start)))
+
+if __name__ == '__main__':
+    main()
+

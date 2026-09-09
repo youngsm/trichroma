@@ -1,0 +1,240 @@
+{
+  "benchmark": "reflect3wires cumulative fast-path ablation",
+  "command": [
+    "chroma-lar/benchmarks/benchmark_fast_path_ablation.py",
+    "--nphotons",
+    "5000000",
+    "--replicates",
+    "2",
+    "--warmup-photons",
+    "131072",
+    "--history-length",
+    "8",
+    "--block-size",
+    "128",
+    "--json",
+    "chroma-lar/benchmarks/triton_fast_path_ablation_5m_steady.json"
+  ],
+  "configuration": {
+    "block_size": 128,
+    "history_epochs_per_poll": 1,
+    "history_length": 8,
+    "nphotons": 5000000,
+    "replicates": 2,
+    "seeds": [
+      8123,
+      2654443884
+    ],
+    "warmup_photons": 131072
+  },
+  "cpu_thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "device": {
+    "compute_capability": [
+      8,
+      0
+    ],
+    "name": "NVIDIA A100-SXM4-40GB",
+    "total_memory_bytes": 42405855232
+  },
+  "host": "sdfampere001",
+  "records": [
+    {
+      "exact_hit_signatures_match_monolithic": true,
+      "median_photons_per_second": 15636646.485974763,
+      "name": "monolithic_scan",
+      "p95_latency_photons_per_second": 15155482.036303248,
+      "runs": [
+        {
+          "boundary_events": 30612900,
+          "boundary_rounds": 114,
+          "detections": 213823,
+          "elapsed_seconds": 0.33104162011295557,
+          "hit_signature": "462101c1cbde37a6b8efc5f4056db2084910928752f39d316251ea328ecebc24",
+          "photons_per_second": 15103841.016407354,
+          "portal_direct": 0,
+          "portal_fallback": 0,
+          "replicate": 0,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577405,
+          "boundary_rounds": 116,
+          "detections": 213435,
+          "elapsed_seconds": 0.3084816951304674,
+          "hit_signature": "0e78ae06b0e75c834d5913aa14fa29573c300c9ed7b86059d6f15d9652781c03",
+          "photons_per_second": 16208417.157087164,
+          "portal_direct": 0,
+          "portal_fallback": 0,
+          "replicate": 1,
+          "seed": 2654443884
+        }
+      ],
+      "switches": {
+        "branch_specialized_boundary": false,
+        "pmt_grid": false,
+        "portal_boundary": false
+      }
+    },
+    {
+      "exact_hit_signatures_match_monolithic": false,
+      "median_photons_per_second": 14684734.611776438,
+      "name": "branch_specialized",
+      "p95_latency_photons_per_second": 14625727.866705943,
+      "runs": [
+        {
+          "boundary_events": 30612376,
+          "boundary_rounds": 114,
+          "detections": 213841,
+          "elapsed_seconds": 0.33896332001313567,
+          "hit_signature": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+          "photons_per_second": 14750858.58790337,
+          "portal_direct": 0,
+          "portal_fallback": 0,
+          "replicate": 0,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577256,
+          "boundary_rounds": 116,
+          "detections": 213419,
+          "elapsed_seconds": 0.34201595978811383,
+          "hit_signature": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+          "photons_per_second": 14619200.820621373,
+          "portal_direct": 0,
+          "portal_fallback": 0,
+          "replicate": 1,
+          "seed": 2654443884
+        }
+      ],
+      "switches": {
+        "branch_specialized_boundary": true,
+        "pmt_grid": false,
+        "portal_boundary": false
+      }
+    },
+    {
+      "exact_hit_signatures_match_monolithic": false,
+      "median_photons_per_second": 11135424.952607244,
+      "name": "branch_plus_grid",
+      "p95_latency_photons_per_second": 9739290.195969304,
+      "runs": [
+        {
+          "boundary_events": 30612376,
+          "boundary_rounds": 114,
+          "detections": 213841,
+          "elapsed_seconds": 0.5205363240092993,
+          "hit_signature": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+          "photons_per_second": 9605477.599504998,
+          "portal_direct": 0,
+          "portal_fallback": 0,
+          "replicate": 0,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577256,
+          "boundary_rounds": 116,
+          "detections": 213419,
+          "elapsed_seconds": 0.37749855499714613,
+          "hit_signature": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+          "photons_per_second": 13245083.812407706,
+          "portal_direct": 0,
+          "portal_fallback": 0,
+          "replicate": 1,
+          "seed": 2654443884
+        }
+      ],
+      "switches": {
+        "branch_specialized_boundary": true,
+        "pmt_grid": true,
+        "portal_boundary": false
+      }
+    },
+    {
+      "exact_hit_signatures_match_monolithic": false,
+      "median_photons_per_second": 12668372.412240548,
+      "name": "branch_plus_portals",
+      "p95_latency_photons_per_second": 12530689.140808351,
+      "runs": [
+        {
+          "boundary_events": 30612376,
+          "boundary_rounds": 114,
+          "detections": 213841,
+          "elapsed_seconds": 0.3995022037997842,
+          "hit_signature": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+          "photons_per_second": 12515575.514837,
+          "portal_direct": 1,
+          "portal_fallback": 0,
+          "replicate": 0,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577256,
+          "boundary_rounds": 116,
+          "detections": 213419,
+          "elapsed_seconds": 0.38986518094316125,
+          "hit_signature": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+          "photons_per_second": 12824946.274771212,
+          "portal_direct": 0,
+          "portal_fallback": 1,
+          "replicate": 1,
+          "seed": 2654443884
+        }
+      ],
+      "switches": {
+        "branch_specialized_boundary": true,
+        "pmt_grid": false,
+        "portal_boundary": true
+      }
+    },
+    {
+      "exact_hit_signatures_match_monolithic": false,
+      "median_photons_per_second": 11981695.030936811,
+      "name": "branch_grid_portals",
+      "p95_latency_photons_per_second": 11909327.495459398,
+      "runs": [
+        {
+          "boundary_events": 30612376,
+          "boundary_rounds": 114,
+          "detections": 213841,
+          "elapsed_seconds": 0.4144857148639858,
+          "hit_signature": "984cdb480484e72524375284300d0fdcd36bfbfcc69a553d1417b6979342cd45",
+          "photons_per_second": 12063141.91465141,
+          "portal_direct": 1,
+          "portal_fallback": 0,
+          "replicate": 0,
+          "seed": 8123
+        },
+        {
+          "boundary_events": 30577256,
+          "boundary_rounds": 116,
+          "detections": 213419,
+          "elapsed_seconds": 0.4201207389123738,
+          "hit_signature": "ece1e8db283d1f8c0de6126599369b4a619bda33ce953557567700754bfb247d",
+          "photons_per_second": 11901340.58352894,
+          "portal_direct": 0,
+          "portal_fallback": 1,
+          "replicate": 1,
+          "seed": 2654443884
+        }
+      ],
+      "switches": {
+        "branch_specialized_boundary": true,
+        "pmt_grid": true,
+        "portal_boundary": true
+      }
+    }
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.4.3",
+    "python": "3.12.8",
+    "torch": "2.5.1+cu124",
+    "torch_cuda": "12.4",
+    "triton": "3.1.0"
+  }
+}

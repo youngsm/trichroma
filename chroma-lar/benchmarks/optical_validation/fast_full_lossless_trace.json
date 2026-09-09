@@ -1,0 +1,86 @@
+{
+  "expected": "Every photon detected; zero bulk/surface absorption in a lossless enclosure with absorbing steel behind perfectly reflecting boundaries.",
+  "scene_fingerprint": "6a2dafedd8b4f9c179ec932bab854c415bfbc9d49b69b2352d02c964b8c9d2d5",
+  "cases": [
+    {
+      "seed": 11,
+      "center_mm": [
+        -1000.0,
+        0.0,
+        0.0
+      ],
+      "photons": 1,
+      "counts": {
+        "detected": 0,
+        "bulk_absorbed": 1,
+        "surface_absorbed": 0,
+        "reflected": 1
+      },
+      "diagnostics": {
+        "detected": 0,
+        "reemitted": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "aborted": 0,
+        "unfinished": 0,
+        "nonfinite": 0
+      },
+      "maximum_interactions": 116,
+      "passed": false
+    },
+    {
+      "seed": 29,
+      "center_mm": [
+        -1990.0,
+        500.0,
+        500.0
+      ],
+      "photons": 1,
+      "counts": {
+        "detected": 1,
+        "bulk_absorbed": 0,
+        "surface_absorbed": 0,
+        "reflected": 1
+      },
+      "diagnostics": {
+        "detected": 1,
+        "reemitted": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "aborted": 0,
+        "unfinished": 0,
+        "nonfinite": 0
+      },
+      "maximum_interactions": 30,
+      "passed": true
+    },
+    {
+      "seed": 83,
+      "center_mm": [
+        -10.0,
+        -500.0,
+        -500.0
+      ],
+      "photons": 1,
+      "counts": {
+        "detected": 1,
+        "bulk_absorbed": 0,
+        "surface_absorbed": 0,
+        "reflected": 1
+      },
+      "diagnostics": {
+        "detected": 1,
+        "reemitted": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "aborted": 0,
+        "unfinished": 0,
+        "nonfinite": 0
+      },
+      "maximum_interactions": 9,
+      "passed": true
+    }
+  ],
+  "passed": false,
+  "diagnostic_script_sha256": "90c2721c1f148aa6ab8720964d6d5bd8a5932356b31566b2be0d04154351a77b"
+}

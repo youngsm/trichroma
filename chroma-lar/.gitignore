@@ -1,0 +1,15 @@
+*.stl
+*.STL
+.DS_Store
+._.DS_Store
+**/__pycache__/*.pyc
+*.root
+*.img
+*.gif
+*.err
+*.log
+*.h5
+*.txt
+*.pkl
+*.npz
+*.csv
