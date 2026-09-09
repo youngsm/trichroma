@@ -1,0 +1,108 @@
+{
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false
+  },
+  "hardware": true,
+  "browser": "/sdf/home/y/youngsam/.cache/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell",
+  "browser_version": "148.0.7778.96",
+  "geometry_rendering_only": true,
+  "browser_canvas_verified": true,
+  "source_hashes": {
+    "chroma-lar/benchmarks/check_webgpu_viewer.py": "ace778865eaf2889f0aa51a81cf43523826584f53d29e94c9fc70da44fafc209",
+    "chroma-lite/chroma/triton/webgpu/export.py": "1d7a9583cc052b8f89f361b2b5927b0ee24c81957f80daddd9642f32b1dc0fdb",
+    "chroma-lite/chroma/triton/webgpu/reference.py": "00c4c48a3b87157fcbe1ff3b8ee4fc98d153b6e7f6d7531edbb8fb631c3c93d8",
+    "chroma-lite/chroma/triton/viewer.py": "58c91612a9253bf31bd89d2f3bb33fce47bf6edb02f79580ebf3b5ae18d3806d",
+    "chroma-lite/chroma/triton/examples/theia.py": "c70f966b02e2d48f023f539429eb39d38c38d684cf1b4b36b9fd395fd001169d",
+    "chroma-lar/chroma_lar/viewer_examples.py": "1023b3214a886c33b4f9cc5c638528a06f4995d413248d952b5fc4da37a3a461",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lar/chroma_lar/triton_scene/instances.py": "c13efc2779faa09e7b5be2531d5aaceb0c8a28663d8db32bad852820730cce34",
+    "chroma-lar/chroma_lar/triton_scene/primitive_adapter.py": "507b6f080a53cbb3deb8352c47343058b687d24dc67f6fb8202fcf19f9436c20",
+    "chroma-lar/chroma_lar/geometry/build_larcube_pixel.py": "8bc24c41c566cb1250d61cb9332787fedf5786ca38a1f59251decf80be66636a",
+    "chroma-lar/chroma_lar/geometry/pixelplane.py": "9ab3710654e00e44213800baa29b65f4bdb4539b9a4cd2c81ca128cdd450922b",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.py": "9d0db78013f629874b508a64d5bb3e1752c9d1663547269cdffb1cb8df978ee1",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.yaml": "f6fee4cd3ece48755f1f96be980d49d6da102604af6446cd1d351d3c8a5067c9"
+  },
+  "asset_hashes": {
+    "index.html": "4395579d82591833d11a5149c2578be38b3dfa009bed26bc099afc2ea00b0c43",
+    "viewer.js": "8f30d743cf155e3b8c1256cb69d85e5b9f196589421a54e327fd3b2408d2bcd6",
+    "trace.wgsl": "f6680287142c669acca7cc1462b667ac3d089d75092cff69cdc6e7360991e83a"
+  },
+  "scenes": [
+    {
+      "scene": {
+        "format": "trichroma-webgpu-v1",
+        "name": "theia",
+        "binary": "theia.bin.gz",
+        "sha256": "36be7d3f22ecf85f763214828db2fd7ee070275e4c0dafff4f4561d91e0b4164",
+        "byte_length": 5635540,
+        "groups": 2,
+        "geometry": {
+          "name": "theia",
+          "radius_mm": 25500,
+          "diameter_mm": 508,
+          "coverage": 0.81,
+          "sensor_instances": 49684,
+          "canonical_sensor_triangles": 660,
+          "enclosure_triangles": 400,
+          "representation": "instanced PMT meshes and faceted enclosure"
+        },
+        "camera": {
+          "eye": [
+            14143.417059847501,
+            9903.32724134903,
+            4626.390431207558
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ],
+          "fov": 65
+        },
+        "rendering": "opaque geometry camera rays; no optical photon transport",
+        "precision": "WGSL f32 triangle queries; no analytic wires",
+        "mesh_triangles": 1060,
+        "instances": 49685,
+        "compression": "gzip",
+        "download_byte_length": 1302197
+      },
+      "oracle": "Independent float64 Moller-Trumbore leaves on float32 exported triangles/transforms; no exported BVH traversal",
+      "compared_rays": 2560,
+      "max_camera_direction_error": 1.7881393432617188e-07,
+      "hit_identity_mismatches": 0,
+      "max_distance_error_mm": 0.03861871429398889,
+      "max_normal_error": 2.188472388309215e-07,
+      "frames": [
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 472.0999994277954,
+          "wall_ms": 929.5999999046326,
+          "batches": 34,
+          "failures": 0,
+          "seed": 20,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"
+        }
+      ],
+      "canvas_nonuniform": true
+    }
+  ]
+}

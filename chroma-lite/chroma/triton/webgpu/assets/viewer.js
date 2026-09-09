@@ -1,4 +1,5 @@
 // Browser-only geometry rendering. The Python exporter is not a render server.
+import {gpuBudget} from './scheduler.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const add = (a, b) => a.map((v, i) => v + b[i]);
@@ -51,7 +52,7 @@ class DetectorRenderer {
     this.failures = this.device.createBuffer({size:4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
     this.catalog = await (await fetch("catalog.json")).json();
     if (!this.catalog.length) throw Error("The scene catalog is empty.");
-    $("scene").replaceChildren(...this.catalog.map(item => new Option(item.name, item.manifest)));
+    $("scene").replaceChildren(...this.catalog.map(item => new Option(item.label || item.name, item.manifest)));
     await this.loadScene(this.catalog[0].manifest);
     this.installControls();
     if (!params.has("manual")) this.schedule(false);
@@ -62,18 +63,25 @@ class DetectorRenderer {
     clearTimeout(this.timer); this.pending = null;
     $("status").textContent = "Loading shared detector geometry…";
     const manifest = await (await fetch(manifestPath)).json();
-    if (manifest.format !== "trichroma-webgpu-v1") throw Error("Unsupported scene format.");
-    const payload = await (await fetch(manifest.binary)).arrayBuffer();
+    if (!["trichroma-webgpu-v1", "trichroma-webgpu-v2"].includes(manifest.format)) throw Error("Unsupported scene format.");
+    if (manifest.byte_length > this.device.limits.maxStorageBufferBindingSize) throw Error('This detector exceeds the browser GPU storage-buffer limit.');
+    const response = await fetch(manifest.binary);
+    if (!response.ok) throw Error('Could not download detector geometry.');
+    const payload = await (manifest.compression === 'gzip'
+      ? new Response(response.body.pipeThrough(new DecompressionStream('gzip')))
+      : response).arrayBuffer();
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", payload)), b=>b.toString(16).padStart(2,"0")).join("");
     if (digest !== manifest.sha256 || payload.byteLength !== manifest.byte_length) throw Error("Scene data failed its length/SHA-256 integrity check.");
     const header = new Uint32Array(payload,0,4);
-    if (header[0] !== 0x54524957 || header[1] !== 1 || header[2] !== manifest.groups || header[3]*4 !== payload.byteLength) throw Error("Invalid scene header.");
+    if (header[0] !== 0x54524957 || manifest.format !== `trichroma-webgpu-v${header[1]}` || header[2] !== manifest.groups || header[3]*4 !== payload.byteLength) throw Error("Invalid scene header.");
     if (payload.byteLength > this.device.limits.maxStorageBufferBindingSize) throw Error(`Scene needs ${payload.byteLength} bytes, exceeding this adapter's storage-buffer limit.`);
     await this.device.queue.onSubmittedWorkDone();
     this.scene?.destroy();
     this.scene = this.device.createBuffer({size:payload.byteLength,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     this.device.queue.writeBuffer(this.scene,0,payload);
     this.manifest = manifest; this.camera = copyCamera(manifest.camera);
+    this.views = {Overview: manifest.camera, ...manifest.views};
+    if ($('view')) $('view').replaceChildren(...Object.keys(this.views).map(label => new Option(label, label)));
     $("details").textContent = JSON.stringify({adapter:this.adapterInfo, ...manifest},null,2);
     $("status").textContent = `${manifest.name}: ${manifest.geometry.sensor_instances?.toLocaleString() ?? manifest.instances.toLocaleString()} sensors/instances · ${(payload.byteLength/1e6).toFixed(2)} MB shared geometry`;
     return manifest;
@@ -100,32 +108,38 @@ class DetectorRenderer {
     const forward = norm(sub(camera.target,camera.eye)), right = norm(cross(forward,camera.up)), up = cross(right,forward);
     const config = new ArrayBuffer(96); const floats = new Float32Array(config), words = new Uint32Array(config);
     floats.set(camera.eye,0); floats.set(forward,4); floats[7]=Math.tan(camera.fov*Math.PI/360);
-    floats.set(right,8); floats.set(up,12); words.set([width,height,rays,seed>>>0],16); words.set([+debug,+jitter,0,0],20);
+    floats.set(right,8); floats.set(up,12); words.set([width,height,rays,seed>>>0],16); words.set([+debug,+jitter,0,0xffffffff],20);
     this.device.queue.writeBuffer(this.uniform,0,config); this.device.queue.writeBuffer(this.failures,0,new Uint32Array(1));
     const bindings = this.device.createBindGroup({layout:this.compute.getBindGroupLayout(0),entries:[
       {binding:0,resource:{buffer:this.scene}},{binding:1,resource:{buffer:this.uniform}},
       {binding:2,resource:this.texture.createView()},{binding:3,resource:{buffer:this.diagnostic}},
       {binding:4,resource:{buffer:this.failures}}]});
     const presentation = this.device.createBindGroup({layout:this.presentation.getBindGroupLayout(0),entries:[{binding:0,resource:this.texture.createView()}]});
-    const start = performance.now(); const encoder = this.device.createCommandEncoder();
-    const compute = encoder.beginComputePass(); compute.setPipeline(this.compute); compute.setBindGroup(0,bindings);
-    compute.dispatchWorkgroups(Math.ceil(width/8),Math.ceil(height/8)); compute.end();
+    const start = performance.now();
+    const timing = await gpuBudget.run(this.device, Math.ceil(width/8)*Math.ceil(height/8), (offset,count)=>{
+      this.device.queue.writeBuffer(this.uniform,88,new Uint32Array([offset]));
+      const encoder=this.device.createCommandEncoder(),compute=encoder.beginComputePass();
+      compute.setPipeline(this.compute);compute.setBindGroup(0,bindings);compute.dispatchWorkgroups(count);compute.end();
+      return encoder;
+    }, {initial:1, progress:fraction=>{$('status').textContent=`${this.manifest.name} · ${rays.toLocaleString()} camera rays · ${Math.floor(fraction*100)}%`;}});
+    const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({colorAttachments:[{view:this.context.getCurrentTexture().createView(),loadOp:"clear",storeOp:"store",clearValue:{r:0,g:0,b:0,a:1}}]});
     pass.setPipeline(this.presentation); pass.setBindGroup(0,presentation); pass.draw(3); pass.end();
     this.device.queue.submit([encoder.finish()]); await this.device.queue.onSubmittedWorkDone();
-    const milliseconds = performance.now()-start;
+    const milliseconds = timing.compute_ms;
     const failures = new Uint32Array(await this.readBuffer(this.failures,4))[0];
     if (failures) throw Error(`${failures} traversal guards failed; this frame is invalid.`);
     if (this.errors.length) throw Error(this.errors.join("\n"));
-    const result = {width,height,rays,milliseconds,failures,seed,adapter:this.adapterInfo,
-      timing:"command encoding + compute + canvas render submission through GPU queue completion; excludes browser paint, asset loading and diagnostic readback"};
+    const result = {width,height,rays,milliseconds,wall_ms:performance.now()-start,batches:timing.batches,failures,seed,adapter:this.adapterInfo,
+      timing:"sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"};
     if (debug) result.diagnostic = Array.from(new Float32Array(await this.readBuffer(this.diagnostic,width*height*48)));
     this.lastFrame = result;
     if (!debug && rays<=100000) this.previewRays=Math.round(Math.max(1000,Math.min(100000,rays*30/Math.max(1,milliseconds))));
-    $("status").textContent = `${this.manifest.name} · ${rays.toLocaleString()} camera rays · ${milliseconds.toFixed(1)} ms queue time · ${(rays/milliseconds/1000).toFixed(2)} M rays/s${this.adapterInfo.isFallbackAdapter ? " · software adapter" : ""}`;
+    $("status").textContent = `${this.manifest.name} · ${rays.toLocaleString()} camera rays · ${result.wall_ms.toFixed(1)} ms including pauses · ${(rays/result.wall_ms/1000).toFixed(2)} M rays/s${this.adapterInfo.isFallbackAdapter ? " · software adapter" : ""}`;
     return result;
   }
   schedule(preview) {
+    if (this.busy) gpuBudget.cancel();
     if (preview) {
       clearTimeout(this.timer); this.timer=setTimeout(()=>this.schedule(false),220);
     }
@@ -138,7 +152,11 @@ class DetectorRenderer {
     if (this.busy) return;
     this.busy=true;
     try {
-      while(this.pending) { const next=this.pending; this.pending=null; await this.render(next); }
+      while(this.pending) {
+        const next=this.pending; this.pending=null;
+        try { await this.render(next); }
+        catch(error) { if(error.name !== 'AbortError') throw error; }
+      }
     } catch(error) { $("error").textContent=error.stack ?? String(error); }
     finally { this.busy=false; }
   }
@@ -149,7 +167,10 @@ class DetectorRenderer {
     });
     $("rays").addEventListener("change",()=>this.schedule(false));
     $("render").addEventListener("click",()=>this.schedule(false));
-    $("reset").addEventListener("click",()=>{this.camera=copyCamera(this.manifest.camera);this.schedule(false);});
+    const resetView=()=>{this.camera=copyCamera(this.views[$('view')?.value] || this.manifest.camera);this.schedule(false);};
+    $("reset").addEventListener("click",resetView);
+    $('view')?.addEventListener('change',resetView);
+    document.addEventListener('gpu-stop',()=>{this.pending=null;clearTimeout(this.timer);$('status').textContent='Stopped.';});
     let pointer=null;
     this.canvas.addEventListener("pointerdown",event=>{pointer=[event.clientX,event.clientY];this.canvas.setPointerCapture(event.pointerId);});
     this.canvas.addEventListener("pointerup",()=>{pointer=null;this.schedule(false);});

@@ -18,18 +18,15 @@ def main():
     parser.add_argument("--small-theia", action="store_true")
     args = parser.parse_args()
     scenes = []
-    for name in args.detector or ["theia", "pixelTPC"]:
-        if name == "reflect3wires":
-            parser.error(
-                "reflect3wires requires validated FP64 wire queries; use notebooks/detector_viewer.ipynb"
-            )
+    for name in args.detector or ["theia", "reflect3wires", "pixelTPC"]:
         options = (
             dict(radius=5000.0, coverage=0.05, diameter=304.8)
             if name == "theia" and args.small_theia
             else {}
         )
-        example = build_viewer_example(name, **options)
-        scene, groups = export_example(example, args.output)
+        source_name = {"reflect3wires": "reflect3wires-mesh", "pixelTPC": "pixelTPC-resolved"}.get(name, name)
+        example = build_viewer_example(source_name, **options)
+        scene, groups = export_example(example, args.output, name=name, compress=True)
         print(
             f"{name}: {scene['instances']:,} instances, {scene['mesh_triangles']:,} shared triangles, {scene['byte_length']/1e6:.2f} MB"
         )

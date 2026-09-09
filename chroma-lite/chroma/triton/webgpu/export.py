@@ -3,14 +3,16 @@
 The v1 buffer starts with magic/version/group-count/word-count. Each 16-word
 group record stores six buffer offsets (BLAS, triangles, colors, TLAS,
 transforms, BLAS escape links), a float32 quantization origin/scale, and four
-counts (BLAS nodes, triangles, TLAS nodes, instances). Its last two words are
+counts (BLAS nodes, triangles, TLAS nodes, instances). In v2, word 14 optionally
+points to a 3x3 bounds rotation; leaf coordinates remain unchanged. Word 15 is
 reserved. Offsets address uint32 words. Transforms contain nine row-major
 object-to-world rotation floats followed by three world translation floats.
 The existing packed BLAS words and original triangle IDs are unchanged.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
+import gzip
 import json
 from pathlib import Path
 import shutil
@@ -78,22 +80,23 @@ class ExportGroup:
     transforms: np.ndarray
     colors: np.ndarray
     scene_view: object
+    bounds_rotation: object = None
 
 
-def prepare_groups(geometry, solid_colors=None):
+def prepare_groups(geometry, solid_colors=None, mesh_groups=None):
     """Keep shared meshes; merge unique meshes into one ordinary world BVH."""
     from chroma_lar.triton_scene.instances import _build_instance_tlas, _padded_bounds
     from chroma_lar.triton_scene.primitive_adapter import instance_traversal_view
     from chroma.triton.primitives import Mesh, MeshInstance
 
-    groups = _geometry_groups(geometry, solid_colors=solid_colors)
+    groups = _geometry_groups(geometry, solid_colors=solid_colors) if mesh_groups is None else mesh_groups
     shared, vertices, triangles, colors = [], [], [], []
     offset = 0
     for group in groups:
         rigid = np.allclose(
             group.rotations @ group.rotations.transpose(0, 2, 1), np.eye(3), atol=2e-6, rtol=0
         )
-        if len(group.rotations) >= 4 and rigid:
+        if (len(group.rotations) >= 4 or group.bounds_rotation is not None) and rigid:
             shared.append(group)
         else:
             for rotation, translation in zip(group.rotations, group.translations):
@@ -124,7 +127,17 @@ def prepare_groups(geometry, solid_colors=None):
             group.vertices, view.instances.bounds_min, view.instances.bounds_max
         )
         lo, hi, left, right, inst, _ = _build_instance_tlas(lower, upper)
-        bvh = build_packed_bvh(group.vertices, group.triangles)
+        rotation = group.bounds_rotation
+        if rotation is not None:
+            rotation = np.asarray(rotation, np.float32)
+            if rotation.shape != (3, 3) or not np.isfinite(rotation).all() or not np.allclose(rotation @ rotation.T, np.eye(3), atol=2e-6, rtol=0):
+                raise ValueError("BVH bounds rotation must be orthogonal")
+            # Rotate only the hierarchy's bounds. Exact original leaf positions
+            # and triangle tests remain in the mesh's original coordinate frame.
+            bvh = build_packed_bvh(group.vertices @ rotation, group.triangles)
+            bvh = replace(bvh, triangle_vertices=np.ascontiguousarray(group.vertices[group.triangles], dtype=np.float32))
+        else:
+            bvh = build_packed_bvh(group.vertices, group.triangles)
         transforms = np.concatenate(
             (group.rotations.reshape(-1, 9), group.translations), axis=1
         ).astype(np.float32)
@@ -136,6 +149,7 @@ def prepare_groups(geometry, solid_colors=None):
                 transforms,
                 np.asarray(group.colors, np.uint32),
                 view,
+                rotation,
             )
         )
     return result
@@ -168,31 +182,36 @@ def pack_groups(groups):
         header[6:9] = np.asarray(bvh.world_origin, np.float32).view(np.uint32)
         header[9] = np.asarray(bvh.world_scale, np.float32).view(np.uint32)
         header[10:14] = [bvh.node_count, bvh.triangle_count, len(group.tlas), len(group.transforms)]
-    parts[0][:4] = [0x54524957, 1, len(groups), size]
+        if group.bounds_rotation is not None:
+            header[14] = append(np.asarray(group.bounds_rotation, np.float32))
+    version = 2 if any(g.bounds_rotation is not None for g in groups) else 1
+    parts[0][:4] = [0x54524957, version, len(groups), size]
     if size >= 2**32:
         raise ValueError("export exceeds 32-bit word addressing")
     return np.concatenate(parts).astype("<u4", copy=False)
 
 
-def export_example(example, destination, *, name=None):
+def export_example(example, destination, *, name=None, compress=False):
     """Write an immutable scene package; analytic wire scenes fail closed."""
     if example.boundary_layers or len(getattr(example.geometry, "wireplanes", ())):
         raise ValueError(
             "WebGPU analytic-wire precision is not validated. Use the Triton notebook for reflect3wires; no wires are omitted."
         )
-    groups = prepare_groups(example.geometry, example.solid_colors)
+    factory = getattr(example, "export_groups", None)
+    groups = prepare_groups(example.geometry, example.solid_colors, None if factory is None else factory())
     words = pack_groups(groups)
     name = example.metadata["name"] if name is None else name
     if not name.replace("-", "").replace("_", "").isalnum():
         raise ValueError("scene name must contain only letters, digits, underscores or hyphens")
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    binary = name + ".bin"
+    binary = name + (".bin.gz" if compress else ".bin")
     payload = words.tobytes()
-    (destination / binary).write_bytes(payload)
+    download = gzip.compress(payload, compresslevel=6, mtime=0) if compress else payload
+    (destination / binary).write_bytes(download)
     camera = example.camera
     manifest = dict(
-        format="trichroma-webgpu-v1",
+        format=f"trichroma-webgpu-v{int(words[1])}",
         name=name,
         binary=binary,
         sha256=hashlib.sha256(payload).hexdigest(),
@@ -203,10 +222,18 @@ def export_example(example, destination, *, name=None):
             eye=list(camera.eye), target=list(camera.target), up=list(camera.up), fov=camera.fov
         ),
         rendering="opaque geometry camera rays; no optical photon transport",
-        precision="WGSL f32 triangle queries; no analytic wires",
+        precision=("WGSL compensated f32 queries for original wire triangles; f32 other triangles"
+                   if int(words[1]) == 2 else "WGSL f32 triangle queries; no analytic wires"),
         mesh_triangles=sum(g.bvh.triangle_count for g in groups),
         instances=sum(len(g.transforms) for g in groups),
     )
+    if compress:
+        manifest.update(compression="gzip", download_byte_length=len(download))
+    if getattr(example, "views", None):
+        manifest["views"] = {
+            label: dict(eye=list(view.eye), target=list(view.target), up=list(view.up), fov=view.fov)
+            for label, view in example.views.items()
+        }
     (destination / (name + ".json")).write_text(json.dumps(manifest, indent=2) + "\n")
     return manifest, groups
 
@@ -228,6 +255,7 @@ def copy_browser_assets(destination, scenes):
         "camera.html",
         "theme.css",
         "fonts.css",
+        "scheduler.js",
     ):
         shutil.copyfile(assets / filename, destination / filename)
     catalog = [dict(name=s["name"], manifest=s["name"] + ".json") for s in scenes]

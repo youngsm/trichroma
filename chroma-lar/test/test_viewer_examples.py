@@ -32,6 +32,31 @@ def test_reflect_view_retains_all_six_wire_planes():
     assert all(len(s.mesh.triangles) == 128 for s in geometry.solids[first_wire:])
 
 
+def test_full_pixel_view_tiles_both_complete_faces_without_averaged_surfaces():
+    example = build_viewer_example("pixelTPC-resolved")
+    geometry = example.geometry
+    assert example.metadata["pads"] == 2_000_000
+    assert len(geometry.channel_index_to_solid_id) == 164
+    tiles = [i for i, solid in enumerate(geometry.solids) if np.any(solid.color == 0xFFFFD700)]
+    assert len(tiles) == 3200
+    centers = np.asarray(geometry.solid_displacements)[tiles]
+    expected_axis = -2106 + np.arange(40) * 108
+    for sign in (-1, 1):
+        face = centers[centers[:, 0] == sign * 2160]
+        expected = np.array([(y, z) for y in expected_axis for z in expected_axis])
+        np.testing.assert_array_equal(face[:, 1:], expected)
+    assert all(getattr(surface, "name", None) != "averaged_pixel"
+               for solid in geometry.solids for surface in solid.unique_surfaces)
+    # Pad and surround areas must cover the entire face, with the configured gold fraction.
+    tile = geometry.solids[tiles[0]]
+    triangles = tile.mesh.vertices[tile.mesh.triangles].astype(float)
+    areas = np.linalg.norm(np.cross(triangles[:, 1] - triangles[:, 0],
+                                    triangles[:, 2] - triangles[:, 0]), axis=1) / 2
+    np.testing.assert_allclose(areas.sum() * len(tiles), 2 * 4320**2, rtol=1e-7)
+    np.testing.assert_allclose(areas[tile.color == 0xFFFFD700].sum() * len(tiles),
+                               2_000_000 * (2.419**2 - 2 * 0.43**2), rtol=1e-6)
+
+
 def test_analytic_view_requires_complete_matching_wire_geometry():
     import pytest
 

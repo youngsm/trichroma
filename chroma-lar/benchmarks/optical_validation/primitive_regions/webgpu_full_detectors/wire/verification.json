@@ -1,0 +1,147 @@
+{
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false
+  },
+  "hardware": true,
+  "browser": "/sdf/home/y/youngsam/.cache/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell",
+  "browser_version": "148.0.7778.96",
+  "geometry_rendering_only": true,
+  "browser_canvas_verified": true,
+  "source_hashes": {
+    "chroma-lar/benchmarks/check_webgpu_viewer.py": "ace778865eaf2889f0aa51a81cf43523826584f53d29e94c9fc70da44fafc209",
+    "chroma-lite/chroma/triton/webgpu/export.py": "1d7a9583cc052b8f89f361b2b5927b0ee24c81957f80daddd9642f32b1dc0fdb",
+    "chroma-lite/chroma/triton/webgpu/reference.py": "00c4c48a3b87157fcbe1ff3b8ee4fc98d153b6e7f6d7531edbb8fb631c3c93d8",
+    "chroma-lite/chroma/triton/viewer.py": "58c91612a9253bf31bd89d2f3bb33fce47bf6edb02f79580ebf3b5ae18d3806d",
+    "chroma-lite/chroma/triton/examples/theia.py": "c70f966b02e2d48f023f539429eb39d38c38d684cf1b4b36b9fd395fd001169d",
+    "chroma-lar/chroma_lar/viewer_examples.py": "1023b3214a886c33b4f9cc5c638528a06f4995d413248d952b5fc4da37a3a461",
+    "chroma-lite/chroma/triton/bvh.py": "d848c66c15d1fd6b1d343785dbd161395ee5bc31f608c211cc5e0e36c4b52124",
+    "chroma-lite/chroma/triton/primitives.py": "172bc737f42099a284d3d039f1ce2e0110768111e298eb225bf5119b96e03891",
+    "chroma-lar/chroma_lar/triton_scene/instances.py": "c13efc2779faa09e7b5be2531d5aaceb0c8a28663d8db32bad852820730cce34",
+    "chroma-lar/chroma_lar/triton_scene/primitive_adapter.py": "507b6f080a53cbb3deb8352c47343058b687d24dc67f6fb8202fcf19f9436c20",
+    "chroma-lar/chroma_lar/geometry/build_larcube_pixel.py": "8bc24c41c566cb1250d61cb9332787fedf5786ca38a1f59251decf80be66636a",
+    "chroma-lar/chroma_lar/geometry/pixelplane.py": "9ab3710654e00e44213800baa29b65f4bdb4539b9a4cd2c81ca128cdd450922b",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.py": "9d0db78013f629874b508a64d5bb3e1752c9d1663547269cdffb1cb8df978ee1",
+    "chroma-lar/chroma_lar/config/detector_config_pixel.yaml": "f6fee4cd3ece48755f1f96be980d49d6da102604af6446cd1d351d3c8a5067c9"
+  },
+  "asset_hashes": {
+    "index.html": "4395579d82591833d11a5149c2578be38b3dfa009bed26bc099afc2ea00b0c43",
+    "viewer.js": "8f30d743cf155e3b8c1256cb69d85e5b9f196589421a54e327fd3b2408d2bcd6",
+    "trace.wgsl": "f6680287142c669acca7cc1462b667ac3d089d75092cff69cdc6e7360991e83a"
+  },
+  "scenes": [
+    {
+      "scene": {
+        "format": "trichroma-webgpu-v2",
+        "name": "reflect3wires",
+        "binary": "reflect3wires.bin.gz",
+        "sha256": "7f2d57cb5a0d62d18c3c19ad6d53c9e2b6ac9f92e897999867bf5a4c09f88c7c",
+        "byte_length": 46230572,
+        "groups": 5,
+        "geometry": {
+          "name": "reflect3wires-mesh",
+          "config": "detector_config_reflect_reflect3wires",
+          "sensor_instances": 162,
+          "solid_instances": 10915,
+          "triangles": 2205488,
+          "active_dimensions_mm": {
+            "x": [
+              -2160,
+              2160
+            ],
+            "y": [
+              -2160,
+              2160
+            ],
+            "z": [
+              -2160,
+              2160
+            ]
+          },
+          "diameter_mm": 111.252,
+          "representation": "original fully meshed wires; analytic_wires=False",
+          "wire_planes": 6,
+          "wire_solids": 10750,
+          "wire_triangles": 1376000,
+          "wire_diameter_mm": 0.15,
+          "wire_pitch_mm": 3,
+          "wire_nsteps": 32
+        },
+        "camera": {
+          "eye": [
+            -2132.4253829156582,
+            0,
+            4.862148974674049
+          ],
+          "target": [
+            -2160,
+            0,
+            0
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ],
+          "fov": 65
+        },
+        "rendering": "opaque geometry camera rays; no optical photon transport",
+        "precision": "WGSL f32 triangle queries; no analytic wires",
+        "mesh_triangles": 693168,
+        "instances": 169,
+        "compression": "gzip",
+        "download_byte_length": 8483950,
+        "views": {
+          "Wire planes": {
+            "eye": [
+              -2132.4253829156582,
+              0,
+              4.862148974674049
+            ],
+            "target": [
+              -2160,
+              0,
+              0
+            ],
+            "up": [
+              0,
+              0,
+              1
+            ],
+            "fov": 65
+          }
+        }
+      },
+      "oracle": "Independent float64 Moller-Trumbore leaves on float32 exported triangles/transforms; no exported BVH traversal",
+      "compared_rays": 960,
+      "max_camera_direction_error": 1.7881393432617188e-07,
+      "hit_identity_mismatches": 0,
+      "max_distance_error_mm": 4.723571760223422e-05,
+      "max_normal_error": 1.203025422613635e-07,
+      "frames": [
+        {
+          "width": 1000,
+          "height": 625,
+          "rays": 2500000,
+          "milliseconds": 297,
+          "wall_ms": 581.9000000953674,
+          "batches": 29,
+          "failures": 0,
+          "seed": 20,
+          "adapter": {
+            "vendor": "nvidia",
+            "architecture": "ampere",
+            "device": "",
+            "description": "",
+            "isFallbackAdapter": false
+          },
+          "timing": "sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"
+        }
+      ],
+      "canvas_nonuniform": true
+    }
+  ]
+}

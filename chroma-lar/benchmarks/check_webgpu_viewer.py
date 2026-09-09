@@ -36,6 +36,10 @@ def main():
         "--full-frame", action="store_true", help="Measure 2.5M rays rather than a 100k-ray preview"
     )
     parser.add_argument("--repeat", type=int, default=3)
+    parser.add_argument("--debug-width", type=int, default=64)
+    parser.add_argument("--debug-height", type=int, default=40)
+    parser.add_argument("--detector", action="append")
+    parser.add_argument("--view")
     args = parser.parse_args()
     from playwright.sync_api import sync_playwright
 
@@ -84,9 +88,14 @@ def main():
             ):
                 raise RuntimeError("Hardware requested but browser selected a software adapter")
             for entry in json.loads((args.bundle / "catalog.json").read_text()):
+                if args.detector and entry["name"] not in args.detector:
+                    continue
                 manifest = page.evaluate(
                     "async path=>await window.trichroma.loadScene(path)", entry["manifest"]
                 )
+                if args.view:
+                    manifest["camera"] = manifest["views"][args.view]
+                    page.evaluate("camera=>trichroma.camera=structuredClone(camera)", manifest["camera"])
                 options = (
                     {
                         key: manifest["geometry"][field]
@@ -99,18 +108,21 @@ def main():
                     if manifest["name"] == "theia"
                     else {}
                 )
-                example = build_viewer_example(manifest["name"], **options)
-                groups = prepare_groups(example.geometry, example.solid_colors)
+                example = build_viewer_example(manifest["geometry"]["name"], **options)
+                groups = prepare_groups(example.geometry, example.solid_colors,
+                                        None if example.export_groups is None else example.export_groups())
                 rebuilt_hash = hashlib.sha256(pack_groups(groups).tobytes()).hexdigest()
                 if rebuilt_hash != manifest["sha256"]:
                     raise RuntimeError(
                         "Current geometry does not match exported scene; re-export before verification"
                     )
                 frame = page.evaluate(
-                    "async()=>await window.trichroma.render({width:64,height:40,rays:2560,debug:true,jitter:false})"
+                    "async options=>await window.trichroma.render(options)",
+                    dict(width=args.debug_width, height=args.debug_height,
+                         rays=args.debug_width*args.debug_height, debug=True, jitter=False),
                 )
                 actual = np.asarray(frame.pop("diagnostic")).reshape(-1, 12)
-                origins, directions = camera_rays(manifest["camera"], 64, 40)
+                origins, directions = camera_rays(manifest["camera"], args.debug_width, args.debug_height)
                 np.testing.assert_allclose(actual[:, 8:11], directions, atol=2e-7, rtol=0)
                 oracle_source = (
                     Path(__file__).resolve().parents[2]
@@ -132,6 +144,8 @@ def main():
                 if not cached:
                     expected = nearest_reference(groups, origins, actual[:, 8:11])
                     np.savez_compressed(oracle_cache, key=oracle_key, expected=expected)
+                np.savez_compressed(args.output / (manifest["name"] + "_hits.npz"),
+                                    actual=actual, expected=expected, origins=origins)
                 np.testing.assert_array_equal(actual[:, 1:4], expected[:, 1:4])
                 np.testing.assert_array_equal(actual[:, 7], expected[:, 7])
                 mask = expected[:, 7] != 0

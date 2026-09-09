@@ -110,6 +110,7 @@ class _MeshGroup:
     colors: np.ndarray
     rotations: np.ndarray
     translations: np.ndarray
+    bounds_rotation: object = None
 
 
 def _colors(value, count):

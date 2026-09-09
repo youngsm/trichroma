@@ -67,6 +67,12 @@ def test_shared_mesh_export_keeps_transforms_and_leaf_instances(tmp_path):
     assert json.loads((tmp_path / "boxes.json").read_text()) == manifest
     words = pack_groups(groups)
     np.testing.assert_array_equal(words[:4], [0x54524957, 1, 1, len(words)])
+    import gzip
+    compressed, _ = export_example(example, tmp_path, name="boxes-compressed", compress=True)
+    downloaded = (tmp_path / compressed["binary"]).read_bytes()
+    assert len(downloaded) == compressed["download_byte_length"]
+    assert gzip.decompress(downloaded) == data
+    assert compressed["sha256"] == manifest["sha256"]
 
 
 def test_nonrigid_transforms_are_baked_and_unhandled_wires_rejected(tmp_path):
@@ -83,6 +89,24 @@ def test_nonrigid_transforms_are_baked_and_unhandled_wires_rejected(tmp_path):
     with pytest.raises(ValueError, match="no wires are omitted"):
         export_example(example, tmp_path / "unwritten")
     assert not (tmp_path / "unwritten").exists()
+
+
+def test_oriented_bounds_preserve_original_triangle_coordinates():
+    from chroma.triton.viewer import _MeshGroup
+
+    mesh = box(1, 1000, 0.1)
+    angle = .63
+    rotation = np.array([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)],
+                         [0, np.sin(angle), np.cos(angle)]], np.float32)
+    vertices = np.asarray(mesh.vertices @ rotation.T, np.float32)
+    group = _MeshGroup(vertices, mesh.triangles, np.full(len(mesh.triangles), 0xFFFFFFFF, np.uint32),
+                       np.eye(3, dtype=np.float32)[None], np.zeros((1, 3), np.float32), rotation)
+    prepared = prepare_groups(None, mesh_groups=[group])
+    np.testing.assert_array_equal(prepared[0].bvh.triangle_vertices, vertices[mesh.triangles])
+    packed = pack_groups(prepared)
+    assert packed[1] == 2
+    matrix_offset = packed[4 + 14]
+    np.testing.assert_array_equal(packed[matrix_offset:matrix_offset+9].view(np.float32).reshape(3, 3), rotation)
 
 
 def test_portable_browser_pages_include_their_local_styles_and_modules(tmp_path):

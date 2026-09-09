@@ -13,8 +13,11 @@ from chroma.triton.viewer import Camera
 def camera_rays(camera, width, height):
     packed = Camera(**camera).packed()
     y, x = np.indices((height, width), dtype=np.float32)
-    horizontal = (2 * (x + 0.5) / width - 1) * (width / height) * packed[12]
-    vertical = (1 - 2 * (y + 0.5) / height) * packed[12]
+    # Match the shader's float32 operation order, including the separate
+    # width multiplication and height division (not a precomputed aspect ratio).
+    u, v = (x + 0.5) / width, (y + 0.5) / height
+    horizontal = (2 * u - 1) * width / height * packed[12]
+    vertical = (1 - 2 * v) * packed[12]
     directions = (
         packed[3:6] + horizontal[..., None] * packed[6:9] + vertical[..., None] * packed[9:12]
     ).reshape(-1, 3)

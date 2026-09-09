@@ -1,0 +1,177 @@
+{
+  "transport": [
+    {
+      "scene": "prism",
+      "exact_terminal_states": 8193,
+      "batches": 4
+    },
+    {
+      "scene": "fluorescence",
+      "exact_terminal_states": 8193,
+      "batches": 4
+    },
+    {
+      "scene": "rayleigh",
+      "exact_terminal_states": 8193,
+      "batches": 4
+    },
+    {
+      "scene": "pmt",
+      "exact_terminal_states": 8193,
+      "batches": 4
+    }
+  ],
+  "diagnostics": [
+    {
+      "scene": "prism",
+      "counts": {
+        "detected": 8193,
+        "surface_absorbed": 0,
+        "bulk_absorbed": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "nonfinite": 0,
+        "reemitted": 0,
+        "scattered": 0,
+        "reflected": 830,
+        "transmitted": 7817,
+        "max_steps": 8,
+        "forward_monitor": 7284,
+        "time_overflow": 0
+      }
+    },
+    {
+      "scene": "fluorescence",
+      "counts": {
+        "detected": 6969,
+        "surface_absorbed": 1224,
+        "bulk_absorbed": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "nonfinite": 0,
+        "reemitted": 6969,
+        "scattered": 0,
+        "reflected": 0,
+        "transmitted": 3509,
+        "max_steps": 3,
+        "forward_monitor": 0,
+        "time_overflow": 0
+      }
+    },
+    {
+      "scene": "rayleigh",
+      "counts": {
+        "detected": 8193,
+        "surface_absorbed": 0,
+        "bulk_absorbed": 0,
+        "escaped": 0,
+        "step_limit": 0,
+        "nonfinite": 0,
+        "reemitted": 0,
+        "scattered": 7251,
+        "reflected": 0,
+        "transmitted": 0,
+        "max_steps": 49,
+        "forward_monitor": 0,
+        "time_overflow": 0
+      }
+    }
+  ],
+  "detectors": [
+    {
+      "scene": "theia",
+      "frame": {
+        "width": 400,
+        "height": 250,
+        "rays": 100000,
+        "milliseconds": 68.90000057220459,
+        "wall_ms": 168.10000038146973,
+        "batches": 12,
+        "failures": 0,
+        "seed": 0,
+        "adapter": {
+          "vendor": "nvidia",
+          "architecture": "ampere",
+          "device": "",
+          "description": "",
+          "isFallbackAdapter": false
+        },
+        "timing": "sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"
+      }
+    },
+    {
+      "scene": "reflect3wires",
+      "frame": {
+        "width": 400,
+        "height": 250,
+        "rays": 100000,
+        "milliseconds": 92.50000047683716,
+        "wall_ms": 244.80000019073486,
+        "batches": 13,
+        "failures": 0,
+        "seed": 0,
+        "adapter": {
+          "vendor": "nvidia",
+          "architecture": "ampere",
+          "device": "",
+          "description": "",
+          "isFallbackAdapter": false
+        },
+        "timing": "sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"
+      }
+    },
+    {
+      "scene": "pixelTPC",
+      "frame": {
+        "width": 400,
+        "height": 250,
+        "rays": 100000,
+        "milliseconds": 30.59999942779541,
+        "wall_ms": 121.89999961853027,
+        "batches": 12,
+        "failures": 0,
+        "seed": 0,
+        "adapter": {
+          "vendor": "nvidia",
+          "architecture": "ampere",
+          "device": "",
+          "description": "",
+          "isFallbackAdapter": false
+        },
+        "timing": "sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"
+      }
+    }
+  ],
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "hidden_tab_pause_resume": true,
+  "stop_discards_partial_event": true,
+  "geometry_stop_resume": true,
+  "errors": [],
+  "notebook_embedded_render": true,
+  "baseline_source_commit": "9309ed99f56bee99ade93390c36159ba36f0b54e",
+  "baseline_website_commit": "dbb1cf963b0013e0ccc0a21d3d5726c0c182eaf0",
+  "baseline_states_sha256": "64c2554fde79203fb0eea1ad343f2bc5062c7c3dae5d2d16417981c40a32daa4",
+  "description": "Real Chromium on local A100: all four camera scenes compared bitwise against pre-batching terminal states for 8193 photons each; pause/resume, Stop/cleanup, full detector renders and notebook embedding.",
+  "asset_hashes": {
+    "camera.wgsl": "df4e36cd74f5a6d2fcf0d5900e67f067da592f98d0d2b8164d5f41e691c51adc",
+    "viewer.js": "8f30d743cf155e3b8c1256cb69d85e5b9f196589421a54e327fd3b2408d2bcd6",
+    "camera.html": "449d538a1efba5496fbc074837d7557d177fbaefb3714d138650055b2586b09e",
+    "scheduler.js": "a807b6a080b93e5c393968952f2f95c4d7de532b559283826606554eb8f84ad8",
+    "trace.wgsl": "f6680287142c669acca7cc1462b667ac3d089d75092cff69cdc6e7360991e83a",
+    "camera.js": "7e2b2366a096c6862a6204561b52bc85c2a58333aa4bbe27802cc3c950c64959",
+    "physics.js": "b4ceed271f8d9188a5d33fb046e921f80c17e6157cac29694951368796d3055e",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "index.html": "4395579d82591833d11a5149c2578be38b3dfa009bed26bc099afc2ea00b0c43",
+    "physics.wgsl": "1cf2dec748d83ed5ea7c65ea6e05705d75ef39d146f676ac6bf9c215ec34e2a6",
+    "physics.html": "c867d275f3285ac98bfbf7bce579d48b8e580c90609792056faf0341e4ae22d7"
+  }
+}

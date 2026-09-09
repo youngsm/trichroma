@@ -25,12 +25,15 @@
 <label>Detector <select id="scene">
 </select>
 </label>
+<label>View<select id="view"></select></label>
 <label>Full-frame rays <select id="rays">
 <option value="2500000">2.5 million</option>
 <option value="625000">625 thousand</option>
 <option value="10000000">10 million</option>
 </select>
 </label>
+<label>GPU use<select id="gpu_mode"><option value="eco">Low</option><option value="balanced" selected>Balanced</option><option value="fast">Full speed</option></select></label>
+<button id="stop" type="button">Stop</button>
 <button id="reset">Reset view</button>
 <button id="render">Render</button>
 </nav>
@@ -45,7 +48,8 @@
 <pre id="details">
 </pre>
 </details>
-<footer class="muted">Opaque surface colors with headlight shading. These are camera rays, not simulated optical photons. PixelTPC retains its original area-averaged pixel faces. Analytic reflect3wires requires the Triton Jupyter viewer; this prototype does not omit or approximate its wires.</footer>
+<p class="muted">Balanced GPU use leaves time between small batches. Work pauses while this tab is hidden; Stop cancels at the next batch.</p>
+<footer class="muted">Opaque surface colors with headlight shading. These are camera rays, not simulated optical photons. The full pixel TPC resolves every pad. The wire TPC uses all six planes of the original 32-sided wire meshes; the analytic-cylinder optical model remains in the Triton notebook.</footer>
 </main>
 <script type="module" src="viewer.js">
 </script>

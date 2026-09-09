@@ -44,6 +44,8 @@
 <option>2048</option>
 </select>
 </label>
+<label>GPU use<select id="gpu_mode"><option value="eco">Low</option><option value="balanced" selected>Balanced</option><option value="fast">Full speed</option></select></label>
+<button id="stop" type="button">Stop</button>
 <button id="run" disabled>Run optical event</button>
 </div>
 <div class="layout">
@@ -77,12 +79,12 @@
 <div class="metric">
 <p class="eyebrow">GPU compute queue</p>
 <strong id="compute">—</strong>
-<span>Submission through completion · excludes plotting and readback</span>
+<span>Sum of GPU batches · excludes pauses, plotting and readback</span>
 </div>
 <div class="metric">
 <p class="eyebrow">Optical throughput</p>
 <strong id="throughput">—</strong>
-<span>Full photon transport / compute time · adapter shown above</span>
+<span>Full photon count / elapsed time, including GPU pauses and readback</span>
 </div>
 </aside>
 </div>

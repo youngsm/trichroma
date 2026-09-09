@@ -1,5 +1,6 @@
 // Small-scene optical Monte Carlo. Full-count observables stay on the GPU;
 // only histograms and a bounded set of real photon paths are downloaded.
+import {gpuBudget} from './scheduler.js';
 const STAT_WORDS = 15788;
 const SCENES = ['prism', 'fluorescence', 'rayleigh', 'pmt'];
 const $ = id => document.getElementById(id);
@@ -247,19 +248,28 @@ export class OpticalLab {
           }
         }))
       });
-      let encoder = d.createCommandEncoder();
-      let pass = encoder.beginComputePass();
-      pass.setPipeline(pipeline);
-      pass.setBindGroup(0, group);
-      pass.dispatchWorkgroups(x, y);
-      pass.end();
-      const begin = performance.now();
-      d.queue.submit([encoder.finish()]);
-      await d.queue.onSubmittedWorkDone();
-      const queueMs = performance.now() - begin;
-      const validation = await d.popErrorScope();
-      if (validation) throw Error(validation.message);
-      encoder = d.createCommandEncoder();
+      let queueMs;
+      try {
+        if (pipeline === this.pipeline) {
+          const timing = await gpuBudget.run(d, Math.ceil(cfg[0] / 128), (offset, count) => {
+            d.queue.writeBuffer(buffers[1], 36, new Uint32Array([offset * 128, Math.min(cfg[0], (offset + count) * 128)]));
+            const encoder = d.createCommandEncoder(), pass = encoder.beginComputePass();
+            pass.setPipeline(pipeline); pass.setBindGroup(0, group); pass.dispatchWorkgroups(count); pass.end();
+            return encoder;
+          });
+          queueMs = timing.compute_ms;
+        } else {
+          const encoder = d.createCommandEncoder(), pass = encoder.beginComputePass();
+          pass.setPipeline(pipeline); pass.setBindGroup(0, group); pass.dispatchWorkgroups(x, y); pass.end();
+          const begin = performance.now();
+          d.queue.submit([encoder.finish()]); await d.queue.onSubmittedWorkDone();
+          queueMs = performance.now() - begin;
+        }
+      } finally {
+        const validation = await d.popErrorScope();
+        if (validation) throw Error(validation.message);
+      }
+      const encoder = d.createCommandEncoder();
       sizes.forEach((size, i) => {
         if (size) encoder.copyBufferToBuffer(buffers[i + 2], 0, readback, offsets[i], size);
       });
@@ -359,7 +369,7 @@ export class OpticalLab {
           readback_ms: data.readbackMs,
           wall_ms: 0,
           photons_per_second: photons / (data.queueMs / 1000),
-          timing_scope: 'compute submission to queue completion; first dispatch may include driver warm-up; readback and JavaScript decoding reported separately'
+          timing_scope: 'queue_ms sums GPU batches; wall_ms includes cooperative pauses, readback and decoding; first dispatch may include driver warm-up'
         },
         counts: {
           detected: stats[1],
@@ -697,13 +707,13 @@ function renderResult(lab, result) {
   $('eventCount').textContent = result.photons.toLocaleString();
   $('detected').textContent = (100 * result.counts.detected / result.photons).toFixed(2) + '%';
   $('compute').textContent = result.metrics.queue_ms.toFixed(1) + ' ms';
-  $('throughput').textContent = (result.metrics.photons_per_second / 1e6).toFixed(2) + ' M/s';
+  $('throughput').textContent = (result.photons / result.metrics.wall_ms / 1000).toFixed(2) + ' M/s';
   $('gate').max = Math.max(.01, result.maxTime);
   $('gate').value = Number.isFinite(lab.timeGate) ? lab.timeGate : $('gate').max;
   $('gateValue').textContent = Number.isFinite(lab.timeGate) ? lab.timeGate.toFixed(2) + ' ns' :
     'all arrival times';
   $('status').textContent =
-    `Complete · ${result.counts.max_steps} maximum interactions · ${result.metrics.readback_ms.toFixed(1)} ms readback · ${result.metrics.wall_ms.toFixed(1)} ms compute + readback + decode · ${lab.info.isFallbackAdapter?'software adapter':'hardware adapter'}`;
+    `Complete · ${result.counts.max_steps} maximum interactions · ${result.metrics.readback_ms.toFixed(1)} ms readback · ${result.metrics.wall_ms.toFixed(1)} ms elapsed including pauses · ${lab.info.isFallbackAdapter?'software adapter':'hardware adapter'}`;
   $('status').classList.remove('error');
   histogramChart('spectrum', result.histograms.detected, 280, 740,
     'wavelength / nm · pale line = emitted source', {

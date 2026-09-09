@@ -2,11 +2,12 @@
 
 These helpers do not alter the original configuration files. The main wire viewer
 uses the same analytic cylinders as optical transport; an explicit meshed
-comparison is also available. The main pixel view preserves the config's explicit
-area-averaged pixel-surface approximation.
+comparison is also available. The pixelTPC helper preserves the configuration's
+area-averaged pixel surface; pixelTPC-resolved replaces both faces with explicit
+pads for the complete browser detector.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -20,6 +21,8 @@ class ViewerExample:
     camera: Camera
     solid_colors: dict
     boundary_layers: tuple = ()
+    views: dict = field(default_factory=dict)
+    export_groups: object = None
 
     def viewer(self, **kwargs):
         from chroma.triton.viewer import DetectorViewer
@@ -37,8 +40,9 @@ class ViewerExample:
 def build_viewer_example(name="theia", *, radius=25500.0, coverage=0.81, diameter=508.0):
     """Return geometry, provenance, display colors, and a useful interior camera.
 
-    Names: ``theia``, ``reflect3wires``, ``reflect3wires-mesh``, ``pixelTPC``, or ``pixelPads`` (a 32x32
-    resolved-pad patch; this closeup is not a complete detector).
+    Names: ``theia``, ``reflect3wires``, ``reflect3wires-mesh``, ``pixelTPC``,
+    ``pixelTPC-resolved`` (complete detector with two million explicit pads),
+    or ``pixelPads`` (legacy 32x32 pad patch).
     """
     if name == "theia":
         from chroma.triton.examples.theia import build_theia
@@ -61,6 +65,8 @@ def build_viewer_example(name="theia", *, radius=25500.0, coverage=0.81, diamete
         return ViewerExample(geometry, metadata, camera, colors)
     if name == "pixelPads":
         return _pixel_pad_closeup()
+    if name == "pixelTPC-resolved":
+        return _resolved_pixel_detector()
     from chroma_lar.geometry.config_loader import load_config_from_file, build_detector_from_dict
 
     names = {
@@ -129,7 +135,114 @@ def build_viewer_example(name="theia", *, radius=25500.0, coverage=0.81, diamete
             pixel_pitch_mm=config["pixel_pitch"],
         )
         camera = Camera.orbit((-1100.0, 2160.0, 0.0), 3300.0, azimuth=-90.0, elevation=10.0)
-    return ViewerExample(geometry, metadata, camera, colors, layers)
+    example = ViewerExample(geometry, metadata, camera, colors, layers)
+    if name == "reflect3wires-mesh":
+        example.export_groups = lambda: _wire_export_groups(geometry, colors, config)
+        example.views["Wire planes"] = Camera.orbit(
+            (-2160.0, 0.0, 0.0), 28.0, azimuth=0.0, elevation=10.0
+        )
+    return example
+
+
+def _wire_export_groups(geometry, colors, config):
+    """Group parallel wire meshes with oriented bounds and untouched leaf vertices."""
+    from chroma.triton.viewer import _geometry_groups, _MeshGroup
+
+    first_wire = len(geometry.channel_index_to_solid_id) + 3
+    groups = _geometry_groups(geometry, solid_colors=colors,
+                              hidden_solids=range(first_wire, len(geometry.solids)))
+    for angle, color in zip(config["wire_angles"], (0xFF, 0xFF00, 0xFF0000)):
+        meshes, locations = {}, set()
+        for i in range(first_wire, len(geometry.solids)):
+            solid = geometry.solids[i]
+            if np.all(solid.color == color):
+                if not np.array_equal(geometry.solid_rotations[i], np.eye(3)):
+                    raise ValueError("wire builder must supply its original baked mesh positions")
+                meshes[id(solid.mesh)] = solid.mesh
+                locations.add(tuple(geometry.solid_displacements[i]))
+        if len(locations) != 2 or not meshes:
+            raise ValueError("expected matching wire meshes on both drift faces")
+        vertices, triangles, offset = [], [], 0
+        for mesh in meshes.values():
+            vertices.append(mesh.vertices)
+            triangles.append(mesh.triangles + offset)
+            offset += len(mesh.vertices)
+        vertices, triangles = np.concatenate(vertices), np.concatenate(triangles)
+        c, s = np.cos(angle), np.sin(angle)
+        bounds_rotation = np.array([[1, 0, 0], [0, c, -s], [0, s, c]], np.float32)
+        groups.append(_MeshGroup(vertices, triangles, np.full(len(triangles), color, np.uint32),
+                                  np.repeat(np.eye(3, dtype=np.float32)[None], 2, axis=0),
+                                  np.array(sorted(locations), np.float32), bounds_rotation))
+    return groups
+
+
+def _resolved_pixel_detector(tile_cells=25):
+    """Keep the complete detector and instance every configured pad on both faces.
+
+    Tiles contain the same chamfered pad and FR-4 triangles as make_pixel_face.
+    Only their storage is shared; there is no distance-dependent substitution or
+    pad averaging. The production detector's optical configuration is unchanged.
+    """
+    from chroma.geometry import Mesh, Solid
+    from chroma_lar.geometry.pixelplane import make_pixel_face
+    from chroma_lar.config.detector_config_pixel import get_config
+
+    example = build_viewer_example("pixelTPC")
+    config = get_config()
+    geometry = example.geometry
+    pitch = config["pixel_pitch"]
+    ny, nz = config["n_pixels_y"], config["n_pixels_z"]
+    if tile_cells <= 0 or ny % tile_cells or nz % tile_cells:
+        raise ValueError("tile size must divide both configured pixel counts")
+    # Remove only the two averaged pixel rectangles, retaining all steel borders,
+    # the other active-volume faces, cavity, cathode, and every PMT.
+    found = []
+    for index, solid in enumerate(geometry.solids):
+        mask = np.array([getattr(s, "name", None) == "averaged_pixel" for s in solid.surface])
+        if mask.any():
+            found.append(index)
+            keep = ~mask
+            geometry.solids[index] = Solid(
+                Mesh(solid.mesh.vertices, solid.mesh.triangles[keep], round=False),
+                solid.material1[keep], solid.material2[keep], solid.surface[keep], solid.color[keep],
+            )
+    if len(found) != 1:
+        raise RuntimeError("expected one active box with averaged pixel faces")
+    half_x = np.ptp(config["active_dimensions"]["x"]) / 2
+    half_tile = tile_cells * pitch / 2
+    target = config["target_material"]
+    for sign in (-1, 1):
+        vertices, triangles, pad, border = make_pixel_face(
+            0.0, (-half_tile, half_tile), (-half_tile, half_tile),
+            tile_cells, tile_cells, pitch, config["pixel_pad_size"],
+            config["pixel_chamfer_radius"], face_normal=sign,
+        )
+        assert not border.any()
+        surfaces = np.where(pad, config["pixel_surface"], config["pcb_surface"])
+        colors = np.where(pad, 0xFFFFD700, 0xFF2E8B57).astype(np.uint32)
+        tile = Solid(Mesh(vertices, triangles, round=False), target,
+                     config["default_optics"].vacuum, surfaces, colors)
+        for iy in range(0, ny, tile_cells):
+            for iz in range(0, nz, tile_cells):
+                geometry.add_solid(tile, displacement=(
+                    sign * half_x,
+                    (iy + tile_cells / 2 - ny / 2) * pitch,
+                    (iz + tile_cells / 2 - nz / 2) * pitch,
+                ))
+    example.metadata.update(
+        name="pixelTPC-resolved", complete_detector=True, pixel_simplified=False,
+        representation="complete detector with all chamfered pixel pads and FR-4 in shared mesh tiles",
+        resolved_pad_triangles=True, pads_per_face=ny*nz, pads=2*ny*nz,
+        pixel_pad_size_mm=config["pixel_pad_size"],
+        pixel_chamfer_radius_mm=config["pixel_chamfer_radius"],
+        tile_cells=tile_cells, tile_instances=2*(ny//tile_cells)*(nz//tile_cells),
+        solid_instances=len(geometry.solids),
+        triangles=sum(len(s.mesh.triangles) for s in geometry.solids),
+    )
+    example.views["Pixel pads"] = Camera.orbit(
+        (-half_x, 0.0, 0.0), 140.0, azimuth=0.0, elevation=20.0
+    )
+    return example
 
 
 def _pixel_pad_closeup():

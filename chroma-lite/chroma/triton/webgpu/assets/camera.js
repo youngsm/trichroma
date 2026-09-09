@@ -1,6 +1,7 @@
 import {
   OpticalLab
 } from './physics.js';
+import {gpuBudget} from './scheduler.js';
 const $ = id => document.getElementById(id);
 const MAP_SIZES = {
   wall: 6 * 128 * 128 * 64 * 4,
@@ -255,19 +256,20 @@ export class PhotonCamera extends OpticalLab {
         }))
       });
       d.pushErrorScope('validation');
-      const encoder = d.createCommandEncoder();
-      const pass = encoder.beginComputePass();
-      pass.setPipeline(this.depositionPipeline);
-      pass.setBindGroup(0, group);
-      const groups = Math.ceil(photons / 128);
-      pass.dispatchWorkgroups(Math.min(65535, groups), Math.ceil(groups / 65535));
-      pass.end();
-      const begin = performance.now();
-      d.queue.submit([encoder.finish()]);
-      await d.queue.onSubmittedWorkDone();
-      const compute_ms = performance.now() - begin;
-      const error = await d.popErrorScope();
-      if (error) throw Error(error.message);
+      let timing;
+      try {
+        timing = await gpuBudget.run(d, Math.ceil(photons / 128), (offset, count) => {
+          d.queue.writeBuffer(resources.config, 36, new Uint32Array([offset * 128, Math.min(photons, (offset + count) * 128)]));
+          const encoder = d.createCommandEncoder(), pass = encoder.beginComputePass();
+          pass.setPipeline(this.depositionPipeline); pass.setBindGroup(0, group);
+          pass.dispatchWorkgroups(count); pass.end();
+          return encoder;
+        }, {progress: fraction => status(`Simulating ${photons.toLocaleString()} photons · ${Math.floor(fraction * 100)}%`)});
+      } finally {
+        const error = await d.popErrorScope();
+        if (error) throw Error(error.message);
+      }
+      const compute_ms = timing.compute_ms;
       const stats = new Uint32Array(await this.download(resources.statistics));
       if (stats[0] !== photons || stats[4] || stats[5] || stats[6]) {
         const tails = !debug && stats[5] ? Array.from(new Uint32Array(
@@ -316,6 +318,7 @@ export class PhotonCamera extends OpticalLab {
         },
         metrics: {
           compute_ms,
+          batches: timing.batches,
           wall_ms: performance.now() - start
         },
         map_bytes: MAP_SIZES,
@@ -542,12 +545,26 @@ export class PhotonCamera extends OpticalLab {
         }]
       });
       d.pushErrorScope('validation');
+      let queue_ms;
+      try {
+        const timing = await gpuBudget.run(d, Math.ceil(width / 8) * Math.ceil(height / 8), (offset, count) => {
+          d.queue.writeBuffer(uniform, 44, new Uint32Array([offset]));
+          const encoder = d.createCommandEncoder(), compute = encoder.beginComputePass();
+          compute.setPipeline(this.cameraPipeline); compute.setBindGroup(0, bind);
+          compute.dispatchWorkgroups(count); compute.end();
+          return encoder;
+        });
+        queue_ms = timing.compute_ms;
+      } catch (error) {
+        // An interrupted sample must not be mixed into a later camera sample.
+        this.frame = 0;
+        throw error;
+      } finally {
+        uniform.destroy();
+        const error = await d.popErrorScope();
+        if (error) throw Error(error.message);
+      }
       const encoder = d.createCommandEncoder();
-      const compute = encoder.beginComputePass();
-      compute.setPipeline(this.cameraPipeline);
-      compute.setBindGroup(0, bind);
-      compute.dispatchWorkgroups(Math.ceil(width / 8), Math.ceil(height / 8));
-      compute.end();
       const pass = encoder.beginRenderPass({
         colorAttachments: [{
           view: this.context.getCurrentTexture().createView(),
@@ -568,10 +585,7 @@ export class PhotonCamera extends OpticalLab {
       const start = performance.now();
       d.queue.submit([encoder.finish()]);
       await d.queue.onSubmittedWorkDone();
-      const queue_ms = performance.now() - start;
-      const error = await d.popErrorScope();
-      uniform.destroy();
-      if (error) throw Error(error.message);
+      queue_ms += performance.now() - start;
       this.frame++;
       return {
         width,
@@ -632,6 +646,11 @@ function schedule(preview = false) {
   refine(version, preview);
   if (preview) settle = setTimeout(() => refine(version, false), 250);
 }
+document.addEventListener('gpu-stop', () => {
+  request++;
+  clearTimeout(settle);
+  status('Stopped.');
+});
 window.photonCameraReady = camera.initialize().then(info => {
   $('adapter').textContent =
     `${info.vendor} ${info.architecture}${info.isFallbackAdapter?' · software adapter':''}`;

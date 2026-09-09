@@ -9,13 +9,17 @@ links for traversal and retains every exported mesh triangle.
 The detector page is **opaque geometry rendering**. The same bundle includes a
 [photon camera](photon_camera.md) at `camera.html`, which forms a 3D image from
 full optical photon maps, and [optical diagnostics](webgpu_physics.md) at
-`physics.html` for detailed spectra, timing and sampled trajectories. PixelTPC
-keeps the original configuration's area-averaged pixel faces. The separate
-`pixelPads` scene shows a resolved 32 × 32 pad patch. Analytic `reflect3wires`
-export is explicitly rejected: its validated renderer uses FP64 cylinder
-queries, while [WGSL provides f32/f16 floating-point types](https://www.w3.org/TR/WGSL/#floating-point-types).
-Use the [Triton notebook](../notebooks/detector_viewer.ipynb) for all six wire
-planes. No wire geometry is silently dropped.
+`physics.html` for detailed spectra, timing and sampled trajectories. The browser
+catalog contains Theia, **Full wire TPC**, and **Full pixel TPC**. The wire scene
+includes all six planes and 10,750 original 32-sided wire meshes. The pixel scene
+includes both complete 1,000 × 1,000 pad faces, their borders, cathode and all
+164 PMTs; the **Pixel pads** view moves the camera close to this same detector.
+The **Wire planes** view similarly inspects the complete wire detector.
+
+Wire-aligned BVH bounds speed traversal without rotating or changing the original
+leaf triangles. Compensated float32 intersection arithmetic resolves neighboring
+facets on thin wires. This mesh export is separate from the native analytic-wire
+renderer; analytic-wire exports remain rejected.
 
 ## Open it
 
@@ -23,7 +27,7 @@ From the checkout, using the same Python environment as the detector examples:
 
 ```bash
 PYTHONPATH=chroma-lite:chroma-lar python chroma-lar/benchmarks/export_webgpu_viewer.py \
-  --output /tmp/trichroma-browser --detector theia --detector pixelTPC --detector pixelPads
+  --output /tmp/trichroma-browser --detector theia --detector reflect3wires --detector pixelTPC
 python -m http.server 8765 --bind 127.0.0.1 --directory /tmp/trichroma-browser
 ```
 
@@ -47,12 +51,15 @@ work on the selected adapter. A full frame follows after motion stops.
 The details panel reports the actual detector dimensions/count, exported scene
 SHA-256, and browser adapter. The corrected main fixture has 49,684 twenty-inch
 PMTs, a 25.5 m radius and 0.81 requested coverage; its shared geometry is about
-5.64 MB. The pixelTPC export is about 0.36 MB. Runtime labels always come from
-the export metadata.
+5.64 MB before compression. The full pixel export is 2.39 MB before compression
+and 0.57 MB compressed; its shared tiles represent 40.84 million triangles. The
+wire export is 46.23 MB before compression and 8.48 MB compressed. Runtime labels
+always come from the export metadata.
 
 ## Precision and validation
 
-WGSL computes triangle queries in float32. This is an inspection renderer and
+WGSL computes ordinary triangle queries in float32, with compensated two-float
+arithmetic for thin wire triangles. This is an inspection renderer and
 does not promise bitwise equality with CUDA optical transport. Exported bounds
 are conservative; traversal guards fail the frame if a tree is invalid. Scene
 bytes are checked against their SHA-256 before upload. Glass and enclosures are
@@ -82,10 +89,16 @@ The supplied Linux headless flags keep Vulkan rendering and canvas compositing
 on the same backend. A failed hardware adapter request is an unsupported test
 environment, not a measurement of hardware performance.
 
-Reported queue time includes command encoding, traversal, shading and the
-canvas render pass through GPU queue completion. It excludes initial shader
-compilation, scene upload, test-only buffer readback, and browser painting. It
-must not be reported as measured interactive browser FPS or optical photons/s.
+All browser pages default to **Balanced** GPU use: bounded submissions alternate
+with idle time. **Low** allows more idle time; **Full speed** removes deliberate
+pauses while retaining bounded submissions. Hidden tabs pause new work and
+**Stop** cancels at the next batch boundary. The requested ray/photon count is
+unchanged. Timing reports distinguish active queue completion from elapsed time
+including pauses; displayed throughput uses elapsed time. These controls reduce
+load, but do not impose a device power limit or a strict GPU execution deadline.
+
+The measurements below predate batching and the full resolved detector exports;
+they describe the original fixtures, not current interactive throughput.
 
 The native NVIDIA/ampere adapter on the local A100-SXM4-40GB produced these
 three-frame warm averages from each default camera, varying jitter seeds, in
@@ -112,6 +125,8 @@ uses SwiftShader; its timings are not hardware performance results. The
 [control smoke report](../chroma-lar/benchmarks/optical_validation/primitive_regions/webgpu_software/controls.json)
 checks real browser selection, drag orbit, wheel zoom, ray-budget changes, reset
 and adaptive previews on that software adapter.
+
+The [complete-detector reports](../chroma-lar/benchmarks/optical_validation/primitive_regions/webgpu_full_detectors/README.md) cover the current wire planes, resolved pixel detector, and batched Theia renderer. They also record browser pause/Stop checks and unchanged photon terminal states across batching.
 
 ## Implementation boundaries
 

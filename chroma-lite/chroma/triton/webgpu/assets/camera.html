@@ -38,6 +38,8 @@
 <option value="z">z</option>
 </select>
 </label>
+<label>GPU use<select id="gpu_mode"><option value="eco">Low</option><option value="balanced" selected>Balanced</option><option value="fast">Full speed</option></select></label>
+<button id="stop" type="button">Stop</button>
 <button id="simulate" disabled>Simulate photons</button>
 </section>
 <p id="scene_note" class="muted"></p>
@@ -66,6 +68,7 @@
 <p>The view is a finite-resolution photon-density estimate, with 64 wavelength bins and bounded spatial maps. The beam and ceiling area light are a weighted source mixture; both are fully transported through glass and the scattering volume. Broad ceiling illumination uses a coarser wall-density map than the focused beam. It includes the first diffuse wall reflection, and uses weak Rayleigh haze in the prism and fluorescent scenes. Fluorescence spectra and lifetimes are modeled in transport; this camera shows steady-state illumination. The image uses Chroma's CIE color tables and exposure. UV is invisible. There are no sampled trajectory lines or added glow overlays. The optical diagnostics page shows spectra, timing distributions, and sampled trajectories.</p>
 <p>The PMT example uses a curved R5912 mesh with a 126–130 nm source and explicitly synthetic calibration tables. Forward transport keeps the complete PMT. The optional cutaway hides part of the PMT for inspection; that clipped image is a diagnostic view of the unchanged photon maps. Photocathode detections are counted separately and do not emit light. UV stays invisible unless its false-color control is enabled.</p>
 </details>
+<p class="muted">Balanced GPU use leaves time between small batches. Work pauses while this tab is hidden; Stop cancels at the next batch.</p>
 <footer>Browser WebGPU · no Python rendering server after export · map discretization and finite camera sampling are documented estimator limits.</footer>
 </main>
 <script type="module" src="camera.js">

@@ -350,6 +350,7 @@ def export_camera_bundle(destination):
         "physics.wgsl",
         "theme.css",
         "fonts.css",
+        "scheduler.js",
     ):
         shutil.copyfile(assets / name, destination / name)
     # This focused bundle contains optical scenes, without the detector meshes
@@ -389,9 +390,12 @@ def notebook_camera_html(destination, *, height=1000, manual=False, software=Fal
         for path in destination.iterdir()
         if path.suffix in (".json", ".wgsl")
     }
-    source = (destination / "physics.js").read_text().replace("location.search", json.dumps(query))
+    scheduler_url = "data:text/javascript;base64," + encode((destination / "scheduler.js").read_bytes())
+    def scheduler_import(source):
+        return source.replace("'./scheduler.js'", json.dumps(scheduler_url))
+    source = scheduler_import((destination / "physics.js").read_text()).replace("location.search", json.dumps(query))
     physics_url = "data:text/javascript;base64," + encode(source.encode())
-    camera = (destination / "camera.js").read_text().replace("location.search", json.dumps(query))
+    camera = scheduler_import((destination / "camera.js").read_text()).replace("location.search", json.dumps(query))
     camera, imports = re.subn(
         r"from\s+['\"]\./physics\.js['\"]", lambda _: "from " + json.dumps(physics_url), camera
     )

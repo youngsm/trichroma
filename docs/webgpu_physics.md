@@ -25,7 +25,7 @@ PYTHONPATH=chroma-lite:chroma-lar python chroma-lar/benchmarks/export_webgpu_vie
   --output /tmp/trichroma-browser
 ```
 
-For a lab-only bundle, call `export_physics_catalog(destination)` from `chroma_lar.webgpu_physics` and copy `physics.html`, `physics.js`, and `physics.wgsl` from `chroma.triton.webgpu`'s assets directory.
+For a lab-only bundle, call `export_physics_catalog(destination)` from `chroma_lar.webgpu_physics` and copy `physics.html`, `physics.js`, `physics.wgsl`, `scheduler.js`, `theme.css`, and `fonts.css` from `chroma.triton.webgpu`'s assets directory.
 
 ## Controls and observables
 
@@ -35,7 +35,7 @@ Only the first requested **0–2,048 photon trajectories** are recorded for disp
 
 The time gate reveals completed flights whose endpoint time is within the gate. It redraws cached trajectories without rerunning the event. A fluorescent waiting time is retained at the reemitting surface; the plot does not interpret that waiting time as a slower flight through space. The spectrum/timing charts remain full-event distributions while the path gate changes.
 
-The page reports GPU queue completion time separately from buffer readback and JavaScript decoding. The first dispatch may include driver warm-up. Optical photons/s divides the full event count by the queue time; it is neither detector-camera rays/s nor browser painting FPS. Software fallback adapters are explicitly labeled.
+The page reports active batch queue time and total elapsed time separately. Throughput includes cooperative pauses. Balanced GPU use is the default; Low leaves more idle time, while Full speed removes deliberate pauses. Every mode bounds submissions, pauses hidden tabs, and supports Stop between batches. Batching retains global photon IDs and the complete requested population. Software fallback adapters are explicitly labeled.
 
 ## API and boundaries
 
@@ -48,9 +48,9 @@ const result = await opticalLab.run({
 opticalLab.setTimeGate(20); // ns; no simulation rerun
 ```
 
-The return value includes event counts, full-count histograms, timing, and sampled vertices. `debug: true` additionally downloads every terminal state for batches of at most 65,536 photons. Large events allocate only bounded path/statistics buffers. Dispatches use a second workgroup dimension above the one-dimensional WebGPU dispatch limit.
+The return value includes event counts, full-count histograms, timing, and sampled vertices. `debug: true` additionally downloads every terminal state for batches of at most 65,536 photons. Large events allocate only bounded path/statistics buffers. Global photon IDs include the batch offset; events remain within the WebGPU dispatch limit.
 
-This is a bounded prototype for these three exported scenes, **not a general Chroma transport backend**. It supports no detector event loading, bulk reemission, PMT electronics, TTS or digitization. Analytic detector wires remain unsupported in the browser geometry page; use the native Triton viewer. Invalid inputs, unsupported formats/surface models, step-limit survivors, and non-finite results fail the event instead of displaying a partial success.
+This is a bounded prototype for these three exported scenes, **not a general Chroma transport backend**. It supports no detector event loading, bulk reemission, PMT electronics, TTS or digitization. The browser geometry page includes the original wire meshes; analytic detector wires require the native Triton viewer. Invalid inputs, unsupported formats/surface models, step-limit survivors, and non-finite results fail the event instead of displaying a partial success.
 
 WGSL arithmetic is float32. Philox uses exact 32-bit integer multiplication/carry logic and matches native random-stream goldens, including 64-bit photon IDs and seeds in the probe. Boundary intersection and Fresnel/Rayleigh math can differ from the CPU float64 intersection reference. Finite validation does not establish correctness for arbitrary geometries, grazing cases or all seeds.
 

@@ -202,8 +202,9 @@ fn spectral_camera(origin:vec3<f32>,initial_direction:vec3<f32>,bin:u32,pixel:u3
 }
 fn srgb(value:vec3<f32>)->vec3<f32>{return select(12.92*value,1.055*pow(value,vec3<f32>(1./2.4))-.055,value>vec3<f32>(.0031308));}
 @compute @workgroup_size(8,8)
-fn render_camera(@builtin(global_invocation_id) invocation:vec3<u32>){
-    let xy=invocation.xy;if(any(xy>=camera.image.xy)){return;}
+fn render_camera(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_id) lane:vec3<u32>){
+    let block=group.x+camera.image.w;let columns=(camera.image.x+7u)/8u;
+    let xy=vec2<u32>(block%columns,block/columns)*8u+lane.xy;if(any(xy>=camera.image.xy)){return;}
     let pixel=xy.y*camera.image.x+xy.x;
     let forward=unit(camera.look_at.xyz-camera.eye.xyz);let reference_up=select(vec3<f32>(0.,0.,1.),vec3<f32>(0.,1.,0.),abs(forward.z)>.99);let right=unit(cross(forward,reference_up));let up=cross(right,forward);
     let jitter=vec2<f32>(random_uniform(pixel,camera.image.z*2u+0x40000000u),random_uniform(pixel,camera.image.z*2u+0x40000001u));

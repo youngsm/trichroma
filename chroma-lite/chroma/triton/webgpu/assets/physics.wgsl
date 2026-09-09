@@ -1,7 +1,7 @@
 // Bounded optical Monte Carlo for the three exported spectral-lab scenes.
 // Philox streams, Fresnel sampling, polarized Rayleigh and surface emission
 // follow the Chroma spectral kernels. Numerical operations use WGSL f32.
-struct Configuration { counts: vec4<u32>, options: vec4<u32>, plot: vec4<f32>, }
+struct Configuration { counts: vec4<u32>, options: vec4<u32>, plot: f32, batch_offset: u32, batch_end: u32, reserved: u32, }
 @group(0) @binding(0) var<storage, read> tables: array<u32>;
 @group(0) @binding(1) var<uniform> config: Configuration;
 @group(0) @binding(2) var<storage, read_write> statistics: array<atomic<u32>>;
@@ -193,7 +193,8 @@ fn path_vertex(id: u32, vertex: u32, position: vec3<f32>, time: f32, wavelength:
 }
 @compute @workgroup_size(128)
 fn simulate(@builtin(global_invocation_id) invocation: vec3<u32>) {
-    let id = invocation.x+invocation.y*8388480u; if (id >= config.counts.x) { return; }
+    let id = invocation.x+invocation.y*8388480u+config.batch_offset;
+    if (id >= config.counts.x || (config.batch_end != 0u && id >= config.batch_end)) { return; }
     var position = v3(31u);
     position.y += (random_uniform(id,0x10000000u)-.5)*f(36u);
     position.z += (random_uniform(id,0x10000001u)-.5)*f(36u);
@@ -296,7 +297,7 @@ fn simulate(@builtin(global_invocation_id) invocation: vec3<u32>) {
     atomicAdd(&statistics[0u],1u);atomicMax(&statistics[12u],steps);atomicMax(&statistics[16u],bitcast<u32>(time));
     if((flags&4u)!=0u){
         atomicAdd(&statistics[1u],1u);histogram(OUT_SPECTRUM,wavelength,280.,740.,92u);
-        histogram(TIME_HIST,time,0.,config.plot.x,128u);if(time>=config.plot.x){atomicAdd(&statistics[14u],1u);}
+        histogram(TIME_HIST,time,0.,config.plot,128u);if(time>=config.plot){atomicAdd(&statistics[14u],1u);}
         if(config.options.y==0u && position.x>299.){
             atomicAdd(&statistics[13u],1u);
             let wb=u32(clamp((wavelength-380.)/4.,0.,84.));
