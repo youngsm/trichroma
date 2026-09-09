@@ -1,0 +1,258 @@
+[
+  {
+    "scene": "prism",
+    "width": 160,
+    "completed": true,
+    "samples": [
+      {
+        "done": true,
+        "error": null,
+        "active": {
+          "completed": 260,
+          "total": 260,
+          "batch": 4,
+          "elapsed_ms": 10.699999809265137
+        },
+        "submissions": 23,
+        "elapsed": 514.5999999046326
+      }
+    ],
+    "frame": {
+      "frame": {
+        "width": 160,
+        "height": 100,
+        "frame": 1,
+        "queue_ms": 71.80000019073486,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "elapsed": 78.90000009536743,
+      "error": null
+    }
+  },
+  {
+    "scene": "prism",
+    "width": 640,
+    "completed": true,
+    "samples": [
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 2816,
+          "total": 4000,
+          "batch": 256,
+          "elapsed_ms": 38.80000019073486
+        },
+        "submissions": 35,
+        "elapsed": 503.5
+      },
+      {
+        "done": true,
+        "error": null,
+        "active": {
+          "completed": 4000,
+          "total": 4000,
+          "batch": 160,
+          "elapsed_ms": 38.59999990463257
+        },
+        "submissions": 39,
+        "elapsed": 1012.5
+      }
+    ],
+    "frame": {
+      "frame": {
+        "width": 640,
+        "height": 400,
+        "frame": 1,
+        "queue_ms": 684.4000000953674,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "elapsed": 685.1999998092651,
+      "error": null
+    }
+  },
+  {
+    "scene": "pmt",
+    "width": 160,
+    "completed": true,
+    "samples": [
+      {
+        "done": true,
+        "error": null,
+        "active": {
+          "completed": 260,
+          "total": 260,
+          "batch": 4,
+          "elapsed_ms": 11.799999713897705
+        },
+        "submissions": 62,
+        "elapsed": 508.7000002861023
+      }
+    ],
+    "frame": {
+      "frame": {
+        "width": 160,
+        "height": 100,
+        "frame": 1,
+        "queue_ms": 208.0999994277954,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "elapsed": 208.59999990463257,
+      "error": null
+    }
+  },
+  {
+    "scene": "pmt",
+    "width": 640,
+    "completed": true,
+    "samples": [
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 512,
+          "total": 4000,
+          "batch": 256,
+          "elapsed_ms": 197
+        },
+        "submissions": 65,
+        "elapsed": 509.5
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1006,
+          "total": 4000,
+          "batch": 238,
+          "elapsed_ms": 253.5
+        },
+        "submissions": 67,
+        "elapsed": 1012.7999997138977
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1541,
+          "total": 4000,
+          "batch": 179,
+          "elapsed_ms": 189.09999990463257
+        },
+        "submissions": 70,
+        "elapsed": 1521.5
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 2134,
+          "total": 4000,
+          "batch": 207,
+          "elapsed_ms": 180.5
+        },
+        "submissions": 73,
+        "elapsed": 2024.9000000953674
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 2616,
+          "total": 4000,
+          "batch": 252,
+          "elapsed_ms": 184
+        },
+        "submissions": 75,
+        "elapsed": 2533.5999999046326
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 3384,
+          "total": 4000,
+          "batch": 256,
+          "elapsed_ms": 178.7999997138977
+        },
+        "submissions": 78,
+        "elapsed": 3039.199999809265
+      },
+      {
+        "done": true,
+        "error": null,
+        "active": {
+          "completed": 4000,
+          "total": 4000,
+          "batch": 104,
+          "elapsed_ms": 16.200000286102295
+        },
+        "submissions": 80,
+        "elapsed": 3548.5999999046326
+      }
+    ],
+    "frame": {
+      "frame": {
+        "width": 640,
+        "height": 400,
+        "frame": 1,
+        "queue_ms": 3280.7000002861023,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "elapsed": 3281.4000000953674,
+      "error": null
+    }
+  }
+]

@@ -1,0 +1,522 @@
+[
+  {
+    "scene": "prism",
+    "width": 160,
+    "completed": true,
+    "samples": [
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 116,
+          "total": 260,
+          "batch": 12,
+          "elapsed_ms": 43.90000009536743
+        },
+        "submissions": 54,
+        "elapsed": 513.5
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 185,
+          "total": 260,
+          "batch": 6,
+          "elapsed_ms": 12.400000095367432
+        },
+        "submissions": 62,
+        "elapsed": 1015.5
+      },
+      {
+        "done": true,
+        "error": null,
+        "active": {
+          "completed": 260,
+          "total": 260,
+          "batch": 9,
+          "elapsed_ms": 11.900000095367432
+        },
+        "submissions": 68,
+        "elapsed": 1525.1999998092651
+      }
+    ],
+    "frame": {
+      "frame": {
+        "width": 160,
+        "height": 100,
+        "frame": 1,
+        "queue_ms": 663.4999985694885,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "elapsed": 1311.1999998092651,
+      "error": null
+    }
+  },
+  {
+    "scene": "prism",
+    "width": 640,
+    "completed": false,
+    "samples": [
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 424,
+          "total": 4000,
+          "batch": 36,
+          "elapsed_ms": 37.700000286102295
+        },
+        "submissions": 81,
+        "elapsed": 503
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 652,
+          "total": 4000,
+          "batch": 20,
+          "elapsed_ms": 35.5
+        },
+        "submissions": 92,
+        "elapsed": 1011.9000000953674
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 892,
+          "total": 4000,
+          "batch": 11,
+          "elapsed_ms": 12.400000095367432
+        },
+        "submissions": 104,
+        "elapsed": 1514.3000001907349
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1172,
+          "total": 4000,
+          "batch": 22,
+          "elapsed_ms": 16.199999809265137
+        },
+        "submissions": 117,
+        "elapsed": 2023.5
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1458,
+          "total": 4000,
+          "batch": 31,
+          "elapsed_ms": 37.40000009536743
+        },
+        "submissions": 128,
+        "elapsed": 2526.4000000953674
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1561,
+          "total": 4000,
+          "batch": 12,
+          "elapsed_ms": 40.40000009536743
+        },
+        "submissions": 138,
+        "elapsed": 3036
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1651,
+          "total": 4000,
+          "batch": 27,
+          "elapsed_ms": 36
+        },
+        "submissions": 149,
+        "elapsed": 3538.5999999046326
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1747,
+          "total": 4000,
+          "batch": 6,
+          "elapsed_ms": 13
+        },
+        "submissions": 160,
+        "elapsed": 4047.5999999046326
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 1857,
+          "total": 4000,
+          "batch": 14,
+          "elapsed_ms": 12
+        },
+        "submissions": 171,
+        "elapsed": 4549.800000190735
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 2019,
+          "total": 4000,
+          "batch": 14,
+          "elapsed_ms": 12
+        },
+        "submissions": 182,
+        "elapsed": 5058.599999904633
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 2169,
+          "total": 4000,
+          "batch": 12,
+          "elapsed_ms": 11
+        },
+        "submissions": 194,
+        "elapsed": 5561.099999904633
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 2343,
+          "total": 4000,
+          "batch": 14,
+          "elapsed_ms": 14
+        },
+        "submissions": 205,
+        "elapsed": 6069.900000095367
+      }
+    ]
+  },
+  {
+    "scene": "pmt",
+    "width": 160,
+    "completed": false,
+    "samples": [
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 23,
+          "total": 260,
+          "batch": 4,
+          "elapsed_ms": 14.200000286102295
+        },
+        "submissions": 256,
+        "elapsed": 505.5
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 33,
+          "total": 260,
+          "batch": 2,
+          "elapsed_ms": 156
+        },
+        "submissions": 258,
+        "elapsed": 1015.2999997138977
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 49,
+          "total": 260,
+          "batch": 8,
+          "elapsed_ms": 36.69999980926514
+        },
+        "submissions": 263,
+        "elapsed": 1517.5
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 70,
+          "total": 260,
+          "batch": 8,
+          "elapsed_ms": 36.700000286102295
+        },
+        "submissions": 267,
+        "elapsed": 2029.8999996185303
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 90,
+          "total": 260,
+          "batch": 6,
+          "elapsed_ms": 34.30000019073486
+        },
+        "submissions": 272,
+        "elapsed": 2532.199999809265
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 95,
+          "total": 260,
+          "batch": 1,
+          "elapsed_ms": 170.09999990463257
+        },
+        "submissions": 273,
+        "elapsed": 3041.199999809265
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 98,
+          "total": 260,
+          "batch": 1,
+          "elapsed_ms": 13.5
+        },
+        "submissions": 276,
+        "elapsed": 3543.3999996185303
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 114,
+          "total": 260,
+          "batch": 4,
+          "elapsed_ms": 129.5
+        },
+        "submissions": 281,
+        "elapsed": 4052.699999809265
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 116,
+          "total": 260,
+          "batch": 1,
+          "elapsed_ms": 156.30000019073486
+        },
+        "submissions": 283,
+        "elapsed": 4555.299999713898
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 133,
+          "total": 260,
+          "batch": 3,
+          "elapsed_ms": 95.90000009536743
+        },
+        "submissions": 288,
+        "elapsed": 5064.199999809265
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 135,
+          "total": 260,
+          "batch": 1,
+          "elapsed_ms": 134.60000038146973
+        },
+        "submissions": 290,
+        "elapsed": 5566.89999961853
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 138,
+          "total": 260,
+          "batch": 1,
+          "elapsed_ms": 13.099999904632568
+        },
+        "submissions": 293,
+        "elapsed": 6075.199999809265
+      }
+    ]
+  },
+  {
+    "scene": "pmt",
+    "width": 640,
+    "completed": false,
+    "samples": [
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 195,
+          "total": 4000,
+          "batch": 25,
+          "elapsed_ms": 71.60000038146973
+        },
+        "submissions": 302,
+        "elapsed": 502.40000009536743
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 204,
+          "total": 4000,
+          "batch": 1,
+          "elapsed_ms": 169.09999990463257
+        },
+        "submissions": 303,
+        "elapsed": 1011.6000003814697
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 206,
+          "total": 4000,
+          "batch": 1,
+          "elapsed_ms": 107.80000019073486
+        },
+        "submissions": 305,
+        "elapsed": 1514
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 281,
+          "total": 4000,
+          "batch": 36,
+          "elapsed_ms": 180.5
+        },
+        "submissions": 313,
+        "elapsed": 2023.1000003814697
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 287,
+          "total": 4000,
+          "batch": 6,
+          "elapsed_ms": 188.5
+        },
+        "submissions": 314,
+        "elapsed": 2525.1000003814697
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 289,
+          "total": 4000,
+          "batch": 1,
+          "elapsed_ms": 97.2999997138977
+        },
+        "submissions": 316,
+        "elapsed": 3034.800000190735
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 363,
+          "total": 4000,
+          "batch": 36,
+          "elapsed_ms": 166.30000019073486
+        },
+        "submissions": 323,
+        "elapsed": 3537.2000002861023
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 370,
+          "total": 4000,
+          "batch": 7,
+          "elapsed_ms": 199.90000009536743
+        },
+        "submissions": 325,
+        "elapsed": 4045.800000190735
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 409,
+          "total": 4000,
+          "batch": 18,
+          "elapsed_ms": 12.900000095367432
+        },
+        "submissions": 332,
+        "elapsed": 4548
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 453,
+          "total": 4000,
+          "batch": 8,
+          "elapsed_ms": 192.90000009536743
+        },
+        "submissions": 333,
+        "elapsed": 5057.200000286102
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 541,
+          "total": 4000,
+          "batch": 44,
+          "elapsed_ms": 206.40000009536743
+        },
+        "submissions": 339,
+        "elapsed": 5560.200000286102
+      },
+      {
+        "done": false,
+        "error": null,
+        "active": {
+          "completed": 628,
+          "total": 4000,
+          "batch": 45,
+          "elapsed_ms": 194
+        },
+        "submissions": 343,
+        "elapsed": 6069.200000286102
+      }
+    ]
+  }
+]

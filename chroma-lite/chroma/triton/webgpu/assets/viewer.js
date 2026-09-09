@@ -91,7 +91,6 @@ class DetectorRenderer {
     if (this.width === width && this.height === height && this.debug === debug) return;
     this.texture?.destroy(); this.diagnostic?.destroy();
     this.width = width; this.height = height; this.debug = debug;
-    this.canvas.width = width; this.canvas.height = height;
     this.texture = this.device.createTexture({size:[width,height],format:"rgba8unorm",usage:GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_SRC});
     this.diagnostic = this.device.createBuffer({size:debug ? width*height*48 : 48,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
   }
@@ -101,7 +100,7 @@ class DetectorRenderer {
     this.device.queue.submit([encoder.finish()]); await staging.mapAsync(GPUMapMode.READ);
     const result = staging.getMappedRange().slice(0); staging.unmap(); staging.destroy(); return result;
   }
-  async render({width=1000,height=625,rays=2500000,seed=0,debug=false,jitter=true,camera=this.camera,colorBy=this.colorBy}={}) {
+  async render({width=1000,height=625,rays=2500000,seed=0,debug=false,jitter=true,camera=this.camera,colorBy=this.colorBy,interactive=false}={}) {
     if (!['surface','normal'].includes(colorBy)) throw Error('Color mode must be surface or normal.');
     if (![width,height,rays].every(Number.isSafeInteger) || width<=0 || height<=0 || rays<width*height || rays>0xffffffff || width>this.device.limits.maxTextureDimension2D || height>this.device.limits.maxTextureDimension2D) throw Error("Invalid image dimensions or ray budget; use at least one ray per pixel.");
     if (![...camera.eye,...camera.target,...camera.up,camera.fov].every(Number.isFinite) || camera.fov<=0 || camera.fov>=179 || Math.hypot(...sub(camera.target,camera.eye))===0 || Math.hypot(...cross(sub(camera.target,camera.eye),camera.up))===0) throw Error("Invalid camera basis or field of view.");
@@ -124,7 +123,10 @@ class DetectorRenderer {
       const encoder=this.device.createCommandEncoder(),compute=encoder.beginComputePass();
       compute.setPipeline(this.compute);compute.setBindGroup(0,bindings);compute.dispatchWorkgroups(count);compute.end();
       return encoder;
-    }, {initial:1, progress:fraction=>{$('status').textContent=`${this.manifest.name} · ${rays.toLocaleString()} camera rays · ${Math.floor(fraction*100)}%`;}});
+    }, {interactive, progress:fraction=>{$('status').textContent=`${this.manifest.name} · ${rays.toLocaleString()} camera rays · ${Math.floor(fraction*100)}%`;}});
+    // Preserve the preview until the full frame is ready to present.
+    if (this.canvas.width !== width) this.canvas.width = width;
+    if (this.canvas.height !== height) this.canvas.height = height;
     const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({colorAttachments:[{view:this.context.getCurrentTexture().createView(),loadOp:"clear",storeOp:"store",clearValue:{r:0,g:0,b:0,a:1}}]});
     pass.setPipeline(this.presentation); pass.setBindGroup(0,presentation); pass.draw(3); pass.end();
@@ -142,13 +144,13 @@ class DetectorRenderer {
     return result;
   }
   schedule(preview) {
-    if (this.busy) gpuBudget.cancel();
+    if (this.busy && !this.activePreview) gpuBudget.cancel();
     if (preview) {
       clearTimeout(this.timer); this.timer=setTimeout(()=>this.schedule(false),220);
     }
     const budget=preview?this.previewRays:Number($("rays").value);
     const scale=preview?Math.sqrt(budget/100000):1;
-    this.pending = {width:preview?Math.max(1,Math.floor(400*scale)):1000,height:preview?Math.max(1,Math.floor(250*scale)):625,rays:budget,seed:this.seed++,camera:copyCamera(this.camera),colorBy:this.colorBy};
+    this.pending = {width:preview?Math.max(1,Math.floor(400*scale)):1000,height:preview?Math.max(1,Math.floor(250*scale)):625,rays:budget,seed:this.seed++,camera:copyCamera(this.camera),colorBy:this.colorBy,interactive:!!preview};
     this.drain();
   }
   async drain() {
@@ -157,11 +159,12 @@ class DetectorRenderer {
     try {
       while(this.pending) {
         const next=this.pending; this.pending=null;
+        this.activePreview = next.interactive;
         try { await this.render(next); }
         catch(error) { if(error.name !== 'AbortError') throw error; }
       }
     } catch(error) { $("error").textContent=error.stack ?? String(error); }
-    finally { this.busy=false; }
+    finally { this.busy=false; this.activePreview=false; }
   }
   installControls() {
     $("scene").addEventListener("change",async event=>{

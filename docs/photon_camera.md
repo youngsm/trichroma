@@ -63,7 +63,9 @@ Drag to orbit, middle-drag (or Shift-drag) to pan, and use the wheel to zoom.
 Panning translates both the camera and its target in world coordinates, keeping
 the viewing direction and distance fixed. Translation stops at the room walls.
 These controls reuse the current photon maps; rerunning the same scene preserves
-the composed camera view.
+the composed camera view. Motion coalesces to the newest view while a small
+preview finishes; changing the view cancels older full-resolution refinement.
+The first image is a quick preview before the selected quality refines.
 
 ## What the camera estimates
 

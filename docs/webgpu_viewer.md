@@ -95,9 +95,10 @@ The supplied Linux headless flags keep Vulkan rendering and canvas compositing
 on the same backend. A failed hardware adapter request is an unsupported test
 environment, not a measurement of hardware performance.
 
-All browser pages default to **Balanced** GPU use: bounded submissions alternate
-with idle time. **Low** allows more idle time; **Full speed** removes deliberate
-pauses while retaining bounded submissions. Hidden tabs pause new work and
+All browser pages default to **Balanced** GPU use: the GPU runs freely in bounded
+submissions, with a completion checkpoint before queuing more work. **Low** adds
+idle time; **Full speed** permits larger batches. Short interaction previews take
+priority, and cheap photon-camera refinements are limited to 30 frames/s in Balanced. Hidden tabs pause new work and
 **Stop** cancels at the next batch boundary. The requested ray/photon count is
 unchanged. Timing reports distinguish active queue completion from elapsed time
 including pauses; displayed throughput uses elapsed time. These controls reduce

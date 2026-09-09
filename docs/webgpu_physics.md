@@ -42,7 +42,7 @@ shown separately when present. The vertical axis is photons per bin.
 
 The time gate reveals completed flights whose endpoint time is within the gate. It redraws cached trajectories without rerunning the event. A fluorescent waiting time is retained at the reemitting surface; the plot does not interpret that waiting time as a slower flight through space. The spectrum/timing charts remain full-event distributions while the path gate changes.
 
-The page reports active batch queue time and total elapsed time separately. Throughput includes cooperative pauses. Balanced GPU use is the default; Low leaves more idle time, while Full speed removes deliberate pauses. Every mode bounds submissions, pauses hidden tabs, and supports Stop between batches. Batching retains global photon IDs and the complete requested population. Software fallback adapters are explicitly labeled.
+The page reports active batch queue time and total elapsed time separately. Throughput includes cooperative pauses. Balanced GPU use is the default and keeps the GPU busy with bounded submissions; Low adds idle time, while Full speed permits larger batches. Every mode bounds submissions, pauses hidden tabs, and supports Stop between batches. Batching retains global photon IDs and the complete requested population. Software fallback adapters are explicitly labeled.
 
 ## API and boundaries
 

@@ -1,4 +1,4 @@
-// Bound individual GPU submissions and leave idle time for the rest of the system.
+// Bound individual GPU submissions; wait for each before queuing more work.
 // Batching changes scheduling only; callers retain global photon/pixel indices.
 export class GpuBudget {
   generation = 0;
@@ -14,13 +14,15 @@ export class GpuBudget {
     if (token !== this.generation) throw new DOMException('Stopped.', 'AbortError');
   }
 
-  async run(device, total, encode, {initial = 8, maximum = 512, progress = null} = {}) {
+  async run(device, total, encode, {initial = 256, maximum = 2048, progress = null, interactive = false} = {}) {
     const token = this.generation, start = performance.now();
-    let offset = 0, batch = initial, compute_ms = 0, batches = 0, max_batch_ms = 0;
-    let queueLatency = 0;
+    let offset = 0, batch = this.mode === 'eco' ? Math.min(initial,32) : initial;
+    let compute_ms = 0, batches = 0, max_batch_ms = 0;
     while (offset < total) {
       await this.checkpoint(token);
-      const count = Math.min(batch, maximum, total - offset);
+      const mode = this.mode;
+      const limit = Math.min(maximum, interactive ? 256 : mode === 'eco' ? 128 : mode === 'fast' ? 2048 : 1024);
+      const count = Math.min(batch, limit, total - offset);
       const begin = performance.now();
       device.queue.submit([encode(offset, count).finish()]);
       this.submissions++;
@@ -33,15 +35,15 @@ export class GpuBudget {
       batches++;
       if (token !== this.generation) throw new DOMException('Stopped.', 'AbortError');
       if (progress) progress(offset / total);
-      // Tiny batches primarily measure browser/driver round-trip latency. Account
-      // for that fixed cost so a 5 ms round trip cannot defeat a 4 ms GPU budget.
-      if (batches === 1 || count === 1) queueLatency = Math.min(20, elapsed);
-      const mode = this.mode, target = queueLatency + (mode === 'eco' ? 4 : mode === 'fast' ? 12 : 8);
-      // Round growth upward so driver round-trip latency cannot trap us forever
-      // at a single workgroup after a cold shader compilation.
+      // A handful of workgroups badly underfills a GPU, especially when one ray
+      // has a long path. Start with useful parallelism, then adapt toward a short
+      // submission rather than imposing an 8 ms target that shrinks to one group.
+      // These are scheduling targets, not hard driver execution deadlines.
+      const target = mode === 'eco' && !interactive ? 24 : mode === 'fast' ? 250 : 200;
       batch = Math.max(1, Math.min(maximum, count * 2, Math.ceil(count * target / Math.max(.25, elapsed))));
-      // Full speed still uses bounded submissions and pauses in background tabs.
-      const pause = mode === 'fast' ? 0 : Math.max(mode === 'eco' ? 16 : 8, elapsed * (mode === 'eco' ? 3 : 1));
+      // Balanced uses the GPU freely. Explicit Low mode adds idle time, while
+      // short interaction previews take priority in every mode.
+      const pause = mode === 'eco' && !interactive ? Math.max(16,elapsed) : 0;
       await this.checkpoint(token, offset < total ? pause : 0);
     }
     return this.lastRun = {compute_ms, wall_ms: performance.now() - start, batches, max_batch_ms};

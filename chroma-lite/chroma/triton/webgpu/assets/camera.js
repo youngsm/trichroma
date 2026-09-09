@@ -423,7 +423,8 @@ export class PhotonCamera extends OpticalLab {
     target = null,
     exposure = null,
     cutaway = null,
-    uvFalseColor = null
+    uvFalseColor = null,
+    interactive = false
   } = {}) {
     if (this.busy || this.rendering) throw Error('The browser GPU is already working');
     if (!this.resources) throw Error('Simulate an optical event first');
@@ -471,8 +472,6 @@ export class PhotonCamera extends OpticalLab {
         this.accumulation?.destroy();
         this.width = width;
         this.height = height;
-        this.canvas.width = width;
-        this.canvas.height = height;
         this.image = d.createTexture({
           size: [width, height],
           format: 'rgba16float',
@@ -553,7 +552,7 @@ export class PhotonCamera extends OpticalLab {
           compute.setPipeline(this.cameraPipeline); compute.setBindGroup(0, bind);
           compute.dispatchWorkgroups(count); compute.end();
           return encoder;
-        });
+        }, {interactive});
         queue_ms = timing.compute_ms;
       } catch (error) {
         // An interrupted sample must not be mixed into a later camera sample.
@@ -564,6 +563,10 @@ export class PhotonCamera extends OpticalLab {
         const error = await d.popErrorScope();
         if (error) throw Error(error.message);
       }
+      // Keep the last presented preview visible while a larger image computes.
+      // Resizing the canvas earlier would blank it for the whole refinement.
+      if (this.canvas.width !== width) this.canvas.width = width;
+      if (this.canvas.height !== height) this.canvas.height = height;
       const encoder = d.createCommandEncoder();
       const pass = encoder.beginRenderPass({
         colorAttachments: [{
@@ -587,17 +590,17 @@ export class PhotonCamera extends OpticalLab {
       await d.queue.onSubmittedWorkDone();
       queue_ms += performance.now() - start;
       this.frame++;
-      return {
+      return this.lastFrame = {
         width,
         height,
         frame: this.frame,
         queue_ms,
         photons: this.photons,
-        eye: this.eye.slice(),
-        target: this.target.slice(),
-        exposure: this.exposure,
-        cutaway: this.cutaway,
-        uv_false_color: this.uvFalseColor
+        eye: Array.from(f.slice(0,3)),
+        target: Array.from(f.slice(4,7)),
+        exposure: f[3],
+        cutaway: !!f[12],
+        uv_false_color: !!f[13]
       };
     } finally {
       this.rendering = false;
@@ -609,45 +612,62 @@ export class PhotonCamera extends OpticalLab {
 }
 const camera = new PhotonCamera();
 window.photonCamera = camera;
-let request = 0,
-  settle = null;
+let request = 0, settle = null, pendingView = null, drainingViews = false;
+let activePreview = false, previewWidth = 128;
 
 function updateInfo(frame) {
   $('samples').textContent =
     `${camera.photons.toLocaleString()} photons · ${frame.frame} spectral camera samples · ${frame.queue_ms.toFixed(0)} ms camera`;
 }
-async function refine(version, preview = false) {
-  if (version !== request || camera.busy || camera.rendering) return;
+async function drainViews() {
+  if (drainingViews) return;
+  drainingViews = true;
   try {
-    const width = preview ? 160 : Number($('quality').value),
-      height = Math.round(width * .625);
-    const frame = await camera.render({
-      width,
-      height,
-      reset: true
-    });
-    updateInfo(frame);
-    if (!preview) {
-      for (let i = 1; i < 16 && version === request; i++) {
-        updateInfo(await camera.render({
-          width,
-          height
-        }));
-      }
+    while (pendingView) {
+      const next = pendingView;
+      pendingView = null;
+      while (camera.rendering) await new Promise(resolve => setTimeout(resolve,8));
+      if (next.version !== request || camera.busy || !camera.resources) continue;
+      try {
+        // Finish a small preview while newer pointer positions coalesce. Repeated
+        // cancellation during dragging would prevent any frame being presented.
+        activePreview = true;
+        const start = performance.now(), width = previewWidth;
+        updateInfo(await camera.render({width,height:Math.round(width*.625),reset:true,interactive:true}));
+        previewWidth = Math.max(64,Math.min(160,8*Math.round(width*Math.sqrt(80/Math.max(1,performance.now()-start))/8)));
+        activePreview = false;
+        if (next.preview || next.version !== request || pendingView) continue;
+        const quality = Number($('quality').value), height = Math.round(quality*.625);
+        for (let sample=0;sample<16 && next.version===request && !pendingView;sample++) {
+          const begin = performance.now();
+          updateInfo(await camera.render({width:quality,height,reset:sample===0,interactive:sample===0}));
+          // Limit refinement of cheap scenes to 30 frames/s (10 in Low mode).
+          // Expensive frames need no additional idle time.
+          const interval = gpuBudget.mode==='fast' ? 0 : gpuBudget.mode==='eco' ? 100 : 1000/30;
+          const wait = interval-(performance.now()-begin);
+          if (sample<15 && wait>0) await new Promise(resolve=>setTimeout(resolve,wait));
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') status(error.message,true);
+      } finally { activePreview = false; }
     }
-  } catch (error) {
-    status(error.message, true);
-  }
+  } finally { drainingViews = false; }
 }
-
 function schedule(preview = false) {
   const version = ++request;
   clearTimeout(settle);
-  refine(version, preview);
-  if (preview) settle = setTimeout(() => refine(version, false), 250);
+  pendingView = {version,preview};
+  if (camera.rendering && !activePreview) gpuBudget.cancel();
+  drainViews();
+  if (preview) settle = setTimeout(()=>{
+    if (version !== request) return;
+    pendingView = {version,preview:false};
+    drainViews();
+  },250);
 }
 document.addEventListener('gpu-stop', () => {
   request++;
+  pendingView = null;
   clearTimeout(settle);
   status('Stopped.');
 });
@@ -657,6 +677,9 @@ window.photonCameraReady = camera.initialize().then(info => {
   $('simulate').disabled = false;
   $('simulate').onclick = async () => {
     request++;
+    pendingView = null;
+    clearTimeout(settle);
+    if (camera.rendering) gpuBudget.cancel();
     $('simulate').disabled = true;
     while (camera.rendering) await new Promise(resolve => requestAnimationFrame(resolve));
     status('Simulating photons and building spectral light maps…');

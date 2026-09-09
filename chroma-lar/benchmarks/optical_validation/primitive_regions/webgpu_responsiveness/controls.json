@@ -1,0 +1,19 @@
+{
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "preview_retained_during_refinement": true,
+  "frames_during_drag": 4,
+  "release_to_latest_view_ms": 205.30000019073486,
+  "stop_latency_ms": 181.45043402910233,
+  "no_refinement_after_stop": true,
+  "hidden_tab_pause_resume": true,
+  "errors": []
+}

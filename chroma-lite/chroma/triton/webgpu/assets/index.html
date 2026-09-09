@@ -50,7 +50,7 @@
 <pre id="details">
 </pre>
 </details>
-<p class="muted">Balanced GPU use leaves time between small batches. Work pauses while this tab is hidden; Stop cancels at the next batch.</p>
+<p class="muted">GPU work runs in bounded batches. Low adds idle time; hidden tabs pause, and Stop cancels at the next batch.</p>
 <footer class="muted">Surface colors use headlight shading; normal colors show surface orientation. These are camera rays, not simulated optical photons. The full pixel TPC resolves every pad. The wire TPC uses all six planes of the original 32-sided wire meshes; the analytic-cylinder optical model remains in the Triton notebook.</footer>
 </main>
 <script type="module" src="viewer.js">
