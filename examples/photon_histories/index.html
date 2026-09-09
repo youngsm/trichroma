@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Photon histories · Chroma</title><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="theme.css">
+<style>
+main{width:min(1500px,calc(100% - 64px));margin-top:38px}.intro{max-width:960px}
+#view{display:block;width:100%;aspect-ratio:1.7;background:#090c10;touch-action:none}
+.timeline{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:17px 0;border-bottom:1px solid var(--line)}
+.timeline label{flex:1;min-width:180px}.timeline input{width:100%;height:22px;padding:0;accent-color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 25px;font-size:15px;margin:12px 0}.legend b{font-weight:400}.x{color:#bc2f43}.y{color:#198449}.z{color:#2d68c6}
+#status{min-height:0}.controls{margin-bottom:0}#meta{font-size:15px}button,select{max-width:100%}
+@media(max-width:700px){main{width:calc(100% - 28px);margin-top:25px}h1{font-size:28px}#view{aspect-ratio:1.2}}
+</style></head>
+<body><main><nav class="site-nav"><a class="brand" href="../">Chroma</a><div class="page-links"><a href="../detectors.html">Detectors</a><a href="../cherenkov/">Cherenkov camera</a></div></nav>
+<h1>Photon histories in water</h1>
+<p class="intro">Individual optical photons inside 49,684 twenty-inch PMTs. Line color follows each photon's polarization; the PMTs show their surface normals.</p>
+<div id="adapter" class="adapter">Connecting to WebGPU…</div>
+<section class="controls">
+<label>HK event<select id="event"></select></label>
+<label>Displayed path limit<select id="paths"><option>512</option><option>2048</option><option selected>8192</option><option>16384</option><option>32768</option></select></label>
+<label>Display<select id="mode"><option value="trails" selected>Moving photon trails</option><option value="history">Complete histories</option></select></label>
+<label>View<select id="preset"><option value="oblique">Oblique</option><option value="side">Side</option><option value="cone">Along the cone</option><option value="wide">Detector overview</option></select></label>
+<label>GPU use<select id="gpu_mode"><option value="eco">Low</option><option value="balanced" selected>Balanced</option><option value="fast">Full speed</option></select></label>
+<button id="late">Late light</button><button id="save">Save image</button><button id="stop">Stop</button><button id="simulate" disabled>Simulate event</button>
+</section>
+<p id="status" role="status">Loading geometry and HK particle steps…</p>
+<canvas id="view" width="1020" height="600" aria-label="Muon Cherenkov photon histories and PMTs colored by normal"></canvas>
+<div class="timeline"><button id="play" disabled>Play</button>
+<label>Event time · <span id="timeLabel">42 ns</span><input id="time" type="range" min="0" max="180" step=".2" value="42"></label>
+<label>Trail duration · <span id="trailLabel">8 ns</span><input id="trail" type="range" min=".5" max="25" step=".5" value="8"></label>
+<label>PMT brightness<input id="brightness" type="range" min=".15" max="1" step=".05" value=".65"></label>
+<label>Line opacity<input id="opacity" type="range" min=".1" max="1" step=".05" value=".85"></label></div>
+<div class="legend"><span>Polarization RGB = (|Eₓ|, |Eᵧ|, |E𝓏|)</span><b class="x">x</b><b class="y">y</b><b class="z">z</b><span>PMT RGB = ½(n + 1)</span></div>
+<p class="muted">Drag to orbit · middle-drag or Shift-drag to pan · scroll to zoom. Each polyline is one transported photon. The visible subset stays fixed as you scrub time.</p>
+<p id="meta" class="muted"></p>
+<details><summary>Physics and rendering</summary>
+<p>The primary and secondary particle steps come from the HK sample: a 1.99975 GeV muon and a 1.99829 GeV electron. Recorded positions, directions, beta and emission times are preserved under a rigid rotation and translation into the Theia geometry. The browser generates new Cherenkov photons from those steps using the Frank–Tamm spectrum over 360–700 nm, with wavelength-dependent cone angle and transverse polarization. This reconstructs optical emission from recorded Geant4 steps; it does not replay the original optical photons or detector hits. Beta is held constant within each recorded step, and source coordinate quantization can produce zero-length steps that emit no new light.</p>
+<p>WebGPU propagates photons through illustrative dispersive water with wavelength-dependent absorption and polarized Rayleigh scattering. Paths terminate at the actual PMT/enclosure triangle meshes; PMTs are ideal absorbing surfaces here, without glass or quantum-efficiency calibration. The physical mean yield sets the simulated photon count (rounded to the nearest photon, without Poisson event fluctuations). A stable subset of photon IDs is retained for display. Rendering reads those actual segments directly from GPU memory, clips them against the detector depth, and never draws synthetic cone lines. Colors encode vector components, not wavelength or optical brightness. The sign of the polarization vector has no observable effect, hence the absolute components.</p>
+<p>Transport stops after 32 flights, with unfinished photons reported. At most 32,768 histories are stored; full counts remain independent of the displayed subset. GPU work is batched, hidden tabs pause, and animation is capped at 30 frames per second. Camera movement and time scrubbing reuse the event.</p>
+<p>Reference: <a href="https://geant4.web.cern.ch/documentation/pipelines/master/prm_html/PhysicsReferenceManual/electromagnetic/xray_production/cerenkov.html">Geant4 Cherenkov model</a>.</p>
+</details></main><script type="module" src="event.js"></script></body></html>
