@@ -24,6 +24,7 @@ class DetectorRenderer {
     this.canvas = $("canvas"); this.pending = null; this.busy = false;
     this.scene = null; this.seed = 0; this.timer = null; this.errors = [];
     this.previewRays = 100000;
+    this.colorBy = 'surface';
   }
   async initialize() {
     if (!navigator.gpu) throw Error("WebGPU is unavailable. Open this page in a WebGPU-capable browser over HTTPS or localhost.");
@@ -100,7 +101,8 @@ class DetectorRenderer {
     this.device.queue.submit([encoder.finish()]); await staging.mapAsync(GPUMapMode.READ);
     const result = staging.getMappedRange().slice(0); staging.unmap(); staging.destroy(); return result;
   }
-  async render({width=1000,height=625,rays=2500000,seed=0,debug=false,jitter=true,camera=this.camera}={}) {
+  async render({width=1000,height=625,rays=2500000,seed=0,debug=false,jitter=true,camera=this.camera,colorBy=this.colorBy}={}) {
+    if (!['surface','normal'].includes(colorBy)) throw Error('Color mode must be surface or normal.');
     if (![width,height,rays].every(Number.isSafeInteger) || width<=0 || height<=0 || rays<width*height || rays>0xffffffff || width>this.device.limits.maxTextureDimension2D || height>this.device.limits.maxTextureDimension2D) throw Error("Invalid image dimensions or ray budget; use at least one ray per pixel.");
     if (![...camera.eye,...camera.target,...camera.up,camera.fov].every(Number.isFinite) || camera.fov<=0 || camera.fov>=179 || Math.hypot(...sub(camera.target,camera.eye))===0 || Math.hypot(...cross(sub(camera.target,camera.eye),camera.up))===0) throw Error("Invalid camera basis or field of view.");
     $("status").textContent = `${this.manifest.name} · rendering ${rays.toLocaleString()} camera rays${this.adapterInfo.isFallbackAdapter ? " on a software adapter" : ""}…`;
@@ -108,7 +110,8 @@ class DetectorRenderer {
     const forward = norm(sub(camera.target,camera.eye)), right = norm(cross(forward,camera.up)), up = cross(right,forward);
     const config = new ArrayBuffer(96); const floats = new Float32Array(config), words = new Uint32Array(config);
     floats.set(camera.eye,0); floats.set(forward,4); floats[7]=Math.tan(camera.fov*Math.PI/360);
-    floats.set(right,8); floats.set(up,12); words.set([width,height,rays,seed>>>0],16); words.set([+debug,+jitter,0,0xffffffff],20);
+    // options.x: bit 0 enables diagnostic readback; bit 1 colors by world normal.
+    floats.set(right,8); floats.set(up,12); words.set([width,height,rays,seed>>>0],16); words.set([+debug | (colorBy === 'normal' ? 2 : 0),+jitter,0,0xffffffff],20);
     this.device.queue.writeBuffer(this.uniform,0,config); this.device.queue.writeBuffer(this.failures,0,new Uint32Array(1));
     const bindings = this.device.createBindGroup({layout:this.compute.getBindGroupLayout(0),entries:[
       {binding:0,resource:{buffer:this.scene}},{binding:1,resource:{buffer:this.uniform}},
@@ -130,7 +133,7 @@ class DetectorRenderer {
     const failures = new Uint32Array(await this.readBuffer(this.failures,4))[0];
     if (failures) throw Error(`${failures} traversal guards failed; this frame is invalid.`);
     if (this.errors.length) throw Error(this.errors.join("\n"));
-    const result = {width,height,rays,milliseconds,wall_ms:performance.now()-start,batches:timing.batches,failures,seed,adapter:this.adapterInfo,
+    const result = {width,height,rays,colorBy,milliseconds,wall_ms:performance.now()-start,batches:timing.batches,failures,seed,adapter:this.adapterInfo,
       timing:"sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"};
     if (debug) result.diagnostic = Array.from(new Float32Array(await this.readBuffer(this.diagnostic,width*height*48)));
     this.lastFrame = result;
@@ -145,7 +148,7 @@ class DetectorRenderer {
     }
     const budget=preview?this.previewRays:Number($("rays").value);
     const scale=preview?Math.sqrt(budget/100000):1;
-    this.pending = {width:preview?Math.max(1,Math.floor(400*scale)):1000,height:preview?Math.max(1,Math.floor(250*scale)):625,rays:budget,seed:this.seed++,camera:copyCamera(this.camera)};
+    this.pending = {width:preview?Math.max(1,Math.floor(400*scale)):1000,height:preview?Math.max(1,Math.floor(250*scale)):625,rays:budget,seed:this.seed++,camera:copyCamera(this.camera),colorBy:this.colorBy};
     this.drain();
   }
   async drain() {
@@ -167,21 +170,37 @@ class DetectorRenderer {
     });
     $("rays").addEventListener("change",()=>this.schedule(false));
     $("render").addEventListener("click",()=>this.schedule(false));
+    $('normal_colors').addEventListener('change',event=>{
+      this.colorBy = event.target.checked ? 'normal' : 'surface';
+      $('normal-legend').hidden = this.colorBy !== 'normal';
+      this.schedule(false);
+    });
     const resetView=()=>{this.camera=copyCamera(this.views[$('view')?.value] || this.manifest.camera);this.schedule(false);};
     $("reset").addEventListener("click",resetView);
     $('view')?.addEventListener('change',resetView);
     document.addEventListener('gpu-stop',()=>{this.pending=null;clearTimeout(this.timer);$('status').textContent='Stopped.';});
     let pointer=null;
-    this.canvas.addEventListener("pointerdown",event=>{pointer=[event.clientX,event.clientY];this.canvas.setPointerCapture(event.pointerId);});
-    this.canvas.addEventListener("pointerup",()=>{pointer=null;this.schedule(false);});
+    this.canvas.addEventListener("pointerdown",event=>{
+      if (event.button !== 0 && event.button !== 1) return;
+      event.preventDefault();
+      pointer={id:event.pointerId,x:event.clientX,y:event.clientY,pan:event.button===1 || event.shiftKey};
+      this.canvas.setPointerCapture(event.pointerId);
+    });
+    this.canvas.addEventListener("pointerup",event=>{
+      if (!pointer || pointer.id !== event.pointerId) return;
+      pointer=null;this.schedule(false);
+    });
     this.canvas.addEventListener("pointercancel",()=>{pointer=null;});
+    this.canvas.addEventListener("lostpointercapture",()=>{pointer=null;});
+    this.canvas.addEventListener("auxclick",event=>{if(event.button===1)event.preventDefault();});
     this.canvas.addEventListener("pointermove",event=>{
-      if(!pointer)return;
-      const dx=event.clientX-pointer[0],dy=event.clientY-pointer[1];pointer=[event.clientX,event.clientY];
+      if(!pointer || pointer.id!==event.pointerId)return;
+      const dx=event.clientX-pointer.x,dy=event.clientY-pointer.y;pointer.x=event.clientX;pointer.y=event.clientY;
       const offset=sub(this.camera.eye,this.camera.target), distance=Math.hypot(...offset);
-      if(event.shiftKey){
+      if(pointer.pan){
         const forward=norm(mul(offset,-1)),right=norm(cross(forward,this.camera.up)),up=cross(right,forward);
-        const movement=add(mul(right,-dx*distance*.002),mul(up,dy*distance*.002));
+        const scale=2*distance*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.canvas.clientHeight);
+        const movement=add(mul(right,-dx*scale),mul(up,dy*scale));
         this.camera.eye=add(this.camera.eye,movement);this.camera.target=add(this.camera.target,movement);
       }else{
         const azimuth=Math.atan2(offset[1],offset[0])-dx*.006;

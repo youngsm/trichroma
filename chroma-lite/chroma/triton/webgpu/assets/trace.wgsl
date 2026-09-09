@@ -201,11 +201,14 @@ fn main(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_id) l
         let hit = trace(cfg.eye.xyz, direction);
         if (hit.triangle == END) {
             color += mix(vec3<f32>(.025, .035, .06), vec3<f32>(.10, .14, .20), uv.y);
+        } else if ((cfg.options.x & 2u) != 0u) {
+            // Signed world normal, independent of camera direction and lighting.
+            color += .5*(hit.normal+vec3<f32>(1.));
         } else {
             let rgb = vec3<f32>(f32((hit.color >> 16u)&255u), f32((hit.color >> 8u)&255u), f32(hit.color&255u))/255.;
             color += rgb*(.22+.78*abs(dot(hit.normal, direction)));
         }
-        if (cfg.options.x != 0u && samples == 0u) {
+        if ((cfg.options.x & 1u) != 0u && samples == 0u) {
             if (hit.triangle == END) {
                 hit_records[pixel*3u] = vec4<f32>(-1.);
                 hit_records[pixel*3u+1u] = vec4<f32>(0.);

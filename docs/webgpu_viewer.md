@@ -42,7 +42,13 @@ exports the same bundle and provides a ZIP download. The existing Triton noteboo
 continues to render on the server GPU and includes the analytic-wire detector.
 
 The scene dropdown selects the detector. Drag to orbit, wheel to zoom, and
-Shift-drag to move the target. The default full frame traces **2,500,000 camera
+middle-drag or Shift-drag to pan. Panning translates the camera and target together
+in the camera's view plane, preserving the viewing direction. **Color by normal** switches from surface colors
+to world-space triangle normals, with RGB = (normal.xyz + 1) / 2. This mode uses
+no headlight shading, so a surface keeps its color as you orbit. The switch
+preserves your camera and stays selected when changing detectors. The render API
+also accepts `colorBy: "normal"` or `colorBy: "surface"`.
+The default full frame traces **2,500,000 camera
 rays**, averaging four samples into each pixel of a 1000 × 625 image. The ray
 budget control also offers 625,000 and 10 million rays. Motion initially uses
 100,000 rays; subsequent preview budgets adapt toward roughly 30 ms of queue

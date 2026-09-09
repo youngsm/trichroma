@@ -1,7 +1,13 @@
 // Small-scene optical Monte Carlo. Full-count observables stay on the GPU;
 // only histograms and a bounded set of real photon paths are downloaded.
 import {gpuBudget} from './scheduler.js';
-const STAT_WORDS = 15788;
+export const STAT_WORDS = 16176;
+// Same exact float32 edges as time_histogram in WGSL, with eight bins per doubling.
+const TIME_EDGES = Array.from(new Float32Array(Uint32Array.from({length:193},(_,i)=>(936+i)*1048576).buffer));
+function timeHistogram(stats, offset) {
+  return {counts:Array.from(stats.slice(offset+1,offset+193)),edges_ns:TIME_EDGES,
+    underflow:stats[offset],overflow:stats[offset+193]};
+}
 const SCENES = ['prism', 'fluorescence', 'rayleigh', 'pmt'];
 const $ = id => document.getElementById(id);
 const colorKnots = [
@@ -393,7 +399,9 @@ export class OpticalLab {
           delay: Array.from(stats.slice(344, 424)),
           scattered: Array.from(stats.slice(424, 456)),
           scatter_source: Array.from(stats.slice(456, 488)),
-          dispersion: Array.from(stats.slice(488, STAT_WORDS)),
+          dispersion: Array.from(stats.slice(488, 15788)),
+          arrival_log: timeHistogram(stats,15788),
+          delay_log: timeHistogram(stats,15982),
           time_max: timeMax
         },
         maxTime: new Float32Array(data.statistics)[16],
@@ -514,7 +522,9 @@ function chartAxes(ctx, w, h, xlabel, ylabel) {
 function histogramChart(id, series, low, high, xlabel, {
   secondary = null,
   ylabel = 'photons',
-  log = false
+  log = false,
+  edges = null,
+  logX = false
 } = {}) {
   const {
     ctx,
@@ -524,11 +534,13 @@ function histogramChart(id, series, low, high, xlabel, {
   chartAxes(ctx, w, h, xlabel, ylabel);
   const transform = v => log ? Math.log1p(v) : v,
     max = Math.max(1, ...series.map(transform), ...(secondary || []).map(transform));
+  const xPosition = value => left+plotw*(logX ? Math.log(value/low)/Math.log(high/low) : (value-low)/(high-low));
   for (let b = 0; b < series.length; b++) {
     const wavelength = low + (b + .5) * (high - low) / series.length;
     ctx.fillStyle = id === 'spectrum' ? spectralColor(wavelength, .82) : '#7bd6e7';
-    ctx.fillRect(left + b * plotw / series.length, bottom - transform(series[b]) / max * ploth, Math
-      .max(1, plotw / series.length - .4), transform(series[b]) / max * ploth);
+    const x0 = edges ? xPosition(edges[b]) : left+b*plotw/series.length;
+    const x1 = edges ? xPosition(edges[b+1]) : left+(b+1)*plotw/series.length;
+    ctx.fillRect(x0, bottom - transform(series[b]) / max * ploth, Math.max(.2,x1-x0-.4), transform(series[b]) / max * ploth);
   }
   if (secondary) {
     ctx.strokeStyle = '#e1e9ff88';
@@ -543,9 +555,44 @@ function histogramChart(id, series, low, high, xlabel, {
   }
   ctx.fillStyle = '#aebacf';
   ctx.font = '10px system-ui';
-  ctx.fillText(String(low), left, bottom + 13);
-  ctx.fillText(String(high), w - 35, bottom + 13);
+  if (logX) {
+    ctx.textAlign='center';
+    const ticks=[];
+    for(let exponent=Math.ceil(Math.log10(low));10**exponent<=high;exponent++) ticks.push(10**exponent);
+    if(ticks.length<2){ticks.unshift(low);ticks.push(high);}
+    let previous=-Infinity;
+    for(const value of ticks) {
+      const x=xPosition(value);
+      if(x-previous<38)continue;
+      ctx.fillText(String(+value.toPrecision(3)),x,bottom+13);previous=x;
+    }
+    ctx.textAlign='left';
+  } else {
+    ctx.fillText(String(low), left, bottom + 13);
+    ctx.fillText(String(high), w - 35, bottom + 13);
+  }
   ctx.fillText(log ? 'log counts' : Math.max(...series).toLocaleString(), left + 4, 14);
+}
+
+function timeChart(id, result, key) {
+  const log = $('time_scale').value === 'log', delay = key === 'delay';
+  const label = delay ? 'added delay / ns' : 'arrival time / ns';
+  const note = $(delay ? 'delay_note' : 'arrival_note');
+  note.textContent = '';
+  if (!log) {
+    histogramChart(id,result.histograms[key],0,delay ? 200 : result.histograms.time_max,label,{ylabel:'photons / bin'});
+    if (!delay && result.counts.time_overflow) note.textContent=`${result.counts.time_overflow.toLocaleString()} at or above ${result.histograms.time_max} ns included in the final bin.`;
+    return;
+  }
+  const data = result.histograms[key+'_log'], occupied = data.counts.flatMap((v,i)=>v ? [i] : []);
+  const first = Math.max(0,(occupied[0] ?? 0)-1), last = Math.min(data.counts.length,(occupied.at(-1) ?? data.counts.length-1)+2);
+  const edges = data.edges_ns.slice(first,last+1);
+  histogramChart(id,data.counts.slice(first,last),edges[0],edges.at(-1),label+' · log scale',
+    {edges,logX:true,ylabel:'photons / bin'});
+  const outside=[];
+  if(data.underflow)outside.push(`${data.underflow.toLocaleString()} below ${+data.edges_ns[0].toPrecision(3)} ns (including zero)`);
+  if(data.overflow)outside.push(`${data.overflow.toLocaleString()} at or above ${data.edges_ns.at(-1)} ns`);
+  note.textContent=outside.join(' · ');
 }
 
 function drawPaths(lab, result) {
@@ -638,9 +685,10 @@ function drawPaths(lab, result) {
 function physicsChart(result) {
   if (result.scene === 'fluorescence') {
     $('physicsTitle').textContent = 'Fluorescence delay';
-    histogramChart('physicsChart', result.histograms.delay, 0, 200, 'added delay / ns');
+    timeChart('physicsChart', result, 'delay');
     return;
   }
+  $('delay_note').textContent = '';
   const {
     ctx,
     w,
@@ -719,8 +767,7 @@ function renderResult(lab, result) {
     'wavelength / nm · pale line = emitted source', {
       secondary: result.histograms.source
     });
-  histogramChart('arrival', result.histograms.arrival, 0, result.histograms.time_max,
-    `arrival time / ns${result.counts.time_overflow?' · overflow in final bin':''}`);
+  timeChart('arrival', result, 'arrival');
   physicsChart(result);
   drawPaths(lab, result);
 }
@@ -755,6 +802,11 @@ if ($('paths')) {
     });
     window.addEventListener('resize', () => {
       if (lab.result) renderResult(lab, lab.result);
+    });
+    $('time_scale').addEventListener('change',()=>{
+      if (!lab.result) return;
+      timeChart('arrival',lab.result,'arrival');
+      if (lab.result.scene==='fluorescence') timeChart('physicsChart',lab.result,'delay');
     });
     if (!new URLSearchParams(location.search).has('manual')) lab.run({
       photons: Number($('photons').value)

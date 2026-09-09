@@ -519,6 +519,15 @@ def check_browser_histograms(result, state):
     histogram("detected", state["wavelengths"][detected], 280, 740, 92)
     histogram("arrival", state["times"][detected], 0, time_max, 128)
     histogram("delay", state["fluorescence_delay"][reemitted], 0, 200, 80)
+    for key, values in (("arrival", state["times"][detected]),
+                        ("delay", state["fluorescence_delay"][reemitted])):
+        if key + "_log" not in result["histograms"]:
+            continue  # Older recorded validation results contain only linear bins.
+        data = result["histograms"][key + "_log"]
+        edges = np.asarray(data["edges_ns"], np.float32)
+        bins = np.searchsorted(edges, np.asarray(values, np.float32), side="right")
+        expected = np.bincount(bins, minlength=len(edges)+1)
+        check(key + "_log", [data["underflow"], *data["counts"], data["overflow"]], expected)
     histogram("scattered", state["source_wavelengths"][scattered], 390, 710, 32)
     histogram("scatter_source", state["source_wavelengths"], 390, 710, 32)
     forward = detected & (state["pos"][:, 0] > 299) & (result["scene"] == "prism")

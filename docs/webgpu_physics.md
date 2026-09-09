@@ -33,6 +33,13 @@ Select the experiment, an optical photon count from **1 to 30 million**, a seed,
 
 Only the first requested **0–2,048 photon trajectories** are recorded for display; the UI offers 128–2,048. These paths come from the same WGSL invocations as the full event. Display colors track wavelength, with UV mapped to violet as a false color. The x–y projection and additive path brightness aid inspection; they do not represent radiance or a physical camera response.
 
+Arrival-time and fluorescence-delay plots default to a logarithmic time axis.
+The Time axis control switches to linear without rerunning the event. The GPU
+records both histograms for the full population. Positive-time bins have eight
+exact float32 intervals per doubling from 2^-10 to 2^14 ns; the logarithmic axis
+uses their actual edges. Zero and underflow/overflow counts are retained and
+shown separately when present. The vertical axis is photons per bin.
+
 The time gate reveals completed flights whose endpoint time is within the gate. It redraws cached trajectories without rerunning the event. A fluorescent waiting time is retained at the reemitting surface; the plot does not interpret that waiting time as a slower flight through space. The spectrum/timing charts remain full-event distributions while the path gate changes.
 
 The page reports active batch queue time and total elapsed time separately. Throughput includes cooperative pauses. Balanced GPU use is the default; Low leaves more idle time, while Full speed removes deliberate pauses. Every mode bounds submissions, pauses hidden tabs, and supports Stop between batches. Batching retains global photon IDs and the complete requested population. Software fallback adapters are explicitly labeled.

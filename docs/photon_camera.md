@@ -59,6 +59,12 @@ For the PMT cross-section presentation, enable the cutaway and set exposure
 to `400000`. The default view uses eye `[-30, -185, 45]` and target
 `[100, 0, -15]` mm; the initial scene remains uncut with UV false color off.
 
+Drag to orbit, middle-drag (or Shift-drag) to pan, and use the wheel to zoom.
+Panning translates both the camera and its target in world coordinates, keeping
+the viewing direction and distance fixed. Translation stops at the room walls.
+These controls reuse the current photon maps; rerunning the same scene preserves
+the composed camera view.
+
 ## What the camera estimates
 
 Packet energy is `source_scale × 450 / wavelength_nm`. A stable Philox draw

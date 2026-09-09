@@ -1,0 +1,375 @@
+{
+  "url": "http://localhost:34529/",
+  "geometry": [
+    {
+      "scene": "theia",
+      "view": null,
+      "unchanged_hit_records": 2560,
+      "surface_pixels_unchanged": true,
+      "normal_rgb_verified": true
+    },
+    {
+      "scene": "reflect3wires",
+      "view": null,
+      "unchanged_hit_records": 2560,
+      "surface_pixels_unchanged": true,
+      "normal_rgb_verified": true
+    },
+    {
+      "scene": "reflect3wires",
+      "view": "Wire planes",
+      "unchanged_hit_records": 2560,
+      "surface_pixels_unchanged": true,
+      "normal_rgb_verified": true
+    },
+    {
+      "scene": "pixelTPC",
+      "view": null,
+      "unchanged_hit_records": 2560,
+      "surface_pixels_unchanged": true,
+      "normal_rgb_verified": true
+    },
+    {
+      "scene": "pixelTPC",
+      "view": "Pixel pads",
+      "unchanged_hit_records": 2560,
+      "surface_pixels_unchanged": true,
+      "normal_rgb_verified": true
+    }
+  ],
+  "physics": [
+    {
+      "scene": "prism",
+      "unchanged_states": 8193,
+      "histograms": {
+        "passed": true,
+        "checks": {
+          "count_detected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_surface_absorbed": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_bulk_absorbed": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_escaped": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_step_limit": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_reemitted": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_scattered": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_reflected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_transmitted": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "time_overflow": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "max_steps": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "source": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "detected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "arrival": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "delay": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "arrival_log": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "delay_log": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "scattered": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "scatter_source": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "forward_monitor": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "dispersion": {
+            "passed": true,
+            "mismatched_bins": 0
+          }
+        }
+      }
+    },
+    {
+      "scene": "fluorescence",
+      "unchanged_states": 8193,
+      "histograms": {
+        "passed": true,
+        "checks": {
+          "count_detected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_surface_absorbed": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_bulk_absorbed": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_escaped": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_step_limit": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_reemitted": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_scattered": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_reflected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_transmitted": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "time_overflow": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "max_steps": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "source": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "detected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "arrival": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "delay": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "arrival_log": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "delay_log": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "scattered": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "scatter_source": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "forward_monitor": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "dispersion": {
+            "passed": true,
+            "mismatched_bins": 0
+          }
+        }
+      }
+    },
+    {
+      "scene": "rayleigh",
+      "unchanged_states": 8193,
+      "histograms": {
+        "passed": true,
+        "checks": {
+          "count_detected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_surface_absorbed": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_bulk_absorbed": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_escaped": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_step_limit": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_reemitted": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_scattered": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_reflected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "count_transmitted": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "time_overflow": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "max_steps": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "source": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "detected": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "arrival": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "delay": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "arrival_log": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "delay_log": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "scattered": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "scatter_source": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "forward_monitor": {
+            "passed": true,
+            "mismatched_bins": 0
+          },
+          "dispersion": {
+            "passed": true,
+            "mismatched_bins": 0
+          }
+        }
+      }
+    }
+  ],
+  "camera": [
+    {
+      "scene": "prism",
+      "unchanged_states": 8193,
+      "middle_pan": true,
+      "rerun_preserves_pan": true
+    },
+    {
+      "scene": "fluorescence",
+      "unchanged_states": 8193,
+      "middle_pan": true,
+      "rerun_preserves_pan": true
+    },
+    {
+      "scene": "rayleigh",
+      "unchanged_states": 8193,
+      "middle_pan": true,
+      "rerun_preserves_pan": true
+    },
+    {
+      "scene": "pmt",
+      "unchanged_states": 8193,
+      "middle_pan": true,
+      "rerun_preserves_pan": true
+    }
+  ],
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false
+  },
+  "detector_middle_pan": true,
+  "normal_toggle_preserves_camera": true,
+  "log_axis_cached_switch": true,
+  "full_population_log_histograms": 2500000,
+  "pan_room_boundary": true,
+  "errors": [],
+  "baseline_source_commit": "f830795ceb909d5474a9d1c552c3ef982a827ba8",
+  "baseline_sha256": "e0d636357a6881a51355386dd51378f811516563175175878f2e2153237b8920",
+  "asset_hashes": {
+    "camera.wgsl": "df4e36cd74f5a6d2fcf0d5900e67f067da592f98d0d2b8164d5f41e691c51adc",
+    "viewer.js": "4deee9e50314716007479bd700e43741216c741849f83730e3a0b6930e096ca7",
+    "camera.html": "0a6db0bd0338d8282f05506c6d835bcc63a86b0839a9b2bc3a50fdc1714dd73b",
+    "scheduler.js": "a807b6a080b93e5c393968952f2f95c4d7de532b559283826606554eb8f84ad8",
+    "trace.wgsl": "d10ced0ae968e7db7143d3d84c6af50b9daa8afdf6c4d0e536e10937b8b55c6a",
+    "camera.js": "b75d7b06b853a79442851c825a1de9b913b0c99bd574666eaee96f65479de7c6",
+    "physics.js": "af3e0497e658edff0f0de8d690dcb302885a91b69980492f54ccbf3e7520cf8f",
+    "deposition.wgsl": "63c9a38c1a0fe0f21131ba07c86adb48882bfe16d79f38240d2ffe433b740ee2",
+    "index.html": "1bbde4e6ae1d2a272e0b49a2998096e8eae62f683e79f1146f93c837e3f7acf6",
+    "physics.wgsl": "a3f4d50ce5f0fd9ea2c1a6c93718b54a32056b23c0a8572a8c5ec878c67d4abb",
+    "physics.html": "7c20330c3016e57de55b0a33b9c12bd8ba410da1a4742b882064abb660cf6faf"
+  }
+}

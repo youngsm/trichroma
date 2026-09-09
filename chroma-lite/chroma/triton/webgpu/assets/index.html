@@ -26,6 +26,7 @@
 </select>
 </label>
 <label>View<select id="view"></select></label>
+<label class="normal-toggle"><input id="normal_colors" type="checkbox" role="switch" aria-describedby="normal-legend">Color by normal</label>
 <label>Full-frame rays <select id="rays">
 <option value="2500000">2.5 million</option>
 <option value="625000">625 thousand</option>
@@ -42,14 +43,15 @@
 <div id="status">Starting WebGPU…</div>
 <div id="error" role="alert">
 </div>
-<div class="muted">Drag to orbit · wheel to zoom · Shift-drag to move the view target. Motion uses a smaller ray budget; a full frame follows when you stop.</div>
+<div class="muted">Drag to orbit · middle-drag or Shift-drag to pan · wheel to zoom. Panning moves the camera and target together. Motion uses a smaller ray budget; a full frame follows when you stop.</div>
+<p id="normal-legend" class="muted" hidden>Normal colors encode surface direction in world coordinates: X → red, Y → green, Z → blue. Negative components are dark; positive components are bright.</p>
 <details>
 <summary>Geometry and adapter details</summary>
 <pre id="details">
 </pre>
 </details>
 <p class="muted">Balanced GPU use leaves time between small batches. Work pauses while this tab is hidden; Stop cancels at the next batch.</p>
-<footer class="muted">Opaque surface colors with headlight shading. These are camera rays, not simulated optical photons. The full pixel TPC resolves every pad. The wire TPC uses all six planes of the original 32-sided wire meshes; the analytic-cylinder optical model remains in the Triton notebook.</footer>
+<footer class="muted">Surface colors use headlight shading; normal colors show surface orientation. These are camera rays, not simulated optical photons. The full pixel TPC resolves every pad. The wire TPC uses all six planes of the original 32-sided wire meshes; the analytic-cylinder optical model remains in the Triton notebook.</footer>
 </main>
 <script type="module" src="viewer.js">
 </script>

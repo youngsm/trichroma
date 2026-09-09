@@ -1,5 +1,5 @@
 import {
-  OpticalLab
+  OpticalLab, STAT_WORDS
 } from './physics.js';
 import {gpuBudget} from './scheduler.js';
 const $ = id => document.getElementById(id);
@@ -237,7 +237,7 @@ export class PhotonCamera extends OpticalLab {
       const resources = {
         tables: this.buffer(this.scenes[scene].packed, store),
         config: this.buffer(cfg, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST),
-        statistics: this.buffer((15788 + paths) * 4, store),
+        statistics: this.buffer((STAT_WORDS + paths) * 4, store),
         paths: this.buffer(Math.max(4, paths * 8193 * 32), store),
         final: this.buffer(debug ? photons * 80 : 2048, store),
         wall: this.buffer(MAP_SIZES.wall, store),
@@ -699,30 +699,56 @@ window.photonCameraReady = camera.initialize().then(info => {
   };
   let drag = null;
   camera.canvas.onpointerdown = e => {
-    if (camera.busy || !camera.resources) return;
+    if (camera.busy || !camera.resources || (e.button !== 0 && e.button !== 1)) return;
+    e.preventDefault();
     drag = {
+      id: e.pointerId,
+      pan: e.button === 1 || e.shiftKey,
       x: e.clientX,
       y: e.clientY,
-      eye: camera.eye.slice()
+      eye: camera.eye.slice(),
+      target: camera.target.slice()
     };
     camera.canvas.setPointerCapture(e.pointerId);
   };
   camera.canvas.onpointermove = e => {
-    if (!drag) return;
-    const v = drag.eye.map((x, i) => x - camera.target[i]),
-      radius = Math.hypot(...v),
-      az = Math.atan2(v[1], v[0]) - (e.clientX - drag.x) * .005,
+    if (!drag || drag.id !== e.pointerId) return;
+    const v = drag.eye.map((x, i) => x - drag.target[i]),
+      radius = Math.hypot(...v);
+    if (drag.pan) {
+      // Use the same world-up fallback as the camera shader near the poles.
+      const forward = v.map(x => -x / radius);
+      const reference = Math.abs(forward[2]) > .99 ? [0,1,0] : [0,0,1];
+      const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+      const horizontal = cross(forward,reference), length = Math.hypot(...horizontal);
+      const right = horizontal.map(x => x/length), up = cross(right,forward);
+      const scale = 2*radius*Math.tan(camera.fov*Math.PI/360)/Math.max(1,camera.canvas.clientHeight);
+      const movement = right.map((x,i) => scale*(-(e.clientX-drag.x)*x+(e.clientY-drag.y)*up[i]));
+      // Clip the translation to the room, moving eye and target by exactly the
+      // same amount so reaching a wall cannot rotate or stretch the view.
+      let fraction = 1;
+      for (let i=0;i<3;i++) if(movement[i]!==0)
+        fraction = Math.min(fraction, Math.max(0, ((movement[i]>0 ? HALF[i]-2 : -HALF[i]+2)-drag.eye[i])/movement[i]));
+      camera.eye = drag.eye.map((x,i) => x+fraction*movement[i]);
+      camera.target = drag.target.map((x,i) => x+fraction*movement[i]);
+      schedule(true);
+      return;
+    }
+    const az = Math.atan2(v[1], v[0]) - (e.clientX - drag.x) * .005,
       el = Math.max(-1.3, Math.min(1.3, Math.asin(v[2] / radius) + (e.clientY - drag.y) *
         .004));
     camera.eye = [radius * Math.cos(el) * Math.cos(az), radius * Math.cos(el) * Math.sin(az),
       radius * Math.sin(el)
-    ].map((x, i) => Math.max(-HALF[i] + 2, Math.min(HALF[i] - 2, x + camera.target[i])));
+    ].map((x, i) => Math.max(-HALF[i] + 2, Math.min(HALF[i] - 2, x + drag.target[i])));
     schedule(true);
   };
-  camera.canvas.onpointerup = () => {
+  camera.canvas.onpointerup = e => {
+    if (!drag || drag.id !== e.pointerId) return;
     drag = null;
     schedule();
   };
+  camera.canvas.onpointercancel = camera.canvas.onlostpointercapture = () => { drag = null; };
+  camera.canvas.onauxclick = e => { if(e.button===1)e.preventDefault(); };
   camera.canvas.onwheel = e => {
     e.preventDefault();
     if (!camera.resources || camera.busy) return;

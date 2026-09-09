@@ -14,7 +14,9 @@ const DELAY_HIST: u32 = 344u;
 const SCATTERED_HIST: u32 = 424u;
 const SOURCE_SCATTER_HIST: u32 = 456u;
 const DISPERSION_HIST: u32 = 488u;
-const STAT_WORDS: u32 = 15788u; // 85 wavelength x 180 angle bins follow offset488.
+const ARRIVAL_LOG: u32 = 15788u; // After the 85 x 180 dispersion histogram.
+const DELAY_LOG: u32 = 15982u;
+const STAT_WORDS: u32 = 16176u;
 const PI2: f32 = 6.283185307179586;
 const END: u32 = 0xffffffffu;
 fn f(i: u32) -> f32 { return bitcast<f32>(tables[i]); }
@@ -183,6 +185,15 @@ fn histogram(offset: u32, value: f32, low: f32, high: f32, count: u32) {
     if (bin+1u<count && value>=low+f32(bin+1u)*width) { bin++; }
     atomicAdd(&statistics[offset+bin],1u);
 }
+fn time_histogram(offset: u32, value: f32) {
+    // Eight exactly representable bins per doubling, from 2^-10 to 2^14 ns.
+    // Separate under/overflow retain zero and out-of-range times. Integer float
+    // keys avoid backend-dependent logarithm rounding at histogram boundaries.
+    var bin = 0u;
+    if (value >= 16384.) { bin = 193u; }
+    else if (value >= .0009765625) { bin = 1u+(bitcast<u32>(value)>>20u)-936u; }
+    atomicAdd(&statistics[offset+bin],1u);
+}
 fn path_vertex(id: u32, vertex: u32, position: vec3<f32>, time: f32, wavelength: f32, flags: u32, flight: f32, arrival_time: f32) {
     if (id >= config.counts.w) { return; }
     let base = (id*(config.options.x+1u)+vertex)*8u;
@@ -298,6 +309,7 @@ fn simulate(@builtin(global_invocation_id) invocation: vec3<u32>) {
     if((flags&4u)!=0u){
         atomicAdd(&statistics[1u],1u);histogram(OUT_SPECTRUM,wavelength,280.,740.,92u);
         histogram(TIME_HIST,time,0.,config.plot,128u);if(time>=config.plot){atomicAdd(&statistics[14u],1u);}
+        time_histogram(ARRIVAL_LOG,time);
         if(config.options.y==0u && position.x>299.){
             atomicAdd(&statistics[13u],1u);
             let wb=u32(clamp((wavelength-380.)/4.,0.,84.));
@@ -308,7 +320,7 @@ fn simulate(@builtin(global_invocation_id) invocation: vec3<u32>) {
     if((flags&8u)!=0u){atomicAdd(&statistics[2u],1u);}
     if((flags&2u)!=0u){atomicAdd(&statistics[3u],1u);}
     if((flags&1u)!=0u){atomicAdd(&statistics[4u],1u);}
-    if((flags&128u)!=0u){atomicAdd(&statistics[7u],1u);histogram(DELAY_HIST,delay_total,0.,200.,80u);}
+    if((flags&128u)!=0u){atomicAdd(&statistics[7u],1u);histogram(DELAY_HIST,delay_total,0.,200.,80u);time_histogram(DELAY_LOG,delay_total);}
     if((flags&16u)!=0u){atomicAdd(&statistics[8u],1u);histogram(SCATTERED_HIST,source_wavelength,390.,710.,32u);}
     if((flags&64u)!=0u){atomicAdd(&statistics[9u],1u);}
     if((flags&256u)!=0u){atomicAdd(&statistics[10u],1u);}

@@ -88,6 +88,7 @@
 </div>
 </aside>
 </div>
+<div class="time-axis-control"><label>Time axis<select id="time_scale"><option value="log" selected>Logarithmic</option><option value="linear">Linear</option></select></label><span class="muted">Arrival times and fluorescence delay</span></div>
 <div class="charts">
 <section class="panel chart">
 <h3>Source &amp; detected spectrum</h3>
@@ -98,11 +99,13 @@
 <h3 id="physicsTitle">Prism dispersion · forward monitor</h3>
 <canvas id="physicsChart">
 </canvas>
+<p id="delay_note" class="muted"></p>
 </section>
 <section class="panel chart">
 <h3>Monitor arrival times</h3>
 <canvas id="arrival">
 </canvas>
+<p id="arrival_note" class="muted"></p>
 </section>
 </div>
 <div id="status" role="status">Loading optical tables and WGSL kernels…</div>
