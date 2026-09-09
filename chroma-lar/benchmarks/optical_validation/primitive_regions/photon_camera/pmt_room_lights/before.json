@@ -1,0 +1,116 @@
+{
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "photons": 2500000,
+  "counts": {
+    "detected": 1803248,
+    "absorbed": 696752,
+    "escaped": 0,
+    "reemitted": 1383153,
+    "scattered": 771885,
+    "max_steps": 91,
+    "beam": 2000727,
+    "fill": 499273,
+    "boundary_roundings": 0,
+    "photocathode": 171754
+  },
+  "walls": {
+    "wall": [
+      {
+        "face": "+x",
+        "energy": 28143.34375822544,
+        "visible": 18528.736766457558,
+        "occupied": 9230,
+        "cells": 16384
+      },
+      {
+        "face": "-x",
+        "energy": 547092.7771402597,
+        "visible": 89656.9599019289,
+        "occupied": 16074,
+        "cells": 16384
+      },
+      {
+        "face": "+y",
+        "energy": 373419.00209081173,
+        "visible": 135382.91443431377,
+        "occupied": 14517,
+        "cells": 16384
+      },
+      {
+        "face": "-y",
+        "energy": 374230.2468637228,
+        "visible": 135749.30059087276,
+        "occupied": 14616,
+        "cells": 16384
+      },
+      {
+        "face": "+z",
+        "energy": 758194.4943078756,
+        "visible": 272915.85905110836,
+        "occupied": 15616,
+        "cells": 16384
+      },
+      {
+        "face": "-z",
+        "energy": 895560.3066815138,
+        "visible": 318584.83612048626,
+        "occupied": 15594,
+        "cells": 16384
+      }
+    ],
+    "fill_wall": [
+      {
+        "face": "+x",
+        "energy": 94547.1184053421,
+        "visible": 94547.1184053421,
+        "occupied": 924,
+        "cells": 1024
+      },
+      {
+        "face": "-x",
+        "energy": 273381.1642589569,
+        "visible": 273381.1642589569,
+        "occupied": 1024,
+        "cells": 1024
+      },
+      {
+        "face": "+y",
+        "energy": 784463.5334553719,
+        "visible": 784463.5334553719,
+        "occupied": 1024,
+        "cells": 1024
+      },
+      {
+        "face": "-y",
+        "energy": 302309.20294618607,
+        "visible": 302309.20294618607,
+        "occupied": 1012,
+        "cells": 1024
+      },
+      {
+        "face": "+z",
+        "energy": 366075.7449874878,
+        "visible": 366075.7449874878,
+        "occupied": 1024,
+        "cells": 1024
+      },
+      {
+        "face": "-z",
+        "energy": 1160514.4640250206,
+        "visible": 1160514.4640250206,
+        "occupied": 990,
+        "cells": 1024
+      }
+    ]
+  },
+  "errors": []
+}

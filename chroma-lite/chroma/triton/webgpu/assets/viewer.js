@@ -1,5 +1,6 @@
 // Browser-only geometry rendering. The Python exporter is not a render server.
 import {gpuBudget} from './scheduler.js';
+import {requestGpuDevice, allocateGpu} from './gpu.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const add = (a, b) => a.map((v, i) => v + b[i]);
@@ -27,17 +28,22 @@ class DetectorRenderer {
     this.colorBy = 'surface';
   }
   async initialize() {
-    if (!navigator.gpu) throw Error("WebGPU is unavailable. Open this page in a WebGPU-capable browser over HTTPS or localhost.");
-    this.adapter = await navigator.gpu.requestAdapter({powerPreference: "high-performance", forceFallbackAdapter: params.has("fallback")});
-    if (!this.adapter) throw Error("No WebGPU adapter was available. The Triton Jupyter viewer remains available on the server.");
-    this.device = await this.adapter.requestDevice();
+    const selected=await requestGpuDevice({forceFallback:params.has('fallback')});
+    this.adapter=selected.adapter;this.device=selected.device;
+    gpuBudget.software=selected.software;
+    if (selected.software) {
+      this.previewRays=4096;
+      $('gpu_mode').value='eco';
+      $('rays').add(new Option('16 thousand','16000'));
+      $('rays').value='16000';
+    }
     this.device.addEventListener("uncapturederror", event => {
       this.errors.push(event.error.message); $("error").textContent = event.error.message;
     });
     this.device.lost.then(info => { $("error").textContent = `GPU device lost: ${info.message}. Reload to reconnect.`; });
     const info = this.adapter.info;
     this.adapterInfo = {vendor: info.vendor, architecture: info.architecture, device: info.device,
-      description: info.description, isFallbackAdapter: info.isFallbackAdapter ?? params.has("fallback")};
+      description: info.description, isFallbackAdapter: selected.software};
     this.context = this.canvas.getContext("webgpu");
     this.format = navigator.gpu.getPreferredCanvasFormat();
     this.context.configure({device:this.device, format:this.format, alphaMode:"opaque"});
@@ -78,8 +84,8 @@ class DetectorRenderer {
     if (payload.byteLength > this.device.limits.maxStorageBufferBindingSize) throw Error(`Scene needs ${payload.byteLength} bytes, exceeding this adapter's storage-buffer limit.`);
     await this.device.queue.onSubmittedWorkDone();
     this.scene?.destroy();
-    this.scene = this.device.createBuffer({size:payload.byteLength,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    this.device.queue.writeBuffer(this.scene,0,payload);
+    this.scene = null;
+    this.scene = await allocateGpu(this.device, arena => arena.buffer(payload,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST));
     this.manifest = manifest; this.camera = copyCamera(manifest.camera);
     this.views = {Overview: manifest.camera, ...manifest.views};
     if ($('view')) $('view').replaceChildren(...Object.keys(this.views).map(label => new Option(label, label)));
@@ -139,7 +145,7 @@ class DetectorRenderer {
       timing:"sum of GPU batch queue completion times; wall_ms includes cooperative pauses; excludes browser paint and asset loading"};
     if (debug) result.diagnostic = Array.from(new Float32Array(await this.readBuffer(this.diagnostic,width*height*48)));
     this.lastFrame = result;
-    if (!debug && rays<=100000) this.previewRays=Math.round(Math.max(1000,Math.min(100000,rays*30/Math.max(1,milliseconds))));
+    if (!debug && rays<=100000) this.previewRays=Math.round(Math.max(1000,Math.min(this.adapterInfo.isFallbackAdapter?16000:100000,rays*30/Math.max(1,milliseconds))));
     $("status").textContent = `${this.manifest.name} · ${rays.toLocaleString()} camera rays · ${result.wall_ms.toFixed(1)} ms including pauses · ${(rays/result.wall_ms/1000).toFixed(2)} M rays/s${this.adapterInfo.isFallbackAdapter ? " · software adapter" : ""}`;
     return result;
   }
@@ -150,7 +156,7 @@ class DetectorRenderer {
     }
     const budget=preview?this.previewRays:Number($("rays").value);
     const scale=preview?Math.sqrt(budget/100000):1;
-    this.pending = {width:preview?Math.max(1,Math.floor(400*scale)):1000,height:preview?Math.max(1,Math.floor(250*scale)):625,rays:budget,seed:this.seed++,camera:copyCamera(this.camera),colorBy:this.colorBy,interactive:!!preview};
+    this.pending = {width:preview?Math.max(1,Math.floor(400*scale)):(this.adapterInfo.isFallbackAdapter?160:1000),height:preview?Math.max(1,Math.floor(250*scale)):(this.adapterInfo.isFallbackAdapter?100:625),rays:budget,seed:this.seed++,camera:copyCamera(this.camera),colorBy:this.colorBy,interactive:!!preview};
     this.drain();
   }
   async drain() {

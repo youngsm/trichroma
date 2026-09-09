@@ -5,8 +5,14 @@
 @group(0) @binding(7) var<storage,read_write> emission_map:array<atomic<u32>>;
 @group(0) @binding(11) var<storage,read_write> fill_wall_map:array<atomic<u32>>;
 const ROOM:vec3<f32>=vec3<f32>(300.,200.,120.);
-const VOLUME_SHAPE:vec3<u32>=vec3<u32>(64u,40u,24u);
-const VOLUME_CELLS:u32=61440u;
+override WALL_RES:u32=128u;
+override FILL_RES:u32=32u;
+override EMISSION_RES:u32=64u;
+override VOLUME_X:u32=64u;
+override VOLUME_Y:u32=40u;
+override VOLUME_Z:u32=24u;
+override VOXEL_VOLUME_MM3:f32=937.5;
+fn volume_shape()->vec3<u32>{return vec3<u32>(VOLUME_X,VOLUME_Y,VOLUME_Z);}
 const WAVELENGTH_BINS:u32=64u;
 fn energy_bin(wavelength:f32)->u32{
     var bin=u32(clamp((wavelength-280.)/7.1875,0.,63.));
@@ -46,13 +52,13 @@ fn face_area(half:vec3<f32>,face:u32,resolution:u32)->f32{
     return 4.*a/f32(resolution*resolution);
 }
 fn deposit_wall(position:vec3<f32>,normal:vec3<f32>,wavelength:f32,packet_scale:f32,is_fill:bool){
-    if(is_fill){let face=face_index(normal);let uv=vec2<u32>(face_uv(position,ROOM,face)*32.);add_fill_wall(((face*32u+uv.y)*32u+uv.x)*WAVELENGTH_BINS+energy_bin(wavelength),450./wavelength*packet_scale);return;}
-    let face=face_index(normal);let uv=vec2<u32>(face_uv(position,ROOM,face)*128.);
-    add_wall(((face*128u+uv.y)*128u+uv.x)*WAVELENGTH_BINS+energy_bin(wavelength),450./wavelength*packet_scale);
+    if(is_fill){let face=face_index(normal);let uv=vec2<u32>(face_uv(position,ROOM,face)*f32(FILL_RES));add_fill_wall(((face*FILL_RES+uv.y)*FILL_RES+uv.x)*WAVELENGTH_BINS+energy_bin(wavelength),450./wavelength*packet_scale);return;}
+    let face=face_index(normal);let uv=vec2<u32>(face_uv(position,ROOM,face)*f32(WALL_RES));
+    add_wall(((face*WALL_RES+uv.y)*WALL_RES+uv.x)*WAVELENGTH_BINS+energy_bin(wavelength),450./wavelength*packet_scale);
 }
 fn deposit_scatter(position:vec3<f32>,polarization:vec3<f32>,wavelength:f32,packet_scale:f32){
-    let cell=vec3<u32>(clamp((position+ROOM)/(2.*ROOM)*vec3<f32>(VOLUME_SHAPE),vec3<f32>(0.),vec3<f32>(VOLUME_SHAPE)-1.));
-    let voxel=(cell.z*40u+cell.y)*64u+cell.x;let base=(voxel*WAVELENGTH_BINS+energy_bin(wavelength))*6u;
+    let cell=vec3<u32>(clamp((position+ROOM)/(2.*ROOM)*vec3<f32>(volume_shape()),vec3<f32>(0.),vec3<f32>(volume_shape())-1.));
+    let voxel=(cell.z*VOLUME_Y+cell.y)*VOLUME_X+cell.x;let base=(voxel*WAVELENGTH_BINS+energy_bin(wavelength))*6u;
     let p=unit(polarization);let energy=450./wavelength*packet_scale;
     add_volume(base,energy*p.x*p.x);add_volume(base+1u,energy*p.y*p.y);add_volume(base+2u,energy*p.z*p.z);
     add_volume(base+3u,energy*p.x*p.y);add_volume(base+4u,energy*p.x*p.z);add_volume(base+5u,energy*p.y*p.z);
@@ -65,7 +71,7 @@ fn deposit_emission(position:vec3<f32>,normal:vec3<f32>,direction:vec3<f32>,wave
         add_emission((2u*u32(chart)+hemisphere)*WAVELENGTH_BINS+energy_bin(wavelength),450./wavelength*packet_scale);
         return;
     }
-    let face=face_index(normal);let uv=vec2<u32>(face_uv(position-v3(tables[41u]+70u),v3(tables[41u]+73u),face)*64.);
+    let face=face_index(normal);let uv=vec2<u32>(face_uv(position-v3(tables[41u]+70u),v3(tables[41u]+73u),face)*f32(EMISSION_RES));
     let hemisphere=select(1u,0u,dot(direction,normal)>=0.);
-    add_emission(((((face*2u+hemisphere)*64u+uv.y)*64u+uv.x)*WAVELENGTH_BINS)+energy_bin(wavelength),450./wavelength*packet_scale);
+    add_emission(((((face*2u+hemisphere)*EMISSION_RES+uv.y)*EMISSION_RES+uv.x)*WAVELENGTH_BINS)+energy_bin(wavelength),450./wavelength*packet_scale);
 }

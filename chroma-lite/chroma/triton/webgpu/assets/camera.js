@@ -2,13 +2,21 @@ import {
   OpticalLab, STAT_WORDS
 } from './physics.js';
 import {gpuBudget} from './scheduler.js';
+import {allocateGpu, checkedGpuWork, isGpuMemoryError} from './gpu.js';
 const $ = id => document.getElementById(id);
-const MAP_SIZES = {
-  wall: 6 * 128 * 128 * 64 * 4,
-  volume: 64 * 40 * 24 * 64 * 6 * 4,
-  wls: 12 * 64 * 64 * 64 * 4,
-  fill_wall: 6 * 32 * 32 * 64 * 4
+const MAP_PROFILES = {
+  full: {wall:128, fill:32, emission:64, volume:[64,40,24]},
+  compact: {wall:64, fill:16, emission:32, volume:[32,20,12]}
 };
+function mapSizes(profile, pmt) {
+  const m=MAP_PROFILES[profile], bytes=64*4;
+  return {
+    wall:6*m.wall*m.wall*bytes,
+    volume:m.volume.reduce((a,b)=>a*b)*6*bytes,
+    wls:(pmt ? 2*pmt.wls_charts : 12*m.emission*m.emission)*bytes,
+    fill_wall:6*m.fill*m.fill*bytes
+  };
+}
 const HALF = [300, 200, 120];
 
 function checkedInteger(value, low, high, name) {
@@ -25,9 +33,24 @@ function status(message, error = false) {
 }
 export class PhotonCamera extends OpticalLab {
   async initialize() {
+    try { return await this.initializeOnce(); }
+    catch (error) {
+      if ((!isGpuMemoryError(error) && !isGpuMemoryError(this.lost)) || this.preferredMapProfile==='compact') throw error;
+      const oldDevice=this.device;
+      this.device=null;
+      if (oldDevice) {oldDevice.destroy();await oldDevice.lost;}
+      this.lost=null;
+      this.preferredMapProfile='compact';
+      this.memoryRecovered=true;
+      if ($('memory_mode')) $('memory_mode').value='compact';
+      return this.initializeOnce();
+    }
+  }
+  async initializeOnce() {
     await super.initialize({
       catalogName: 'camera-catalog.json'
     });
+    if (this.software) this.preferredMapProfile='compact';
     for (const {
         scene
       }
@@ -60,10 +83,13 @@ export class PhotonCamera extends OpticalLab {
       data[77] = settings.source_mix.beam_probability;
       data[78] = light.integrated_radiance * data[69] * Math.PI;
       data[79] = 120 - settings.source_mix.fill_origin_z;
+      const fillLayout = light.layout || 'ceiling';
+      if (!['ceiling', 'room_faces'].includes(fillLayout)) throw Error('Unsupported fill-light layout');
+      data[85] = fillLayout === 'room_faces' ? 1 : 0;
       if (pmt) {
         if ([pmt.triangle_role, pmt.triangle_chart, pmt.triangle_area_mm2].some(a =>
             !Array.isArray(a) || a.length !== count)) throw Error('Invalid PMT triangle atlas');
-        checkedInteger(pmt.wls_charts, 1, MAP_SIZES.wls / (2 * 64 * 4), 'WLS charts');
+        checkedInteger(pmt.wls_charts, 1, count, 'WLS charts');
         if (pmt.triangle_role.some(v => !Number.isInteger(v) || v < 0 || v > 3) ||
           pmt.triangle_chart.some(v => !Number.isInteger(v) || v < -1 || v >= pmt.wls_charts) ||
           pmt.triangle_area_mm2.some(v => !Number.isFinite(v) || v <= 0) ||
@@ -116,7 +142,36 @@ export class PhotonCamera extends OpticalLab {
     ].map(name => fetch(name).then(r => r.text())));
     const hooks = {
       '// CAMERA_BVH_HOOK': 'if(tables[45u]!=0u){return nearest_camera_bvh(origin,direction,previous,false);}',
-      '// CAMERA_SOURCE_HOOK': `let is_fill=random_uniform(id,0x10000008u)>=f(tables[41u]+77u);var packet_scale=1./f(tables[41u]+77u);if(is_fill){position=v3(tables[41u]+64u)+vec3<f32>((2.*random_uniform(id,0x10000004u)-1.)*f(tables[41u]+67u),(2.*random_uniform(id,0x10000005u)-1.)*f(tables[41u]+68u),-f(tables[41u]+79u));initial_position=position;direction=hemisphere(vec3<f32>(0.,0.,-1.),random_uniform(id,0x10000006u),random_uniform(id,0x10000007u),true);polarization=random_polarization(direction,random_uniform(id,0x10000002u));wavelength=390.+320.*random_uniform(id,0x10000003u);packet_scale=f(tables[41u]+78u)/(1.-f(tables[41u]+77u))*wavelength/450.;atomicAdd(&statistics[21u],1u);}else{atomicAdd(&statistics[20u],1u);}`,
+      '// CAMERA_SOURCE_HOOK': `
+        let light=tables[41u];
+        let beam_probability=f(light+77u);
+        let is_fill=random_uniform(id,0x10000008u)>=beam_probability;
+        var packet_scale=1./beam_probability;
+        if(is_fill){
+          if(f(light+85u)>.5){
+            let x=(2.*random_uniform(id,0x10000004u)-1.)*f(light+67u);
+            let y=(2.*random_uniform(id,0x10000005u)-1.)*f(light+68u);
+            let face=min(5u,u32(6.*random_uniform(id,0x10000009u)));
+            let axis=face/2u;
+            let sign=select(-1.,1.,face%2u==0u);
+            let u_axis=select(0u,1u,axis==0u);
+            let v_axis=select(2u,1u,axis==2u);
+            position=vec3<f32>(0.);
+            position[axis]=sign*(ROOM[axis]-.001);
+            position[u_axis]=x;position[v_axis]=y;
+            var fill_normal=vec3<f32>(0.);fill_normal[axis]=-sign;
+            direction=hemisphere(fill_normal,random_uniform(id,0x10000006u),random_uniform(id,0x10000007u),true);
+          }else{
+            // Retain the original expression so driver FMA rounding is unchanged.
+            position=v3(light+64u)+vec3<f32>((2.*random_uniform(id,0x10000004u)-1.)*f(light+67u),(2.*random_uniform(id,0x10000005u)-1.)*f(light+68u),-f(light+79u));
+            direction=hemisphere(vec3<f32>(0.,0.,-1.),random_uniform(id,0x10000006u),random_uniform(id,0x10000007u),true);
+          }
+          initial_position=position;
+          polarization=random_polarization(direction,random_uniform(id,0x10000002u));
+          wavelength=390.+320.*random_uniform(id,0x10000003u);
+          packet_scale=f(light+78u)/(1.-beam_probability)*wavelength/450.;
+          atomicAdd(&statistics[21u],1u);
+        }else{atomicAdd(&statistics[20u],1u);}`,
       '// CAMERA_SCATTER_HOOK': 'deposit_scatter(position,polarization,wavelength,packet_scale);',
       '// CAMERA_EMISSION_HOOK': 'deposit_emission(position,normal,direction,wavelength,packet_scale,tri);',
       '// CAMERA_BOUNDARY_HOOK': 'if((flags&4u)!=0u){if(tables[42u]!=0u&&tables[tables[42u]+tri]==2u){atomicAdd(&statistics[25u],1u);}else{deposit_wall(position,normal,wavelength,packet_scale,is_fill);}}',
@@ -134,20 +189,9 @@ export class PhotonCamera extends OpticalLab {
     const errors = (await module.getCompilationInfo()).messages.filter(m => m.type === 'error');
     if (errors.length) throw Error(errors.map(e => `${e.lineNum}:${e.linePos} ${e.message}`).join(
       '\n'));
-    this.depositionPipeline = await this.device.createComputePipelineAsync({
-      layout: 'auto',
-      compute: {
-        module,
-        entryPoint: 'simulate'
-      }
-    });
-    this.cameraPipeline = await this.device.createComputePipelineAsync({
-      layout: 'auto',
-      compute: {
-        module,
-        entryPoint: 'render_camera'
-      }
-    });
+    this.shaderModule = module;
+    this.mapProfile = null;
+    await this.setMapProfile(this.preferredMapProfile || 'full');
     this.canvas = $('camera');
     this.context = this.canvas.getContext('webgpu');
     this.format = navigator.gpu.getPreferredCanvasFormat();
@@ -182,6 +226,77 @@ export class PhotonCamera extends OpticalLab {
     this.exposure = 100000;
     return this.info;
   }
+  async setMapProfile(profile) {
+    if (!Object.hasOwn(MAP_PROFILES, profile)) throw Error('Unsupported light-map detail.');
+    if (this.mapProfile === profile) return;
+    const m=MAP_PROFILES[profile];
+    const constants={WALL_RES:m.wall,FILL_RES:m.fill,EMISSION_RES:m.emission,
+      VOLUME_X:m.volume[0],VOLUME_Y:m.volume[1],VOLUME_Z:m.volume[2],
+      VOXEL_VOLUME_MM3:57600000/m.volume.reduce((a,b)=>a*b)};
+    // Compile sequentially to avoid overlapping driver compilation peaks.
+    const pipelines = await checkedGpuWork(this.device, async () => {
+      const deposition = await this.device.createComputePipelineAsync({layout:'auto',
+        compute:{module:this.shaderModule,entryPoint:'simulate',constants}});
+      const camera = await this.device.createComputePipelineAsync({layout:'auto',
+        compute:{module:this.shaderModule,entryPoint:'render_camera',constants}});
+      return {deposition,camera};
+    });
+    this.depositionPipeline=pipelines.deposition;
+    this.cameraPipeline=pipelines.camera;
+    this.mapProfile=profile;
+  }
+  async recoverMemory(error) {
+    if (this.mapProfile === 'compact') {
+      throw Error('GPU memory allocation failed even with reduced light-map detail. Reload after freeing GPU memory. '+(error.message || error));
+    }
+    const generation=gpuBudget.generation;
+    const view={eye:this.eye?.slice(),target:this.target?.slice(),fov:this.fov,
+      exposure:this.exposure,cutaway:this.cutaway,uvFalseColor:this.uvFalseColor};
+    this.busy=true;
+    try {
+      this.releaseMaps();
+      const oldDevice=this.device;
+      this.device=null;
+      oldDevice.destroy();
+      await oldDevice.lost;
+      this.lost=null;
+      this.preferredMapProfile='compact';
+      if ($('memory_mode')) $('memory_mode').value='compact';
+      if ($('memory_note')) $('memory_note').textContent='Recovering from a GPU memory allocation failure with reduced light-map detail…';
+      await this.initialize();
+      Object.assign(this,view);
+      if (generation !== gpuBudget.generation) throw new DOMException('Stopped.','AbortError');
+      this.memoryRecovered=true;
+    } finally { this.busy=false; }
+  }
+  async simulate(options = {}) {
+    if (this.busy || this.rendering) throw Error('The browser GPU is already working');
+    const profile=options.memory || this.preferredMapProfile || 'full';
+    try {
+      // Keep camera gestures from rendering old maps while their pipelines change.
+      this.busy=true;
+      try { await this.setMapProfile(profile); }
+      finally { this.busy=false; }
+      const result=await this.simulateOnce(options);
+      this.lastSimulationOptions={...options,scene:result.scene,photons:result.photons,seed:result.seed,polarization:result.polarization};
+      return result;
+    } catch (error) {
+      if (!isGpuMemoryError(error) && !isGpuMemoryError(this.lost)) throw error;
+      await this.recoverMemory(error);
+      const result=await this.simulateOnce(options);
+      this.lastSimulationOptions={...options,scene:result.scene,photons:result.photons,seed:result.seed,polarization:result.polarization};
+      return result;
+    }
+  }
+  async render(options = {}) {
+    try { return await this.renderOnce(options); }
+    catch (error) {
+      if ((!isGpuMemoryError(error) && !isGpuMemoryError(this.lost)) || !this.lastSimulationOptions) throw error;
+      await this.recoverMemory(error);
+      await this.simulateOnce(this.lastSimulationOptions);
+      return this.renderOnce({...options,reset:true});
+    }
+  }
   async download(buffer) {
     const read = this.buffer(buffer.size, GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ);
     try {
@@ -206,7 +321,7 @@ export class PhotonCamera extends OpticalLab {
     this.accumulation?.destroy();
     this.accumulation = null;
   }
-  async simulate({
+  async simulateOnce({
     scene = 'prism',
     photons = 2500000,
     seed = 901,
@@ -215,6 +330,7 @@ export class PhotonCamera extends OpticalLab {
     debugMaps = false
   } = {}) {
     if (this.busy || this.rendering) throw Error('The browser GPU is already working');
+    if (this.lost) throw Error('GPU device lost: '+this.lost);
     if (!this.scenes[scene]) throw Error('Unsupported camera scene');
     checkedInteger(photons, 1, 30000000, 'Photons');
     checkedInteger(seed, 0, Number.MAX_SAFE_INTEGER, 'Seed');
@@ -234,17 +350,19 @@ export class PhotonCamera extends OpticalLab {
       ].indexOf(scene), debug ? photons : 0, ['random', 'y', 'z'].indexOf(polarization)]);
       new Float32Array(cfg.buffer)[8] = scene === 'pmt' ? 10000 : scene === 'fluorescence' ? 205 :
         25;
-      const resources = {
-        tables: this.buffer(this.scenes[scene].packed, store),
-        config: this.buffer(cfg, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST),
-        statistics: this.buffer((STAT_WORDS + paths) * 4, store),
-        paths: this.buffer(Math.max(4, paths * 8193 * 32), store),
-        final: this.buffer(debug ? photons * 80 : 2048, store),
-        wall: this.buffer(MAP_SIZES.wall, store),
-        volume: this.buffer(MAP_SIZES.volume, store),
-        wls: this.buffer(MAP_SIZES.wls, store),
-        fill_wall: this.buffer(MAP_SIZES.fill_wall, store)
-      };
+      await d.queue.onSubmittedWorkDone();
+      const mapBytes=mapSizes(this.mapProfile,this.scenes[scene].scene.camera.pmt);
+      const resources = await allocateGpu(d, arena => ({
+        tables: arena.buffer(this.scenes[scene].packed, store),
+        config: arena.buffer(cfg, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST),
+        statistics: arena.buffer((STAT_WORDS + paths) * 4, store),
+        paths: arena.buffer(Math.max(4, paths * 8193 * 32), store),
+        final: arena.buffer(debug ? photons * 80 : 2048, store),
+        wall: arena.buffer(mapBytes.wall, store),
+        volume: arena.buffer(mapBytes.volume, store),
+        wls: arena.buffer(mapBytes.wls, store),
+        fill_wall: arena.buffer(mapBytes.fill_wall, store)
+      }));
       this.resources = resources;
       const group = d.createBindGroup({
         layout: this.depositionPipeline.getBindGroupLayout(0),
@@ -255,6 +373,7 @@ export class PhotonCamera extends OpticalLab {
           }
         }))
       });
+      d.pushErrorScope('out-of-memory');
       d.pushErrorScope('validation');
       let timing;
       try {
@@ -267,6 +386,8 @@ export class PhotonCamera extends OpticalLab {
         }, {progress: fraction => status(`Simulating ${photons.toLocaleString()} photons · ${Math.floor(fraction * 100)}%`)});
       } finally {
         const error = await d.popErrorScope();
+        const memory = await d.popErrorScope();
+        if (memory) {const e=new Error(memory.message || 'GPU memory allocation failed.');e.name='GpuMemoryError';throw e;}
         if (error) throw Error(error.message);
       }
       const compute_ms = timing.compute_ms;
@@ -321,7 +442,8 @@ export class PhotonCamera extends OpticalLab {
           batches: timing.batches,
           wall_ms: performance.now() - start
         },
-        map_bytes: MAP_SIZES,
+        map_bytes: mapBytes,
+        map_profile: this.mapProfile,
         estimator: manifest.camera,
         adapter: this.info
       };
@@ -358,6 +480,12 @@ export class PhotonCamera extends OpticalLab {
       if (debugMaps) {
         result.maps = await this.debugMaps();
       }
+      const m=MAP_PROFILES[this.mapProfile];
+      result.estimator={...manifest.camera,wall_shape:[m.wall,m.wall],fill_wall_shape:[m.fill,m.fill],
+        volume_shape:m.volume.slice(),voxel_volume_mm3:57600000/m.volume.reduce((a,b)=>a*b),
+        fluorescence_shape:[m.emission,m.emission]};
+      if ($('memory_note')) $('memory_note').textContent=
+        `${this.memoryRecovered?'Recovered after a GPU memory allocation failed. ':''}${this.mapProfile==='compact'?'Reduced':'Full'} light-map detail · ${(Object.values(mapBytes).reduce((a,b)=>a+b)/1048576).toFixed(1)} MiB of maps · 64 wavelength bins.`;
       this.result = result;
       const cathode = result.counts.photocathode ?
         ` · ${result.counts.photocathode.toLocaleString()} photocathode detections` : '';
@@ -406,7 +534,7 @@ export class PhotonCamera extends OpticalLab {
   }
   async debugMaps() {
     const output = {};
-    for (const key of Object.keys(MAP_SIZES)) {
+    for (const key of ['wall','volume','wls','fill_wall']) {
       const values = new Float32Array(await this.download(this.resources[key]));
       const pairs = [];
       for (let index = 0; index < values.length; index++)
@@ -415,7 +543,7 @@ export class PhotonCamera extends OpticalLab {
     }
     return output;
   }
-  async render({
+  async renderOnce({
     width = 640,
     height = 400,
     reset = false,
@@ -427,6 +555,7 @@ export class PhotonCamera extends OpticalLab {
     interactive = false
   } = {}) {
     if (this.busy || this.rendering) throw Error('The browser GPU is already working');
+    if (this.lost) throw Error('GPU device lost: '+this.lost);
     if (!this.resources) throw Error('Simulate an optical event first');
     checkedInteger(width, 8, 1920, 'Width');
     checkedInteger(height, 8, 1200, 'Height');
@@ -465,20 +594,21 @@ export class PhotonCamera extends OpticalLab {
       }
     }
     this.rendering = true;
+    let uniform=null;
     try {
       const d = this.device;
       if (!this.image || width !== this.width || height !== this.height) {
         this.image?.destroy();
         this.accumulation?.destroy();
-        this.width = width;
-        this.height = height;
-        this.image = d.createTexture({
-          size: [width, height],
-          format: 'rgba16float',
-          usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
-        });
-        this.accumulation = this.buffer(width * height * 16, GPUBufferUsage.STORAGE |
-          GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST);
+        this.image=null;this.accumulation=null;
+        await d.queue.onSubmittedWorkDone();
+        const target=await allocateGpu(d, arena => ({
+          image:arena.texture({size:[width,height],format:'rgba16float',
+            usage:GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.TEXTURE_BINDING}),
+          accumulation:arena.buffer(width*height*16,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC|GPUBufferUsage.COPY_DST)
+        }));
+        this.width=width;this.height=height;
+        this.image=target.image;this.accumulation=target.accumulation;
         reset = true;
       }
       if (reset) this.frame = 0;
@@ -487,7 +617,7 @@ export class PhotonCamera extends OpticalLab {
       f.set([...this.eye, this.exposure, ...this.target, Math.tan(this.fov * Math.PI / 360)]);
       cfg.set([width, height, this.frame, 0], 8);
       f.set([this.cutaway ? 1 : 0, this.uvFalseColor ? 1 : 0, 0, 0], 12);
-      const uniform = this.buffer(cfg, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
+      uniform = await allocateGpu(d, arena => arena.buffer(cfg, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST));
       const r = this.resources;
       const bind = d.createBindGroup({
         layout: this.cameraPipeline.getBindGroupLayout(0),
@@ -543,6 +673,7 @@ export class PhotonCamera extends OpticalLab {
           resource: this.image.createView()
         }]
       });
+      d.pushErrorScope('out-of-memory');
       d.pushErrorScope('validation');
       let queue_ms;
       try {
@@ -559,10 +690,12 @@ export class PhotonCamera extends OpticalLab {
         this.frame = 0;
         throw error;
       } finally {
-        uniform.destroy();
         const error = await d.popErrorScope();
+        const memory = await d.popErrorScope();
+        if (memory) {const e=new Error(memory.message || 'GPU memory allocation failed.');e.name='GpuMemoryError';throw e;}
         if (error) throw Error(error.message);
       }
+      if (this.lost) throw Error('GPU device lost: '+this.lost);
       // Keep the last presented preview visible while a larger image computes.
       // Resizing the canvas earlier would blank it for the whole refinement.
       if (this.canvas.width !== width) this.canvas.width = width;
@@ -589,6 +722,7 @@ export class PhotonCamera extends OpticalLab {
       d.queue.submit([encoder.finish()]);
       await d.queue.onSubmittedWorkDone();
       queue_ms += performance.now() - start;
+      if (this.lost) throw Error('GPU device lost: '+this.lost);
       this.frame++;
       return this.lastFrame = {
         width,
@@ -603,6 +737,7 @@ export class PhotonCamera extends OpticalLab {
         uv_false_color: !!f[13]
       };
     } finally {
+      uniform?.destroy();
       this.rendering = false;
     }
   }
@@ -617,7 +752,7 @@ let activePreview = false, previewWidth = 128;
 
 function updateInfo(frame) {
   $('samples').textContent =
-    `${camera.photons.toLocaleString()} photons · ${frame.frame} spectral camera samples · ${frame.queue_ms.toFixed(0)} ms camera`;
+    `${camera.photons.toLocaleString()} photons · ${frame.frame} camera ${frame.frame === 1 ? 'pass' : 'passes'} · ${frame.queue_ms.toFixed(0)} ms camera`;
 }
 async function drainViews() {
   if (drainingViews) return;
@@ -634,11 +769,11 @@ async function drainViews() {
         activePreview = true;
         const start = performance.now(), width = previewWidth;
         updateInfo(await camera.render({width,height:Math.round(width*.625),reset:true,interactive:true}));
-        previewWidth = Math.max(64,Math.min(160,8*Math.round(width*Math.sqrt(80/Math.max(1,performance.now()-start))/8)));
+        previewWidth = Math.max(camera.software?24:64,Math.min(camera.software?64:160,8*Math.round(width*Math.sqrt(80/Math.max(1,performance.now()-start))/8)));
         activePreview = false;
         if (next.preview || next.version !== request || pendingView) continue;
         const quality = Number($('quality').value), height = Math.round(quality*.625);
-        for (let sample=0;sample<16 && next.version===request && !pendingView;sample++) {
+        for (let sample=0;sample<(camera.software?2:16) && next.version===request && !pendingView;sample++) {
           const begin = performance.now();
           updateInfo(await camera.render({width:quality,height,reset:sample===0,interactive:sample===0}));
           // Limit refinement of cheap scenes to 30 frames/s (10 in Low mode).
@@ -672,6 +807,10 @@ document.addEventListener('gpu-stop', () => {
   status('Stopped.');
 });
 window.photonCameraReady = camera.initialize().then(info => {
+  if (info.isFallbackAdapter) {
+    $('photons').value=10000;$('gpu_mode').value='eco';$('memory_mode').value='compact';
+    $('quality').add(new Option('160 px','160'));$('quality').value='160';previewWidth=32;
+  }
   $('adapter').textContent =
     `${info.vendor} ${info.architecture}${info.isFallbackAdapter?' · software adapter':''}`;
   $('simulate').disabled = false;
@@ -688,10 +827,11 @@ window.photonCameraReady = camera.initialize().then(info => {
         scene: $('scene').value,
         photons: Number($('photons').value),
         seed: Number($('seed').value),
-        polarization: $('polarization').value
+        polarization: $('polarization').value,
+        memory: $('memory_mode')?.value || 'full'
       });
       status(
-        `${result.photons.toLocaleString()} optical photons (${result.counts.beam.toLocaleString()} beam + ${result.counts.fill.toLocaleString()} ceiling) · ${result.counts.scattered.toLocaleString()} scattered · ${result.counts.reemitted.toLocaleString()} reemitted${result.scene === "pmt" ? " · " + result.counts.photocathode.toLocaleString() + " photocathode detections" : ""} · ${result.metrics.compute_ms.toFixed(1)} ms transport and deposition`
+        `${result.photons.toLocaleString()} optical photons (${result.counts.beam.toLocaleString()} beam + ${result.counts.fill.toLocaleString()} fill) · ${result.counts.scattered.toLocaleString()} scattered · ${result.counts.reemitted.toLocaleString()} reemitted${result.scene === "pmt" ? " · " + result.counts.photocathode.toLocaleString() + " photocathode detections" : ""} · ${result.metrics.compute_ms.toFixed(1)} ms transport and deposition`
       );
       schedule();
     } catch (error) {

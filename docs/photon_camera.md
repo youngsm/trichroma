@@ -39,7 +39,11 @@ The PMT uses the repository's R5912 contour, 203.2 mm nominal diameter and
 including its tail to 10 microseconds. The glass absorbs unconverted VUV;
 visible photocathode detection probability is 0.25, with the remainder
 absorbed. These are software-validation inputs, not measured PMT calibration.
-Optical-table endpoint values above 500 nm extend the visible ceiling source.
+Optical-table endpoint values above 500 nm extend the visible fill spectrum.
+For this PMT scene, the visible fill is shared by six inward-facing area lights
+centered on the room faces. Each emits one sixth of the original ceiling
+light's power, so the total stays fixed while illumination surrounds the PMT.
+The focused VUV beam and optical calibration are unchanged.
 The same compiled BVH accelerates forward photons and camera queries while
 preserving the original triangle indices. The curved TPB emission maps use
 each triangle's actual area and separate its two outgoing hemispheres.
@@ -66,17 +70,46 @@ These controls reuse the current photon maps; rerunning the same scene preserves
 the composed camera view. Motion coalesces to the newest view while a small
 preview finishes; changing the view cancels older full-resolution refinement.
 The first image is a quick preview before the selected quality refines.
+The hardware view accumulates 16 camera passes per pixel (two on a software
+adapter). Each pass jitters the pixel ray and samples optical interactions
+across the 64 wavelength bins, skipping bins with negligible color response.
+These passes reuse the same forward photon maps: more passes reduce camera
+sampling noise, while more simulated photons reduce photon-map sampling noise.
+
+The **Light-map detail** control selects full or reduced spatial maps for the
+next simulation. Reduced mode retains all 64 wavelength bins and the complete
+requested photon population, with the same transport and random streams.
+It uses a 32 × 20 × 12 volume grid, 64 × 64 beam-wall maps and 16 × 16 fill-wall
+maps. The curved PMT keeps its original per-facet fluorescence charts. Its maps
+need 17.9 MiB in reduced mode, compared with 115.8 MiB in full mode. Other scenes
+use 20.6 MiB in reduced mode. Driver allocations and image buffers are additional.
+
+Allocation failures release any buffers already created by that operation.
+A GPU memory failure triggers one retry on a fresh device with reduced maps,
+preserving the requested photons and camera pose. This also handles a lost
+device reporting `VK_ERROR_OUT_OF_DEVICE_MEMORY`. A failed retry stops with an
+error instead of repeatedly allocating. Lowering the photon count alone does
+not reduce these fixed-size lighting maps.
+
+Adapter selection tries hardware first and then requests a software adapter if
+needed. When the browser supplies a CPU adapter, the page starts with 10,000
+photons, reduced maps, a 160-pixel camera and smaller compute batches. Browsers
+may refuse software WebGPU, particularly when hardware acceleration is disabled;
+a website cannot enable that browser capability. The fallback is conditional
+on the browser exposing a usable adapter.
 
 ## What the camera estimates
 
 Packet energy is `source_scale × 450 / wavelength_nm`. A stable Philox draw
-selects the main beam with probability 0.8 and the ceiling source with
+selects the main beam with probability 0.8 and visible fill with
 probability 0.2. Beam packets have `source_scale = 1/0.8`. Ceiling packets
 sample a Lambertian rectangle with constant radiant energy
 `L × area × pi / 0.2` per packet; their scale includes the initial wavelength
 so wavelength shifting still reduces their energy correctly. Here
 `L = 0.00003` in relative energy per square millimetre and steradian, and the
-emitter measures 180 by 80 mm. Source choices remain identical for existing
+emitter measures 180 by 80 mm. For the PMT, a separate stable draw selects
+one of six equal-area panels; each has radiance `L/6`. The packet weight and
+total fill power remain identical to the single ceiling source. Source choices remain identical for existing
 photon IDs when N changes.
 
 Every estimate divides by the **total emitted photon count N**, including

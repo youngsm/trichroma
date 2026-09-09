@@ -1,0 +1,16 @@
+{
+  "prism": {
+    "unchanged_terminal_states": 8193
+  },
+  "fluorescence": {
+    "unchanged_terminal_states": 8193
+  },
+  "rayleigh": {
+    "unchanged_terminal_states": 8193
+  },
+  "pmt": {
+    "unchanged_beam_terminal_states": 6617,
+    "old_lighting_unchanged_terminal_states": 8193
+  },
+  "errors": []
+}

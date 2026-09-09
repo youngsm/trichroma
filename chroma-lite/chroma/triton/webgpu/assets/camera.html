@@ -39,13 +39,15 @@
 </select>
 </label>
 <label>GPU use<select id="gpu_mode"><option value="eco">Low</option><option value="balanced" selected>Balanced</option><option value="fast">Full speed</option></select></label>
+<label>Light-map detail<select id="memory_mode"><option value="full" selected>Full</option><option value="compact">Reduced memory</option></select></label>
 <button id="stop" type="button">Stop</button>
 <button id="simulate" disabled>Simulate photons</button>
 </section>
 <p id="scene_note" class="muted"></p>
+<p id="memory_note" class="muted" role="status"></p>
 <canvas id="camera" width="640" height="400" aria-label="Physical photon camera render">
 </canvas>
-<p id="pmt_legend" class="muted" hidden><strong>PMT layers:</strong> TPB coats the outer glass surface; the glass envelope is 3 mm thick; the photocathode lines the inner surface and absorbs light. The cutaway opens the view without removing any forward-transport geometry.</p>
+<p id="pmt_legend" class="muted" hidden><strong>PMT layers:</strong> TPB coats the outer glass surface; the glass envelope is 3 mm thick; the photocathode lines the inner surface and absorbs light. The cutaway opens the view without removing any forward-transport geometry. Six wall lights provide visible fill around the PMT; the focused VUV beam illuminates the TPB.</p>
 <aside>
 <span>Drag to orbit · middle-drag or Shift-drag to pan · wheel to zoom</span>
 <label>Exposure<input id="exposure" type="range" min="3" max="7" step=".05" value="5">
@@ -65,7 +67,8 @@
 <details>
 <summary>How this image is formed</summary>
 <p>Every simulated photon contributes to wavelength-binned light maps: incident energy on diffuse room walls, polarization moments at volume-scattering collisions, and actual fluorescent emission. The camera gathers these maps with geometric visibility, wavelength-dependent Fresnel refraction, polarized Rayleigh weighting and Beer attenuation. Brightness is normalized by the number of launched photons; increasing that count reduces sampling noise. Orbiting reuses the event maps.</p>
-<p>The view is a finite-resolution photon-density estimate, with 64 wavelength bins and bounded spatial maps. The beam and ceiling area light are a weighted source mixture; both are fully transported through glass and the scattering volume. Broad ceiling illumination uses a coarser wall-density map than the focused beam. It includes the first diffuse wall reflection, and uses weak Rayleigh haze in the prism and fluorescent scenes. Fluorescence spectra and lifetimes are modeled in transport; this camera shows steady-state illumination. The image uses Chroma's CIE color tables and exposure. UV is invisible. There are no sampled trajectory lines or added glow overlays. The optical diagnostics page shows spectra, timing distributions, and sampled trajectories.</p>
+<p>Camera passes average samples at each pixel to reduce image noise. Each pass jitters the pixel ray and samples optical interactions across the wavelength bins, reusing the same photon maps. Additional passes do not simulate the forward photons again.</p>
+<p>The view is a finite-resolution photon-density estimate, with 64 wavelength bins and bounded spatial maps. The beam and visible area lights are a weighted source mixture; both are fully transported through glass and the scattering volume. Broad ceiling illumination uses a coarser wall-density map than the focused beam. It includes the first diffuse wall reflection, and uses weak Rayleigh haze in the prism and fluorescent scenes. Fluorescence spectra and lifetimes are modeled in transport; this camera shows steady-state illumination. The image uses Chroma's CIE color tables and exposure. UV is invisible. There are no sampled trajectory lines or added glow overlays. The optical diagnostics page shows spectra, timing distributions, and sampled trajectories.</p>
 <p>The PMT example uses a curved R5912 mesh with a 126–130 nm source and explicitly synthetic calibration tables. Forward transport keeps the complete PMT. The optional cutaway hides part of the PMT for inspection; that clipped image is a diagnostic view of the unchanged photon maps. Photocathode detections are counted separately and do not emit light. UV stays invisible unless its false-color control is enabled.</p>
 </details>
 <p class="muted">GPU work runs in bounded batches. Low adds idle time; hidden tabs pause, and Stop cancels at the next batch.</p>

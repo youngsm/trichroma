@@ -5,31 +5,31 @@ struct CameraParameters {eye:vec4<f32>,look_at:vec4<f32>,image:vec4<u32>,options
 @group(0) @binding(9) var camera_image:texture_storage_2d<rgba16float,write>;
 @group(0) @binding(10) var<storage,read_write> accumulation:array<vec4<f32>>;
 fn map_wall(face:u32,uv:vec2<f32>,bin:u32)->f32{
-    let coordinate=clamp(uv*128.-.5,vec2<f32>(0.),vec2<f32>(127.));let lo=vec2<u32>(coordinate);let hi=min(lo+1u,vec2<u32>(127u));let a=fract(coordinate);
-    let p00=bitcast<f32>(atomicLoad(&wall_map[((face*128u+lo.y)*128u+lo.x)*WAVELENGTH_BINS+bin]));
-    let p10=bitcast<f32>(atomicLoad(&wall_map[((face*128u+lo.y)*128u+hi.x)*WAVELENGTH_BINS+bin]));
-    let p01=bitcast<f32>(atomicLoad(&wall_map[((face*128u+hi.y)*128u+lo.x)*WAVELENGTH_BINS+bin]));
-    let p11=bitcast<f32>(atomicLoad(&wall_map[((face*128u+hi.y)*128u+hi.x)*WAVELENGTH_BINS+bin]));
+    let coordinate=clamp(uv*f32(WALL_RES)-.5,vec2<f32>(0.),vec2<f32>(f32(WALL_RES-1u)));let lo=vec2<u32>(coordinate);let hi=min(lo+1u,vec2<u32>(WALL_RES-1u));let a=fract(coordinate);
+    let p00=bitcast<f32>(atomicLoad(&wall_map[((face*WALL_RES+lo.y)*WALL_RES+lo.x)*WAVELENGTH_BINS+bin]));
+    let p10=bitcast<f32>(atomicLoad(&wall_map[((face*WALL_RES+lo.y)*WALL_RES+hi.x)*WAVELENGTH_BINS+bin]));
+    let p01=bitcast<f32>(atomicLoad(&wall_map[((face*WALL_RES+hi.y)*WALL_RES+lo.x)*WAVELENGTH_BINS+bin]));
+    let p11=bitcast<f32>(atomicLoad(&wall_map[((face*WALL_RES+hi.y)*WALL_RES+hi.x)*WAVELENGTH_BINS+bin]));
     return mix(mix(p00,p10,a.x),mix(p01,p11,a.x),a.y);
 }
 fn map_fill_wall(face:u32,uv:vec2<f32>,bin:u32)->f32{
-    let coordinate=clamp(uv*32.-.5,vec2<f32>(0.),vec2<f32>(31.));let lo=vec2<u32>(coordinate);let hi=min(lo+1u,vec2<u32>(31u));let a=fract(coordinate);
-    let p00=bitcast<f32>(atomicLoad(&fill_wall_map[((face*32u+lo.y)*32u+lo.x)*WAVELENGTH_BINS+bin]));
-    let p10=bitcast<f32>(atomicLoad(&fill_wall_map[((face*32u+lo.y)*32u+hi.x)*WAVELENGTH_BINS+bin]));
-    let p01=bitcast<f32>(atomicLoad(&fill_wall_map[((face*32u+hi.y)*32u+lo.x)*WAVELENGTH_BINS+bin]));
-    let p11=bitcast<f32>(atomicLoad(&fill_wall_map[((face*32u+hi.y)*32u+hi.x)*WAVELENGTH_BINS+bin]));
+    let coordinate=clamp(uv*f32(FILL_RES)-.5,vec2<f32>(0.),vec2<f32>(f32(FILL_RES-1u)));let lo=vec2<u32>(coordinate);let hi=min(lo+1u,vec2<u32>(FILL_RES-1u));let a=fract(coordinate);
+    let p00=bitcast<f32>(atomicLoad(&fill_wall_map[((face*FILL_RES+lo.y)*FILL_RES+lo.x)*WAVELENGTH_BINS+bin]));
+    let p10=bitcast<f32>(atomicLoad(&fill_wall_map[((face*FILL_RES+lo.y)*FILL_RES+hi.x)*WAVELENGTH_BINS+bin]));
+    let p01=bitcast<f32>(atomicLoad(&fill_wall_map[((face*FILL_RES+hi.y)*FILL_RES+lo.x)*WAVELENGTH_BINS+bin]));
+    let p11=bitcast<f32>(atomicLoad(&fill_wall_map[((face*FILL_RES+hi.y)*FILL_RES+hi.x)*WAVELENGTH_BINS+bin]));
     return mix(mix(p00,p10,a.x),mix(p01,p11,a.x),a.y);
 }
 fn map_emission(face:u32,hemisphere:u32,uv:vec2<f32>,bin:u32)->f32{
-    let coordinate=clamp(uv*64.-.5,vec2<f32>(0.),vec2<f32>(63.));let lo=vec2<u32>(coordinate);let hi=min(lo+1u,vec2<u32>(63u));let a=fract(coordinate);let f=face*2u+hemisphere;
-    let p00=bitcast<f32>(atomicLoad(&emission_map[((f*64u+lo.y)*64u+lo.x)*WAVELENGTH_BINS+bin]));
-    let p10=bitcast<f32>(atomicLoad(&emission_map[((f*64u+lo.y)*64u+hi.x)*WAVELENGTH_BINS+bin]));
-    let p01=bitcast<f32>(atomicLoad(&emission_map[((f*64u+hi.y)*64u+lo.x)*WAVELENGTH_BINS+bin]));
-    let p11=bitcast<f32>(atomicLoad(&emission_map[((f*64u+hi.y)*64u+hi.x)*WAVELENGTH_BINS+bin]));
+    let coordinate=clamp(uv*f32(EMISSION_RES)-.5,vec2<f32>(0.),vec2<f32>(f32(EMISSION_RES-1u)));let lo=vec2<u32>(coordinate);let hi=min(lo+1u,vec2<u32>(EMISSION_RES-1u));let a=fract(coordinate);let f=face*2u+hemisphere;
+    let p00=bitcast<f32>(atomicLoad(&emission_map[((f*EMISSION_RES+lo.y)*EMISSION_RES+lo.x)*WAVELENGTH_BINS+bin]));
+    let p10=bitcast<f32>(atomicLoad(&emission_map[((f*EMISSION_RES+lo.y)*EMISSION_RES+hi.x)*WAVELENGTH_BINS+bin]));
+    let p01=bitcast<f32>(atomicLoad(&emission_map[((f*EMISSION_RES+hi.y)*EMISSION_RES+lo.x)*WAVELENGTH_BINS+bin]));
+    let p11=bitcast<f32>(atomicLoad(&emission_map[((f*EMISSION_RES+hi.y)*EMISSION_RES+hi.x)*WAVELENGTH_BINS+bin]));
     return mix(mix(p00,p10,a.x),mix(p01,p11,a.x),a.y);
 }
 fn cell_scattering_moment(cell:vec3<u32>,bin:u32,e:vec3<f32>)->f32{
-    let base=(((cell.z*40u+cell.y)*64u+cell.x)*WAVELENGTH_BINS+bin)*6u;
+    let base=(((cell.z*VOLUME_Y+cell.y)*VOLUME_X+cell.x)*WAVELENGTH_BINS+bin)*6u;
     let xx=bitcast<f32>(atomicLoad(&volume_map[base]));let yy=bitcast<f32>(atomicLoad(&volume_map[base+1u]));let zz=bitcast<f32>(atomicLoad(&volume_map[base+2u]));
     if(xx+yy+zz==0.){return 0.;}
     let xy=bitcast<f32>(atomicLoad(&volume_map[base+3u]));let xz=bitcast<f32>(atomicLoad(&volume_map[base+4u]));let yz=bitcast<f32>(atomicLoad(&volume_map[base+5u]));
@@ -38,8 +38,8 @@ fn cell_scattering_moment(cell:vec3<u32>,bin:u32,e:vec3<f32>)->f32{
 fn camera_scattering_source(position:vec3<f32>,bin:u32,polarization:vec3<f32>)->f32{
     // Continuous tent reconstruction of cell-centered collision moments.
     // This adds finite-resolution smoothing bias, without N-dependent gain.
-    let coordinate=clamp((position+ROOM)/(2.*ROOM)*vec3<f32>(VOLUME_SHAPE)-.5,vec3<f32>(0.),vec3<f32>(VOLUME_SHAPE)-1.);
-    let lo=vec3<u32>(coordinate);let hi=min(lo+1u,VOLUME_SHAPE-1u);let a=fract(coordinate);
+    let coordinate=clamp((position+ROOM)/(2.*ROOM)*vec3<f32>(volume_shape())-.5,vec3<f32>(0.),vec3<f32>(volume_shape())-1.);
+    let lo=vec3<u32>(coordinate);let hi=min(lo+1u,volume_shape()-1u);let a=fract(coordinate);
     var moment=0.;
     for(var z=0u;z<2u;z++){for(var y=0u;y<2u;y++){for(var x=0u;x<2u;x++){
         let cell=vec3<u32>(select(lo.x,hi.x,x==1u),select(lo.y,hi.y,y==1u),select(lo.z,hi.z,z==1u));
@@ -48,7 +48,7 @@ fn camera_scattering_source(position:vec3<f32>,bin:u32,polarization:vec3<f32>)->
     }}}
     // Random transverse camera polarization with weight2 is an unbiased
     // adjoint estimator of the unpolarized3/(8pi)*(trM-omega M omega) source.
-    return moment*(3./(4.*3.141592653589793))/(f32(config.counts.x)*937.5);
+    return moment*(3./(4.*3.141592653589793))/(f32(config.counts.x)*VOXEL_VOLUME_MM3);
 }
 struct VolumeIntegral {radiance:f32,transmittance:f32}
 fn integrate_volume(origin:vec3<f32>,direction:vec3<f32>,polarization:vec3<f32>,distance:f32,bin:u32,material:u32,wavelength:f32)->VolumeIntegral{
@@ -56,11 +56,11 @@ fn integrate_volume(origin:vec3<f32>,direction:vec3<f32>,polarization:vec3<f32>,
     let sigma=select(0.,1./scatter_length,scatter_length<1e30)+select(0.,1./absorb_length,absorb_length<1e30);
     if(sigma<=0.){return VolumeIntegral(0.,1.);}
     var radiance=0.;var transmission=1.;var t=0.;
-    let cell_size=2.*ROOM/vec3<f32>(VOLUME_SHAPE);
+    let cell_size=2.*ROOM/vec3<f32>(volume_shape());
     for(var i=0u;i<256u;i++){
         if(t>=distance||transmission<1e-7){break;}
         let position=origin+(t+1e-4)*direction;
-        let cell=vec3<u32>(clamp((position+ROOM)/cell_size,vec3<f32>(0.),vec3<f32>(VOLUME_SHAPE)-1.));
+        let cell=vec3<u32>(clamp((position+ROOM)/cell_size,vec3<f32>(0.),vec3<f32>(volume_shape())-1.));
         let far=select(vec3<f32>(cell),vec3<f32>(cell)+1.,direction>vec3<f32>(0.))*cell_size-ROOM;
         let nonzero=abs(direction)>vec3<f32>(1e-30);
         let raw_bound=(far-origin)/select(vec3<f32>(1.),direction,nonzero);
@@ -76,6 +76,14 @@ fn integrate_volume(origin:vec3<f32>,direction:vec3<f32>,polarization:vec3<f32>,
     return VolumeIntegral(radiance,transmission);
 }
 fn fill_emission(position:vec3<f32>,bin:u32)->f32{
+    if(f(tables[41u]+85u)>.5){
+        // Six equal-area wall panels share the original ceiling-light power.
+        let gap=abs(abs(position)-ROOM);
+        let axis=select(select(2u,1u,gap.y<gap.z),0u,gap.x<min(gap.y,gap.z));
+        let u_axis=select(0u,1u,axis==0u);let v_axis=select(2u,1u,axis==2u);
+        if(gap[axis]>.01||abs(position[u_axis])>f(tables[41u]+67u)||abs(position[v_axis])>f(tables[41u]+68u)){return 0.;}
+        return f(tables[41u]+bin)/6.;
+    }
     let center=v3(tables[41u]+64u);let delta=position-center;
     if(abs(delta.z)>.01||abs(delta.x)>f(tables[41u]+67u)||abs(delta.y)>f(tables[41u]+68u)){return 0.;}
     return f(tables[41u]+bin);
@@ -158,7 +166,7 @@ fn spectral_camera(origin:vec3<f32>,initial_direction:vec3<f32>,bin:u32,pixel:u3
             let model=tables[tables[19u]+u32(surface)];
             if(model==0u&&interpolate(20u,u32(surface),wavelength)>.99&&(tables[42u]==0u||tables[tables[42u]+tri]==0u)){
                 let face=face_index(normal);let energy=map_wall(face,face_uv(position,ROOM,face),bin);
-                let irradiance=energy/(f32(config.counts.x)*face_area(ROOM,face,128u))+map_fill_wall(face,face_uv(position,ROOM,face),bin)/(f32(config.counts.x)*face_area(ROOM,face,32u));
+                let irradiance=energy/(f32(config.counts.x)*face_area(ROOM,face,WALL_RES))+map_fill_wall(face,face_uv(position,ROOM,face),bin)/(f32(config.counts.x)*face_area(ROOM,face,FILL_RES));
                 radiance+=throughput*(irradiance*f(tables[41u]+76u)/3.141592653589793+fill_emission(position,bin));break;
             }
             if(model==0u){
@@ -186,7 +194,7 @@ fn spectral_camera(origin:vec3<f32>,initial_direction:vec3<f32>,bin:u32,pixel:u3
                     if(chart>=0){energy=bitcast<f32>(atomicLoad(&emission_map[(2u*u32(chart)+hemisphere)*WAVELENGTH_BINS+bin]));area=f(tables[44u]+tri);}
                 }else{
                     energy=map_emission(face,hemisphere,face_uv(position-v3(tables[41u]+70u),v3(tables[41u]+73u),face),bin);
-                    area=face_area(v3(tables[41u]+73u),face,64u);
+                    area=face_area(v3(tables[41u]+73u),face,EMISSION_RES);
                 }
                 radiance+=throughput*energy/(f32(config.counts.x)*area*6.283185307179586*max(abs(dot(direction,normal)),1e-6));
                 throughput*=1.-interpolate(21u,u32(surface),wavelength);

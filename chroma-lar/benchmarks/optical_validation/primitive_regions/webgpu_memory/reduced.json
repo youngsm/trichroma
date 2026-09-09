@@ -1,0 +1,554 @@
+{
+  "stages": [
+    {
+      "allocations": {
+        "bytes": 0,
+        "peak": 0,
+        "buffers": 0,
+        "textures": 0
+      },
+      "frame": null,
+      "lost": null,
+      "errors": [],
+      "stage": "initialized",
+      "time": 1788985764.57632
+    },
+    {
+      "allocations": {
+        "bytes": 21715448,
+        "peak": 21780152,
+        "buffers": 9,
+        "textures": 0
+      },
+      "frame": null,
+      "lost": null,
+      "errors": [],
+      "stage": "0-prism-simulate",
+      "time": 1788985764.8473003
+    },
+    {
+      "allocations": {
+        "bytes": 23251448,
+        "peak": 23251512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 320,
+        "height": 200,
+        "frame": 2,
+        "queue_ms": 62.40000009536743,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "0-prism-render-320",
+      "time": 1788985765.0100799
+    },
+    {
+      "allocations": {
+        "bytes": 27859448,
+        "peak": 27859512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 640,
+        "height": 400,
+        "frame": 2,
+        "queue_ms": 95.10000038146973,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "0-prism-render-640",
+      "time": 1788985765.20885
+    },
+    {
+      "allocations": {
+        "bytes": 35539448,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 163.10000038146973,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "0-prism-render-960",
+      "time": 1788985765.5517266
+    },
+    {
+      "allocations": {
+        "bytes": 19317256,
+        "peak": 35539512,
+        "buffers": 9,
+        "textures": 0
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 163.10000038146973,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "0-pmt-simulate",
+      "time": 1788985766.0151937
+    },
+    {
+      "allocations": {
+        "bytes": 20853256,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 320,
+        "height": 200,
+        "frame": 2,
+        "queue_ms": 657.0999999046326,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "0-pmt-render-320",
+      "time": 1788985767.4191077
+    },
+    {
+      "allocations": {
+        "bytes": 25461256,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 640,
+        "height": 400,
+        "frame": 2,
+        "queue_ms": 1811.3000001907349,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "0-pmt-render-640",
+      "time": 1788985771.2316017
+    },
+    {
+      "allocations": {
+        "bytes": 33141256,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 3090.6000003814697,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "0-pmt-render-960",
+      "time": 1788985777.2534463
+    },
+    {
+      "allocations": {
+        "bytes": 21715448,
+        "peak": 35539512,
+        "buffers": 9,
+        "textures": 0
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 3090.6000003814697,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-prism-simulate",
+      "time": 1788985777.3718128
+    },
+    {
+      "allocations": {
+        "bytes": 23251448,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 320,
+        "height": 200,
+        "frame": 2,
+        "queue_ms": 57.700000286102295,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-prism-render-320",
+      "time": 1788985777.498063
+    },
+    {
+      "allocations": {
+        "bytes": 27859448,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 640,
+        "height": 400,
+        "frame": 2,
+        "queue_ms": 92.7999997138977,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-prism-render-640",
+      "time": 1788985777.6932251
+    },
+    {
+      "allocations": {
+        "bytes": 35539448,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 163.19999980926514,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-prism-render-960",
+      "time": 1788985778.0392497
+    },
+    {
+      "allocations": {
+        "bytes": 19317256,
+        "peak": 35539512,
+        "buffers": 9,
+        "textures": 0
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 163.19999980926514,
+        "photons": 2500000,
+        "eye": [
+          -240,
+          -170,
+          95
+        ],
+        "target": [
+          30,
+          0,
+          -40
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-pmt-simulate",
+      "time": 1788985778.4766016
+    },
+    {
+      "allocations": {
+        "bytes": 20853256,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 320,
+        "height": 200,
+        "frame": 2,
+        "queue_ms": 659.5999999046326,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-pmt-render-320",
+      "time": 1788985779.882925
+    },
+    {
+      "allocations": {
+        "bytes": 25461256,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 640,
+        "height": 400,
+        "frame": 2,
+        "queue_ms": 1820.7000007629395,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-pmt-render-640",
+      "time": 1788985783.7223427
+    },
+    {
+      "allocations": {
+        "bytes": 33141256,
+        "peak": 35539512,
+        "buffers": 10,
+        "textures": 1
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 2915.6000003814697,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "1-pmt-render-960",
+      "time": 1788985789.576516
+    },
+    {
+      "allocations": {
+        "bytes": 0,
+        "peak": 35539512,
+        "buffers": 0,
+        "textures": 0
+      },
+      "frame": {
+        "width": 960,
+        "height": 600,
+        "frame": 2,
+        "queue_ms": 2915.6000003814697,
+        "photons": 2500000,
+        "eye": [
+          -30,
+          -185,
+          45
+        ],
+        "target": [
+          100,
+          0,
+          -15
+        ],
+        "exposure": 100000,
+        "cutaway": false,
+        "uv_false_color": false
+      },
+      "lost": null,
+      "errors": [],
+      "stage": "released",
+      "time": 1788985789.5789628
+    }
+  ],
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "errors": [],
+  "device_memory_peak_mib": 148.0
+}

@@ -1,6 +1,7 @@
 // Small-scene optical Monte Carlo. Full-count observables stay on the GPU;
 // only histograms and a bounded set of real photon paths are downloaded.
 import {gpuBudget} from './scheduler.js';
+import {allocateGpu, requestGpuDevice} from './gpu.js';
 export const STAT_WORDS = 16176;
 // Same exact float32 edges as time_histogram in WGSL, with eight bins per doubling.
 const TIME_EDGES = Array.from(new Float32Array(Uint32Array.from({length:193},(_,i)=>(936+i)*1048576).buffer));
@@ -121,16 +122,13 @@ export class OpticalLab {
   async initialize({
     catalogName = 'physics-catalog.json'
   } = {}) {
-    if (!navigator.gpu) throw Error(
-      'WebGPU needs a compatible browser and a secure context (HTTPS or localhost).');
-    this.adapter = await navigator.gpu.requestAdapter({
-      powerPreference: 'high-performance',
-      forceFallbackAdapter: new URLSearchParams(location.search).has('fallback')
-    });
-    if (!this.adapter) throw Error(
-      'No WebGPU adapter. Try current Chrome with hardware acceleration enabled.');
-    this.device = await this.adapter.requestDevice();
+    const selected=await requestGpuDevice({forceFallback:new URLSearchParams(location.search).has('fallback')});
+    this.adapter=selected.adapter;this.device=selected.device;
+    this.software=selected.software;
+    gpuBudget.software=this.software;
+    const ownedDevice=this.device;
     this.device.lost.then(info => {
+      if (info.reason==='destroyed' || this.device!==ownedDevice) return;
       this.lost = info.message;
       showError(`GPU device lost: ${info.message}`);
     });
@@ -206,7 +204,7 @@ export class OpticalLab {
       architecture: info.architecture,
       device: info.device,
       description: info.description,
-      isFallbackAdapter: info.isFallbackAdapter ?? false,
+      isFallbackAdapter: this.software,
       limits: {
         maxStorageBufferBindingSize: this.device.limits.maxStorageBufferBindingSize
       }
@@ -235,14 +233,14 @@ export class OpticalLab {
   async dispatch(tables, cfg, statBytes, pathBytes, debugBytes, pipeline, x, y) {
     const d = this.device,
       storage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST;
-    const buffers = [this.buffer(tables, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST), this
-      .buffer(cfg, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST), this.buffer(statBytes,
-        storage), this.buffer(pathBytes, storage), this.buffer(debugBytes, storage)
-    ];
     const sizes = [statBytes, pathBytes, debugBytes],
       offsets = [0, statBytes, statBytes + pathBytes];
-    const readback = this.buffer(Math.max(4, statBytes + pathBytes + debugBytes), GPUBufferUsage
-      .MAP_READ | GPUBufferUsage.COPY_DST);
+    const {buffers,readback}=await allocateGpu(d, arena => ({
+      buffers:[arena.buffer(tables,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST),
+        arena.buffer(cfg,GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST),
+        arena.buffer(statBytes,storage),arena.buffer(pathBytes,storage),arena.buffer(debugBytes,storage)],
+      readback:arena.buffer(Math.max(4,statBytes+pathBytes+debugBytes),GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST)
+    }));
     try {
       d.pushErrorScope('validation');
       const group = d.createBindGroup({
@@ -775,6 +773,7 @@ if ($('paths')) {
   const lab = new OpticalLab();
   window.opticalLab = lab;
   window.opticalLabReady = lab.initialize().then(info => {
+    if (info.isFallbackAdapter) {$('photons').value=10000;$('gpu_mode').value='eco';}
     $('adapter').textContent =
       `${info.vendor||'GPU'} ${info.architecture||info.description||''}${info.isFallbackAdapter?' · software fallback':''}`;
     $('run').disabled = false;

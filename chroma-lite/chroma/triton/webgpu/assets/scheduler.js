@@ -4,6 +4,7 @@ export class GpuBudget {
   generation = 0;
   lastRun = null;
   submissions = 0;
+  software = false;
 
   get mode() { return document.getElementById('gpu_mode')?.value || 'balanced'; }
   cancel() { this.generation++; }
@@ -16,12 +17,12 @@ export class GpuBudget {
 
   async run(device, total, encode, {initial = 256, maximum = 2048, progress = null, interactive = false} = {}) {
     const token = this.generation, start = performance.now();
-    let offset = 0, batch = this.mode === 'eco' ? Math.min(initial,32) : initial;
+    let offset = 0, batch = this.software ? Math.min(initial,8) : this.mode === 'eco' ? Math.min(initial,32) : initial;
     let compute_ms = 0, batches = 0, max_batch_ms = 0;
     while (offset < total) {
       await this.checkpoint(token);
       const mode = this.mode;
-      const limit = Math.min(maximum, interactive ? 256 : mode === 'eco' ? 128 : mode === 'fast' ? 2048 : 1024);
+      const limit = Math.min(maximum, this.software ? 8 : interactive ? 256 : mode === 'eco' ? 128 : mode === 'fast' ? 2048 : 1024);
       const count = Math.min(batch, limit, total - offset);
       const begin = performance.now();
       device.queue.submit([encode(offset, count).finish()]);

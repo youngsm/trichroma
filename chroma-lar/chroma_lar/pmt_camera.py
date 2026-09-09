@@ -81,6 +81,7 @@ def build_pmt_camera_scene():
         explanation="R5912 profile · VUV-to-visible TPB conversion · glass Fresnel transport · photocathode absorption",
         fluorescence_time=tpb.reemission_time_cdf,
         beam_width=60,
+        fill_from_all_walls=True,
     )
 
 

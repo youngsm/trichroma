@@ -256,6 +256,7 @@ def copy_browser_assets(destination, scenes):
         "theme.css",
         "fonts.css",
         "scheduler.js",
+        "gpu.js",
     ):
         shutil.copyfile(assets / filename, destination / filename)
     catalog = [dict(name=s["name"], manifest=s["name"] + ".json") for s in scenes]

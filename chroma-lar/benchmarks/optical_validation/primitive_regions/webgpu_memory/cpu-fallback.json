@@ -1,0 +1,62 @@
+{
+  "gpu_disabled_browser": {
+    "webgpu": true,
+    "requests": [
+      {
+        "fallback": false,
+        "available": false,
+        "software": null
+      },
+      {
+        "fallback": true,
+        "available": false,
+        "software": null
+      }
+    ]
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true,
+    "limits": {
+      "maxStorageBufferBindingSize": 134217728
+    }
+  },
+  "defaults": {
+    "requests": [
+      false,
+      true
+    ],
+    "photons": "10000",
+    "quality": "160",
+    "memory": "compact",
+    "gpu_use": "eco"
+  },
+  "render": {
+    "profile": "compact",
+    "photons": 256,
+    "frame": {
+      "width": 24,
+      "height": 16,
+      "frame": 1,
+      "queue_ms": 224.2000002861023,
+      "photons": 256,
+      "eye": [
+        -240,
+        -170,
+        95
+      ],
+      "target": [
+        30,
+        0,
+        -40
+      ],
+      "exposure": 100000,
+      "cutaway": false,
+      "uv_false_color": false
+    }
+  },
+  "errors": []
+}

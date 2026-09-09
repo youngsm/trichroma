@@ -1,6 +1,6 @@
 """Scene exports and independent estimators for the browser photon camera.
 
-Beam and ceiling photons use importance weights for their sampled source
+Beam and fill photons use importance weights for their sampled source
 mixture. Energy is expressed relative to one 450nm photon, so a surviving
 packet contributes source_scale*450/wavelength, normalized by the total N.
 The finite photon maps estimate radiance in relative energy
@@ -40,7 +40,7 @@ def camera_source_is_fill(count, seed=901):
 
 
 def camera_source_scales(count, seed, source_wavelengths):
-    """Photon importance weights for stable-ID beam/ceiling source sampling."""
+    """Photon importance weights for stable-ID beam/fill source sampling."""
     return np.where(
         camera_source_is_fill(count, seed),
         FILL_POWER / (1 - BEAM_PROBABILITY) * np.asarray(source_wavelengths) / 450,
@@ -72,6 +72,7 @@ def camera_source_energy_sum(name, count, seed=901):
 @dataclass(frozen=True)
 class CameraScene(PlaygroundScene):
     beam_width: float = 2.0
+    fill_from_all_walls: bool = False
 
     def photons(self, count, seed=901, polarization="random"):
         from chroma.triton.optical_response import uniform
@@ -97,6 +98,22 @@ class CameraScene(PlaygroundScene):
             batch.wavelengths.copy(),
         )
         normal = np.tile(np.array([0, 0, -1], np.float32), (len(selected), 1))
+        if self.fill_from_all_walls:
+            # Equal-power Lambertian panels centered on the six room faces.
+            # Keep the total fill power and source-choice stream unchanged.
+            face = np.minimum((6 * uniform(selected, seed, 0x10000009)).astype(int), 5)
+            axis = face // 2
+            sign = np.where(face % 2 == 0, 1, -1)
+            u_axis = np.where(axis == 0, 1, 0)
+            v_axis = np.where(axis == 2, 1, 2)
+            rows = np.arange(len(selected))
+            origins = np.zeros((len(selected), 3), np.float32)
+            origins[rows, axis] = sign * (np.array([300, 200, 120], np.float32)[axis] - np.float32(0.001))
+            origins[rows, u_axis] = (uniform(selected, seed, 0x10000004) - 0.5) * 180
+            origins[rows, v_axis] = (uniform(selected, seed, 0x10000005) - 0.5) * 80
+            position[fill] = origins
+            normal[:] = 0
+            normal[rows, axis] = -sign
         direction[fill] = _hemisphere(
             normal,
             uniform(selected, seed, 0x10000006),
@@ -299,6 +316,14 @@ def camera_manifest(name):
         manifest["camera"]["default_target"] = [100, 0, -15]
         manifest["camera"]["scattering_length_at_bin_centers_mm"] = [950.0] * len(colors["centers"])
         manifest["camera"]["object_translation"] = [20, 0, -15]
+    if fixture.fill_from_all_walls:
+        manifest["camera"]["source_mix"]["fill_face_stream"] = 0x10000009
+        manifest["camera"]["fill_light"].update(
+            layout="room_faces",
+            panel_count=6,
+            panel_radiance_scale=1 / 6,
+            scope="Six equal-power Lambertian panels, centered on the room faces and emitting inward; total visible fill power equals the single ceiling light",
+        )
     return manifest, fixture, scene
 
 
@@ -351,6 +376,7 @@ def export_camera_bundle(destination):
         "theme.css",
         "fonts.css",
         "scheduler.js",
+        "gpu.js",
     ):
         shutil.copyfile(assets / name, destination / name)
     # This focused bundle contains optical scenes, without the detector meshes
@@ -391,8 +417,9 @@ def notebook_camera_html(destination, *, height=1000, manual=False, software=Fal
         if path.suffix in (".json", ".wgsl")
     }
     scheduler_url = "data:text/javascript;base64," + encode((destination / "scheduler.js").read_bytes())
+    gpu_url = "data:text/javascript;base64," + encode((destination / "gpu.js").read_bytes())
     def scheduler_import(source):
-        return source.replace("'./scheduler.js'", json.dumps(scheduler_url))
+        return source.replace("'./scheduler.js'", json.dumps(scheduler_url)).replace("'./gpu.js'", json.dumps(gpu_url))
     source = scheduler_import((destination / "physics.js").read_text()).replace("location.search", json.dumps(query))
     physics_url = "data:text/javascript;base64," + encode(source.encode())
     camera = scheduler_import((destination / "camera.js").read_text()).replace("location.search", json.dumps(query))
@@ -654,7 +681,7 @@ def reference_camera_maps(oracle, manifest):
                 x, y, z = [
                     axis_bin(position[axis], half[axis], volume_shape[axis]) for axis in range(3)
                 ]
-                base = (((z * 40 + y) * 64 + x) * bins + wavelength_bin) * 6
+                base = int((((z * volume_shape[1] + y) * volume_shape[0] + x) * bins + wavelength_bin) * 6)
                 moment = polarization_moments(record["incoming_polarization"], energy)
                 for component, (a, b) in enumerate(
                     ((0, 0), (1, 1), (2, 2), (0, 1), (0, 2), (1, 2))
@@ -666,7 +693,7 @@ def reference_camera_maps(oracle, manifest):
             face = 2 * axis + int(normal[axis] < 0)
             u_axis, v_axis = settings["face_uv_axes"][face]
             if kind == "wall":
-                resolution = 32 if record["source_is_fill"] else 128
+                resolution = settings["fill_wall_shape" if record["source_is_fill"] else "wall_shape"][0]
                 u = axis_bin(position[u_axis], half[u_axis], resolution)
                 v = axis_bin(position[v_axis], half[v_axis], resolution)
                 index = ((face * resolution + v) * resolution + u) * bins + wavelength_bin
@@ -682,10 +709,11 @@ def reference_camera_maps(oracle, manifest):
                     continue
                 extent = settings["fluorescence_half_extent"]
                 position = position - settings["fluorescence_center"]
-                u = axis_bin(position[u_axis], extent[u_axis], 64)
-                v = axis_bin(position[v_axis], extent[v_axis], 64)
+                resolution = settings["fluorescence_shape"][0]
+                u = axis_bin(position[u_axis], extent[u_axis], resolution)
+                v = axis_bin(position[v_axis], extent[v_axis], resolution)
                 hemisphere = int(np.dot(normal, record["outgoing_direction"]) < 0)
-                index = (((face * 2 + hemisphere) * 64 + v) * 64 + u) * bins + wavelength_bin
+                index = (((face * 2 + hemisphere) * resolution + v) * resolution + u) * bins + wavelength_bin
                 maps["wls"][index] += energy
     return {
         name: [[index, value] for index, value in sorted(values.items()) if value != 0]
@@ -718,7 +746,7 @@ def wall_bin_boundary_oracle(browser_states, oracle, manifest, *, position_toler
         new_index = reference_camera_maps(dict(records={"wall": [moved]}), manifest)[kind][0][0]
         if old_index == new_index:
             continue
-        resolution = 32 if record["source_is_fill"] else 128
+        resolution = settings["fill_wall_shape" if record["source_is_fill"] else "wall_shape"][0]
         normal = np.asarray(record["normal"])
         axis = int(np.argmax(np.abs(normal)))
         face = 2 * axis + int(normal[axis] < 0)

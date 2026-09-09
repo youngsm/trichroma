@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "atol": 0.0001,
+  "rtol": 0.0001,
+  "comparisons": {
+    "wall": {
+      "cells": 485,
+      "mismatches": 0,
+      "finite": true,
+      "max_abs": 6.332487689775235e-07,
+      "browser_sum": 1245.3993993997574,
+      "cpu_sum": 1245.3993996668585,
+      "disagreement_indices": []
+    },
+    "fill_wall": {
+      "cells": 192,
+      "mismatches": 0,
+      "finite": true,
+      "max_abs": 2.134452136814957e-06,
+      "browser_sum": 1302.881413936615,
+      "cpu_sum": 1302.8812862008945,
+      "disagreement_indices": []
+    },
+    "volume": {
+      "cells": 1434,
+      "mismatches": 0,
+      "finite": true,
+      "max_abs": 4.6387006247816664e-06,
+      "browser_sum": 1629.8513772839324,
+      "cpu_sum": 1629.8514317786135,
+      "disagreement_indices": []
+    },
+    "wls": {
+      "cells": 491,
+      "mismatches": 0,
+      "finite": true,
+      "max_abs": 2.571521537930721e-07,
+      "browser_sum": 741.247500538826,
+      "cpu_sum": 741.2474956858471,
+      "disagreement_indices": []
+    }
+  },
+  "map_bytes": {
+    "wall": 6291456,
+    "volume": 11796480,
+    "wls": 319488,
+    "fill_wall": 393216
+  },
+  "profile": "compact"
+}

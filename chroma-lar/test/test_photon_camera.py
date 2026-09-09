@@ -1,6 +1,7 @@
 """Independent conservation and normalization checks for photon-camera maps."""
 
 import json
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -135,6 +136,38 @@ def test_weighted_area_source_is_transverse_stable_and_energy_normalized():
         manifest["camera"]["fill_light"]["integrated_radiance"] * 180 * 80 * np.pi / 0.2,
         rtol=1e-7,
     )
+
+
+def test_pmt_room_panels_emit_inward_with_fixed_power_and_unchanged_beam():
+    manifest, fixture, _ = camera_manifest("pmt")
+    count, seed = 81930, 901
+    photons = fixture.photons(count, seed)
+    ceiling = replace(fixture, fill_from_all_walls=False).photons(count, seed)
+    fill = camera_source_is_fill(count, seed)
+    for field in ("pos", "direction", "polarization", "wavelengths", "weights"):
+        np.testing.assert_array_equal(getattr(photons, field)[~fill], getattr(ceiling, field)[~fill])
+
+    origins = photons.pos[fill]
+    half = np.array([300, 200, 120])
+    axis = np.argmin(half - np.abs(origins), axis=1)
+    rows = np.arange(len(origins))
+    sign = np.sign(origins[rows, axis])
+    face = 2 * axis + (sign < 0)
+    assert np.all(np.bincount(face, minlength=6) > 150)
+    np.testing.assert_allclose(half[axis] - np.abs(origins[rows, axis]), 0.001, atol=1e-5)
+    assert np.all(-sign * photons.direction[fill][rows, axis] > 0)
+    for panel in range(6):
+        cosine = (-sign * photons.direction[fill][rows, axis])[face == panel]
+        assert cosine.mean() == pytest.approx(2 / 3, abs=0.07)
+    assert np.max(np.abs(np.sum(photons.direction * photons.polarization, axis=1))) < 1e-6
+    energy = packet_energy(photons.wavelengths) * camera_source_scales(count, seed, photons.wavelengths)
+    assert energy.sum() == pytest.approx(camera_source_energy_sum("pmt", count, seed), rel=1e-7)
+    light = manifest["camera"]["fill_light"]
+    emitted_power = light["panel_count"] * light["panel_radiance_scale"] * light["integrated_radiance"] * np.prod(light["full_size"]) * np.pi
+    # The two float32 energy/scale products introduce ordinary rounding.
+    np.testing.assert_allclose(energy[fill], emitted_power / 0.2, rtol=2 * np.finfo(np.float32).eps)
+    ceiling_energy = packet_energy(ceiling.wavelengths) * camera_source_scales(count, seed, ceiling.wavelengths)
+    np.testing.assert_array_equal(energy, ceiling_energy)
 
 
 def test_map_audit_rejects_missing_signed_cells_and_nonfinite_values():
