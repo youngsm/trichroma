@@ -20,8 +20,21 @@ visual opacity only. A secondary photon emitted at 2.9 µs starts at age zero.
 
 All PMT arrivals are recorded, including photons without a displayed path.
 The 3D PMTs default to 15% normal-color brightness (10% in the early close-up),
-brighten at arrival, and fade to a dimmer level afterward. Only brightness
-changes; the original surface-normal RGB color is preserved.
+sum an exponential pulse from every arrival, and retain a brightness
+contribution proportional to accumulated hit count. Only brightness changes;
+the original surface-normal RGB color is preserved.
+
+For PMT arrival times `t_i <= t`, the pulse amplitude is
+`A(t) = sum(exp(-(t-t_i)/tau))` and accumulated charge proxy is the count `N(t)`.
+Every photon has unit weight. Pulses add before the nonlinear display mapping:
+`brightness = base + (1-base) * (1-exp(-gain*(A + weight*N)))`.
+Default decay is 20 ns, accumulated-hit weight 0.35, and display gain 1.
+Setting the accumulated-hit weight to zero gives a pure decaying response.
+Complete histories show `N` alone. These are relative signals, not calibrated
+charge or voltage: the model does not include QE, gain fluctuations or PMT
+electronics. The display gain adjusts brightness, not simulated PMT gain.
+The GPU recomputes the amplitude from recorded arrival times, so backward
+scrubbing and changes to decay time are independent of frame rate or history.
 The arrival counter lives directly over the 3D canvas; there is no separate
 hit-map panel. Scrubbing backward removes later arrivals. The First PMT
 arrivals window jumps to the first recorded arrivals in the current event.
@@ -118,7 +131,11 @@ hit counts and latest-arrival times are checked against an independent CPU
 scan during forward and backward scrubbing. Full-event hit records must be
 bitwise unchanged when all paths are retained. Tests also exercise precise
 slow playback, early close-ups, fading, late-light navigation, a constrained
-128 MiB buffer limit, and injected allocation failure recovery. With
+128 MiB buffer limit, and injected allocation failure recovery. Thirty synthetic
+PMT impulse-train cases check coincident hits, pulse overlap, decay, late hits
+and backward scrubbing against independent exponential sums; recorded event
+arrivals are checked the same way. The late-time render is compared with
+and without the accumulated-hit contribution. With
 `--baseline`, original history/counter/debug bytes must match the old page.
 It also renders the full muon and electron events and saves screenshots.
 Browser-native WebGPU is required for the default local hardware test.
@@ -129,11 +146,13 @@ against the previously published transport implementation; see
 `expanded-transport.json`. `report.json` records the final presentation and
 resource checks, with another 16,386-history transport comparison.
 Both full events have zero unfinished photons and zero traversal failures;
-their measured simulation wall times were 0.215 s and 0.219 s, including
+their measured simulation wall times were 0.211 s and 0.220 s, including
 allocation, readback and arrival indexing but excluding initialization and rendering.
-Cached early-event frames took 4.1 ms with 8,192 displayed paths and 10.6 ms
+Cached early-event frames took 3.5 ms with 8,192 displayed paths and 11.0 ms
 with all 269,860 electron paths (three frames each, at 1440 pixels wide).
 The display still caps playback at 30 updates/s.
+`validation/ring-integrated.png` and `ring-pulses-only.png` compare the same
+muon event at 500 ns from the Along the cone view.
 These are local measurements, not a performance guarantee for other GPUs.
 
 References: [Geant4 Cherenkov model](https://geant4.web.cern.ch/documentation/pipelines/master/prm_html/PhysicsReferenceManual/electromagnetic/xray_production/cerenkov.html),

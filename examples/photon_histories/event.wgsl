@@ -1,4 +1,5 @@
 // Appended to the unchanged shared detector traversal shader. Units: mm, ns, nm.
+// settings.a[4]: PMT count, pulse decay (ns), accumulated-hit weight, display gain.
 struct Settings { a: array<vec4<f32>, 5> }
 struct SourceStep { start: vec4<f32>, end: vec4<f32>, direction: vec4<f32> }
 struct Flight { start: vec4<f32>, end: vec4<f32>, polarization: vec4<f32>, identity: vec4<f32> }
@@ -124,7 +125,16 @@ fn update_hits(@builtin(global_invocation_id) id:vec3<u32>){
     let time=select(settings.a[2].x,1e30,settings.a[1].w>.5);
     while(lo<hi){let mid=(lo+hi)/2u;if(hit_times[mid]<=time){lo=mid+1u;}else{hi=mid;}}
     var latest=-1e30;if(lo>first){latest=hit_times[lo-1u];}
-    hit_states[sensor]=vec4<f32>(f32(lo-first),latest,0.,0.);
+    // Every arrival contributes one pulse. Recompute from recorded times so
+    // scrubbing, playback speed, and frame rate cannot change the signal.
+    var amplitude=0.;
+    if(settings.a[1].w<.5){
+        let tau=max(settings.a[4].y,.001);
+        for(var hit=first;hit<lo;hit++){
+            amplitude+=exp(-max(0.,time-hit_times[hit])/tau);
+        }
+    }
+    hit_states[sensor]=vec4<f32>(f32(lo-first),latest,amplitude,0.);
 }
 
 // RASTER MODULE
@@ -183,10 +193,6 @@ fn photon_vertex(@builtin(vertex_index) index:u32,@builtin(instance_index) insta
 @vertex fn fullscreen(@builtin(vertex_index) i:u32)->@builtin(position) vec4<f32>{
     let p=array<vec2<f32>,3>(vec2<f32>(-1.,-1.),vec2<f32>(3.,-1.),vec2<f32>(-1.,3.));return vec4<f32>(p[i],0.,1.);
 }
-fn hit_flash(state:vec4<f32>)->f32{
-    if(state.x==0. || settings.a[1].w>.5){return 0.;}
-    return exp(-max(0.,settings.a[2].x-state.y)/4.);
-}
 @fragment fn background(@builtin(position) p:vec4<f32>)->@location(0) vec4<f32>{
     var color=textureLoad(detector_color,vec2<i32>(p.xy),0);
     let sensor=textureLoad(detector_sensor,vec2<i32>(p.xy),0).x;
@@ -194,7 +200,10 @@ fn hit_flash(state:vec4<f32>)->f32{
         var brightness=settings.a[2].w;
         if(settings.a[3].x>.5){
             let state=hit_states[sensor-1u];
-            let intensity=select(0.,.2,state.x>0.)+.8*hit_flash(state);
+            // Unit-height exponential pulses add linearly before display mapping.
+            // A separate cumulative-count contribution keeps the ring visible.
+            let signal=select(state.z+settings.a[4].z*state.x,state.x,settings.a[1].w>.5);
+            let intensity=1.-exp(-max(0.,settings.a[4].w*signal));
             brightness=mix(brightness,1.,intensity);
         }
         // Preserve the normal RGB direction: arrival changes brightness only.

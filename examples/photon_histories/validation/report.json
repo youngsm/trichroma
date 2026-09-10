@@ -31,7 +31,8 @@
     "scatterProjectionError": 0.0005364848048712725,
     "arrivals": {
       "matched": 1412,
-      "forward_backward_scrub": true
+      "forward_backward_scrub": true,
+      "amplitudeError": 2.142310422392768e-07
     },
     "cone_cosine_error": 1.876431167113779e-07,
     "source_position_error_mm": 0.00022652633068357206,
@@ -42,7 +43,7 @@
     "previous_transport_bitwise_equal": true,
     "full_event": {
       "photons": 272157,
-      "wall_ms": 215.10000002384186,
+      "wall_ms": 210.5999999642372,
       "counters": [
         272157,
         45652,
@@ -92,7 +93,8 @@
     "scatterProjectionError": 0.0005855250784720294,
     "arrivals": {
       "matched": 1404,
-      "forward_backward_scrub": true
+      "forward_backward_scrub": true,
+      "amplitudeError": 1.7093928450506723e-07
     },
     "cone_cosine_error": 1.9652699578820432e-07,
     "source_position_error_mm": 0.00012203615055241194,
@@ -103,7 +105,7 @@
     "previous_transport_bitwise_equal": true,
     "full_event": {
       "photons": 269860,
-      "wall_ms": 219,
+      "wall_ms": 219.69999998807907,
       "counters": [
         269860,
         45175,
@@ -131,7 +133,7 @@
     "path_count_reuses_event": true,
     "play_stop": true,
     "middle_pan": true,
-    "slow_playback_ns_approx_1s": 0.01118600000023895,
+    "slow_playback_ns_approx_1s": 0.011051999999881212,
     "hits_in_3d": true,
     "first_arrivals_window": true,
     "all_paths": {
@@ -139,13 +141,22 @@
       "bytes": 552673280
     },
     "cached_frame_ms": {
-      "8192": 4.066666662693024,
-      "all": 10.566666662693024
+      "8192": 3.466666658719381,
+      "all": 10.966666658719381
     },
     "all_muon_paths": 272157,
     "late_window": true,
     "fade_reuses_event": true,
     "early_closeup": true
+  },
+  "pmt_signal": {
+    "cases": 30,
+    "maximumError": 1.3313123625735557e-07,
+    "coincident_hits_add": true,
+    "delayed_hit": true,
+    "backward_scrub": true,
+    "controls_reuse_event": true,
+    "integrated_ring_persists": true
   },
   "resource_limits": {
     "allocation_failure_retry": true,
@@ -157,5 +168,6 @@
       "errors": []
     }
   },
-  "errors": []
+  "errors": [],
+  "baseline_source_commit": "332fa4aab56653b1f8481a58051981955ab59d02"
 }

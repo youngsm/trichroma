@@ -82,7 +82,7 @@ class PhotonHistories {
     p.set([this.capacity,this.stride||1,this.displayCount(),$('mode').value==='history'?1:0],4);
     p.set([this.eventTime,Number($('trail').value),Number($('opacity').value),Number($('brightness').value)],8);
     p.set([$('highlight').checked?1:0,Number($('fade').value),this.debugCount||0,disableOptics?1:0],12);
-    p[16]=this.sensorCount;return p;
+    p.set([this.sensorCount,Number($('pmtDecay').value),Number($('pmtMemory').value),Number($('pmtGain').value)],16);return p;
   }
   displayCount(){return Math.min($('paths').value==='all'?this.count:Number($('paths').value),this.retained||0);}
   setEventTime(value){
@@ -101,7 +101,7 @@ class PhotonHistories {
   }
   syncTimeControls(){
     const history=$('mode').value==='history';
-    for(const id of ['time','trail','play','window','speed','early'])$(id).disabled=history;
+    for(const id of ['time','trail','play','window','speed','early','pmtDecay','pmtMemory'])$(id).disabled=history;
     $('window').querySelector('[value="late"]').disabled=(this.source?.latest_emission_ns||0)<=180;
     for(const option of $('paths').options)if(option.value!=='all')option.disabled=Number(option.value)>this.maxCapacity;
     $('paths').querySelector('[value="all"]').disabled=Math.round(this.source?.total_yield||272157)>this.maxCapacity;
@@ -237,7 +237,8 @@ class PhotonHistories {
     $('simulate').onclick=()=>{const requested=$('paths').value==='all'?Math.round(this.source?.total_yield||272157):Number($('paths').value);this.capacity=Math.min(this.maxCapacity,Math.max(this.software?2048:32768,requested));this.simulate().catch(e=>this.fail(e));};
     $('event').onchange=()=>{this.seed=901;this.simulate().then(()=>{if(['early','origin'].includes($('preset').value))this.focusEmission($('preset').value==='origin');}).catch(e=>this.fail(e));};
     $('stop').onclick=()=>{this.playing=false;$('play').textContent='Play';this.pending=false;gpuBudget.cancel();};
-    for(const id of ['paths','mode','brightness','opacity','time','trail','highlight','fade'])$(id).addEventListener('input',()=>{
+    for(const id of ['paths','mode','brightness','opacity','time','trail','highlight','fade','pmtDecay','pmtMemory','pmtGain'])$(id).addEventListener('input',()=>{
+      if(id==='pmtMemory')$('pmtMemoryLabel').textContent=Math.round(Number($('pmtMemory').value)*100)+'%';
       if(id==='time')this.setEventTime($('time').value);
       if(id==='paths'){const requested=$('paths').value==='all'?this.count:Number($('paths').value);if(requested>this.capacity&&!this.busy){this.simulate().catch(e=>this.fail(e));return;}}
       if(id==='trail'){$('trailLabel').textContent=$('trail').value+' ns';}

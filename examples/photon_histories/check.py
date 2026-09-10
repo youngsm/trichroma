@@ -142,18 +142,23 @@ def main():
                             if(hits[id*4]!==flights[end+7]||hits[id*4+1]!==flights[end+14]+1||hits[id*4+2]!==flights[end+11])throw Error('Arrival does not match terminal flight');matched++;
                         }else if(hits[id*4+1]!==0)throw Error('Spurious PMT arrival');
                     }
+                    let amplitudeError=0;
                     for(const time of [0,10,50,100,180,3000,100,0]){
                         app.timeWindow('full');app.setEventTime(time);await app.render({width:340});
                         const states=new Float32Array(await app.download(app.eventBuffers.hitStates));
                         let sum=0;
                         for(let sensor=0;sensor<app.sensorCount;sensor++){
-                            let count=0,last=-1e30;
-                            for(let i=app.hitOffsets[sensor];i<app.hitOffsets[sensor+1];i++)if(app.hitTimes[i]<=Math.fround(app.eventTime)){count++;last=app.hitTimes[i];}
+                            let count=0,last=-1e30,amplitude=0;
+                            for(let i=app.hitOffsets[sensor];i<app.hitOffsets[sensor+1];i++)if(app.hitTimes[i]<=Math.fround(app.eventTime)){
+                                count++;last=app.hitTimes[i];amplitude+=Math.exp(-(Math.fround(app.eventTime)-app.hitTimes[i])/Number(document.getElementById('pmtDecay').value));
+                            }
+                            amplitudeError=Math.max(amplitudeError,Math.abs(states[sensor*4+2]-amplitude));
                             if(states[sensor*4]!==count || (count && states[sensor*4+1]!==last))throw Error('PMT timeline mismatch');sum+=count;
                         }
                         if(sum!==app.arrivedAt(Math.fround(app.eventTime)))throw Error('Total arrival mismatch');
                     }
-                    app.timeWindow('prompt');return {matched,forward_backward_scrub:true};
+                    if(amplitudeError>5e-5)throw Error('Additive PMT signal mismatch');
+                    app.timeWindow('prompt');return {matched,forward_backward_scrub:true,amplitudeError};
                 }""")
                 r["arrivals"] = hit_check
                 debug = np.array(r.pop("debug")).reshape(-1, 16)
@@ -415,6 +420,52 @@ def main():
                 page.wait_for_function("!app.rendering && !app.pending")
                 assert page.evaluate("app.eventTime>2900")
                 report["controls"]["late_window"] = True
+            # Independent synthetic impulse trains test coincidence, pileup, decay and replay.
+            report["pmt_signal"] = page.evaluate("""async()=>{
+                const usage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC;
+                const owned=[];const buffer=(data,usage)=>{const b=app.device.createBuffer({size:data.byteLength,usage});owned.push(b);app.device.queue.writeBuffer(b,0,data);return b;};
+                const lists=[[1,1,3],[2,10,2900],[]];
+                try{
+                    const offsets=buffer(new Uint32Array([0,3,6,6]),usage),times=buffer(new Float32Array(lists.flat()),usage);
+                    const states=buffer(new Float32Array(12),usage),params=buffer(new Float32Array(20),GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST);
+                    const group=app.group(app.hitPipeline,{6:params,13:offsets,14:times,15:states});let maximumError=0,cases=0;
+                    for(const tau of [4,20,100])for(const time of [0,.9999,1,2,3,10,15,200,2910,3]){
+                        const settings=app.settings();settings[7]=0;settings[8]=time;settings[16]=3;settings[17]=tau;app.device.queue.writeBuffer(params,0,settings);
+                        const encoder=app.device.createCommandEncoder(),pass=encoder.beginComputePass();pass.setPipeline(app.hitPipeline);pass.setBindGroup(0,group);pass.dispatchWorkgroups(1);pass.end();app.device.queue.submit([encoder.finish()]);
+                        const result=new Float32Array(await app.download(states));
+                        for(let sensor=0;sensor<3;sensor++){
+                            const arrived=lists[sensor].filter(t=>t<=settings[8]);const expected=arrived.reduce((a,t)=>a+Math.exp(-(settings[8]-t)/tau),0);
+                            if(result[sensor*4]!==arrived.length)throw Error('Integrated PMT count mismatch');
+                            maximumError=Math.max(maximumError,Math.abs(result[sensor*4+2]-expected));
+                        }
+                        if(time===1 && result[2]!==2)throw Error('Coincident hits did not add');cases++;
+                    }
+                    if(maximumError>5e-5)throw Error('Exponential PMT pulse mismatch');
+                    return {cases,maximumError,coincident_hits_add:true,delayed_hit:true,backward_scrub:true};
+                }finally{owned.forEach(b=>b.destroy());}
+            }""")
+            for control, value in [("#pmtDecay", "50"), ("#pmtGain", ".5")]:
+                page.select_option(control, value)
+            page.locator("#pmtMemory").fill("0.5")
+            page.locator("#pmtMemory").dispatch_event("input")
+            page.wait_for_function("!app.rendering && !app.pending")
+            signal_event_generation = page.evaluate("app.eventGeneration")
+            page.select_option("#window", "full")
+            page.locator("#time").fill("500")
+            page.locator("#time").dispatch_event("input")
+            page.wait_for_function("!app.rendering && !app.pending")
+            retained_ring = page.locator("#view").screenshot(
+                path=str(args.output / "integrated-ring.png")
+            )
+            page.locator("#pmtMemory").fill("0")
+            page.locator("#pmtMemory").dispatch_event("input")
+            page.wait_for_function("!app.rendering && !app.pending")
+            assert (
+                page.locator("#view").screenshot() != retained_ring
+            ), "Accumulated hits did not retain the ring"
+            assert page.evaluate("app.eventGeneration") == signal_event_generation
+            report["pmt_signal"]["controls_reuse_event"] = True
+            report["pmt_signal"]["integrated_ring_persists"] = True
             # Inject an allocation failure without exhausting the host GPU.
             report["resource_limits"] = page.evaluate("""async()=>{
                 const create=app.device.createBuffer.bind(app.device);let injected=0;
