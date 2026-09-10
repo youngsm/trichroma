@@ -7,6 +7,27 @@ Each polyline identifies one simulated photon. RGB is the absolute value of
 its polarization components; PMT RGB is `(normal + 1) / 2` in world coordinates.
 The display includes time scrubbing, short trails or complete histories,
 stable path subsets, camera orbit/pan/zoom, view presets and PNG export.
+“Explore first 10 ns” selects a close-up of the emission region, a short trail,
+and playback at 0.1 simulated ns per real second. The speed can drop to
+0.01 ns/s (100 real seconds per simulated ns). Separate 0–1 ns and 0–10 ns
+slider windows expose early emission precisely. Playback uses elapsed wall
+time and a floating-point clock independent of slider quantization.
+
+Photon-age fading has an adjustable half-life and can be disabled. Moving
+trails fade according to the current time minus that photon's emission time;
+complete histories fade along each flight according to its age. This changes
+visual opacity only. A secondary photon emitted at 2.9 µs starts at age zero.
+
+All PMT arrivals are recorded, including photons without a displayed path.
+The 3D PMTs default to 15% normal-color brightness (10% in the early close-up),
+brighten at arrival, and fade to a dimmer level afterward. Only brightness
+changes; the original surface-normal RGB color is preserved.
+The arrival counter lives directly over the 3D canvas; there is no separate
+hit-map panel. Scrubbing backward removes later arrivals. The First PMT
+arrivals window jumps to the first recorded arrivals in the current event.
+Per-PMT sorted arrival lists are queried on the GPU, so playback needs neither repeated
+transport nor GPU-to-CPU readback. These are ideal-surface photon intersections,
+not quantum-efficiency-weighted or electronics-level detections.
 
 ```sh
 python examples/photon_histories/build.py /tmp/photon-histories \
@@ -15,9 +36,9 @@ python -m http.server 8765 --directory /tmp/photon-histories
 ```
 
 The website destination is `/chroma/photons/`. No homepage link is needed.
-The build copies the shared traversal shader, GPU allocator and scheduler;
-it does not change those shared implementations. The full Theia payload is
-SHA-256 verified on load. PMT and enclosure geometry participate in both
+The build copies the unchanged shared traversal shader and scheduler. The
+GPU helper has an optional storage-buffer limit request; other viewers keep
+their default limits. The full Theia payload is SHA-256 verified on load. PMT and enclosure geometry participate in both
 transport and camera depth clipping.
 
 ## Recorded events
@@ -64,10 +85,18 @@ The visual composition is inspired by Simon Blyth's photon-propagation images;
 the implementation and transport here use WebGPU and Chroma geometry.
 
 Each photon can make 32 flights; unfinished and sampling-failure counters are
-reported explicitly. At most 32,768 evenly spaced photon IDs retain histories
-(64 MiB maximum path buffer); all simulated photons contribute to counters.
-Software adapters retain 2,048 histories. Display controls never reseed the
-event. Transport and geometry rendering use bounded GPU batches. Time animation
+reported explicitly. By default, up to 32,768 evenly spaced photon IDs retain
+histories (64 MiB path buffer). Higher limits include 65,536, 131,072, 262,144,
+and all photons; the full muon event uses 531.6 MiB of path storage. The
+available limits follow the device's supported storage-buffer size, capped
+at 300,000 retained histories. Larger buffers are allocated only when selected.
+Allocation errors release partially created resources and retry with fewer
+retained paths. This is bounded storage, not a guarantee of available VRAM.
+Software adapters retain at most 2,048 histories. Increasing the retained
+limit reruns the same seed; reducing the displayed limit reuses the event.
+Clicking Simulate after reducing the limit also releases the larger allocation.
+Neither changes the physical photon count. All photons contribute to counters
+and the 3D hit display. Display controls never reseed the event. Transport and geometry rendering use bounded GPU batches. Time animation
 is capped at 30 updates/s and pauses in hidden tabs. Camera geometry is cached
 while scrubbing; motion uses a smaller preview before a 1440-pixel final image.
 
@@ -75,7 +104,8 @@ while scrubbing; motion uses a smaller preview before a 1440-pixel final image.
 
 ```sh
 PYTHONPATH=PATH_TO_PLAYWRIGHT python examples/photon_histories/check.py \
-  /tmp/photon-histories --seeds 10 --output /tmp/history-check
+  /tmp/photon-histories --seeds 10 --baseline PATH_TO_PREVIOUS_BUNDLE \
+  --output /tmp/history-check
 ```
 
 `check.py` verifies Cherenkov angles, unit/transverse polarization, source
@@ -83,14 +113,27 @@ positions and emission times, the marginal wavelength spectrum, flight group
 velocity, continuous histories and polarization updates at scattering. It
 compares every history/counter/debug byte across different batch sizes, checks
 terminal accounting and exercises time/path controls, playback, Stop and pan.
+Arrival records must match terminal flight IDs, times and wavelengths. GPU
+hit counts and latest-arrival times are checked against an independent CPU
+scan during forward and backward scrubbing. Full-event hit records must be
+bitwise unchanged when all paths are retained. Tests also exercise precise
+slow playback, early close-ups, fading, late-light navigation, a constrained
+128 MiB buffer limit, and injected allocation failure recovery. With
+`--baseline`, original history/counter/debug bytes must match the old page.
 It also renders the full muon and electron events and saves screenshots.
 Browser-native WebGPU is required for the default local hardware test.
 
 `validation/` records the local NVIDIA A100 browser run. Complete histories for
-163,860 photons (ten seeds per particle) match bitwise across batch sizes.
+163,860 photons (ten seeds per particle) match bitwise across batch sizes and
+against the previously published transport implementation; see
+`expanded-transport.json`. `report.json` records the final presentation and
+resource checks, with another 16,386-history transport comparison.
 Both full events have zero unfinished photons and zero traversal failures;
-their measured simulation wall times were 0.186 s and 0.192 s, including
-allocation and counter readback but excluding initialization and rendering.
+their measured simulation wall times were 0.215 s and 0.219 s, including
+allocation, readback and arrival indexing but excluding initialization and rendering.
+Cached early-event frames took 4.1 ms with 8,192 displayed paths and 10.6 ms
+with all 269,860 electron paths (three frames each, at 1440 pixels wide).
+The display still caps playback at 30 updates/s.
 These are local measurements, not a performance guarantee for other GPUs.
 
 References: [Geant4 Cherenkov model](https://geant4.web.cern.ch/documentation/pipelines/master/prm_html/PhysicsReferenceManual/electromagnetic/xray_production/cerenkov.html),

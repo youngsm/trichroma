@@ -38,11 +38,11 @@
     "emission_time_error_ns": 0.00011350635089665091,
     "spectrum_chi2": 3.5637396118464997,
     "batch_bitwise_equal": true,
-    "bitwise_photon_histories": 8193,
+    "bitwise_photon_histories": 81930,
     "previous_transport_bitwise_equal": true,
     "full_event": {
       "photons": 272157,
-      "wall_ms": 215.10000002384186,
+      "wall_ms": 208.80000001192093,
       "counters": [
         272157,
         45652,
@@ -99,11 +99,11 @@
     "emission_time_error_ns": 8.44781057603584e-07,
     "spectrum_chi2": 3.5791134248643415,
     "batch_bitwise_equal": true,
-    "bitwise_photon_histories": 8193,
+    "bitwise_photon_histories": 81930,
     "previous_transport_bitwise_equal": true,
     "full_event": {
       "photons": 269860,
-      "wall_ms": 219,
+      "wall_ms": 215.39999997615814,
       "counters": [
         269860,
         45175,
@@ -131,31 +131,19 @@
     "path_count_reuses_event": true,
     "play_stop": true,
     "middle_pan": true,
-    "slow_playback_ns_approx_1s": 0.01118600000023895,
-    "hits_in_3d": true,
-    "first_arrivals_window": true,
+    "slow_playback_ns_approx_1s": 0.011081000000238761,
     "all_paths": {
       "paths": 269860,
       "bytes": 552673280
     },
     "cached_frame_ms": {
-      "8192": 4.066666662693024,
-      "all": 10.566666662693024
+      "8192": 5.100000003973643,
+      "all": 12.133333345254263
     },
     "all_muon_paths": 272157,
     "late_window": true,
     "fade_reuses_event": true,
     "early_closeup": true
-  },
-  "resource_limits": {
-    "allocation_failure_retry": true,
-    "retained": 16010,
-    "hit_sha256": "8fc8004452cfa0bb65e043b25e78fbafb2238e355b11fb15aeb3a4c7d024f82a",
-    "128_MiB_adapter": {
-      "capacity": 65536,
-      "all_disabled": true,
-      "errors": []
-    }
   },
   "errors": []
 }

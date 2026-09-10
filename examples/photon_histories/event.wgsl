@@ -9,6 +9,12 @@ struct Flight { start: vec4<f32>, end: vec4<f32>, polarization: vec4<f32>, ident
 @group(0) @binding(9) var<storage, read_write> flight_counts: array<u32>;
 @group(0) @binding(10) var<storage, read_write> statistics: array<atomic<u32>>;
 @group(0) @binding(11) var<storage, read_write> debug_source: array<vec4<f32>>;
+// One fixed slot per transported photon. Zero sensor ID means no PMT arrival.
+@group(0) @binding(12) var<storage, read_write> pmt_hits: array<vec4<f32>>;
+@group(0) @binding(13) var<storage, read> hit_offsets: array<u32>;
+@group(0) @binding(14) var<storage, read> hit_times: array<f32>;
+@group(0) @binding(15) var<storage, read_write> hit_states: array<vec4<f32>>;
+@group(0) @binding(16) var sensor_output: texture_storage_2d<r32uint, write>;
 const C_MM_NS: f32 = 299.792458;
 const PI_EVENT: f32 = 3.141592653589793;
 const MAX_FLIGHTS: u32 = 32u;
@@ -79,6 +85,7 @@ fn propagate(@builtin(global_invocation_id) gid:vec3<u32>){
         if(retained){flights[slot*MAX_FLIGHTS+bounce]=Flight(vec4<f32>(position,time),vec4<f32>(end,arrival),vec4<f32>(polarization,wavelength),identity);flight_counts[slot]=bounce+1u;}
         atomicAdd(&statistics[9],1u);
         if(debug){debug_source[id*4u+3u]=vec4<f32>(f32(lo),arrival,f32(bounce+1u),identity.y);}
+        if(hit_boundary && boundary.group==1u){pmt_hits[id]=vec4<f32>(arrival,f32(boundary.instance+1u),wavelength,f32(id));}
         if(hit_boundary){atomicAdd(&statistics[select(2u,1u,boundary.group==1u)],1u);return;}
         if(absorbed){atomicAdd(&statistics[3],1u);return;}
         atomicAdd(&statistics[6],1u);
@@ -102,9 +109,22 @@ fn detector_camera(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocat
     let direction=normalize(cfg.forward.xyz+cfg.right.xyz*((2.*uv.x-1.)*f32(cfg.dimensions.x)/f32(cfg.dimensions.y)*cfg.forward.w)+cfg.up.xyz*((1.-2.*uv.y)*cfg.forward.w));
     let hit=trace(cfg.eye.xyz,direction);
     var color=vec3<f32>(.018,.022,.03);
-    if(hit.triangle!=END && hit.group==1u){color=.5*(hit.normal+vec3<f32>(1.))*settings.a[2].w;}
+    if(hit.triangle!=END && hit.group==1u){color=.5*(hit.normal+vec3<f32>(1.));}
     textureStore(output,vec2<i32>(pixel),vec4<f32>(color,1.));
+    textureStore(sensor_output,vec2<i32>(pixel),vec4<u32>(select(0u,hit.instance+1u,hit.triangle!=END && hit.group==1u),0u,0u,0u));
     textureStore(depth_output,vec2<i32>(pixel),vec4<f32>(hit.distance,0.,0.,0.));
+}
+
+// Sorted arrival lists let time scrubbing update all PMTs without transport or readback.
+@compute @workgroup_size(128)
+fn update_hits(@builtin(global_invocation_id) id:vec3<u32>){
+    let sensor=id.x;if(sensor>=u32(settings.a[4].x)){return;}
+    let first=hit_offsets[sensor];let end=hit_offsets[sensor+1u];
+    var lo=first;var hi=end;
+    let time=select(settings.a[2].x,1e30,settings.a[1].w>.5);
+    while(lo<hi){let mid=(lo+hi)/2u;if(hit_times[mid]<=time){lo=mid+1u;}else{hi=mid;}}
+    var latest=-1e30;if(lo>first){latest=hit_times[lo-1u];}
+    hit_states[sensor]=vec4<f32>(f32(lo-first),latest,0.,0.);
 }
 
 // RASTER MODULE
@@ -118,12 +138,14 @@ struct Flight {start:vec4<f32>,end:vec4<f32>,polarization:vec4<f32>,identity:vec
 @group(0) @binding(3) var detector_depth:texture_2d<f32>;
 @group(0) @binding(4) var detector_color:texture_2d<f32>;
 @group(0) @binding(5) var<storage,read> flight_counts:array<u32>;
-struct Vertex {@builtin(position) clip:vec4<f32>,@location(0) world:vec3<f32>,@location(1) color:vec3<f32>,@location(2) edge:f32}
+@group(0) @binding(6) var detector_sensor:texture_2d<u32>;
+@group(0) @binding(7) var<storage,read> hit_states:array<vec4<f32>>;
+struct Vertex {@builtin(position) clip:vec4<f32>,@location(0) world:vec3<f32>,@location(1) color:vec3<f32>,@location(2) edge:f32,@location(3) age:f32}
 fn camera_position(world:vec3<f32>)->vec3<f32>{let v=world-cfg.eye.xyz;return vec3<f32>(dot(v,cfg.right.xyz),dot(v,cfg.up.xyz),dot(v,cfg.forward.xyz));}
 fn project(v:vec3<f32>)->vec4<f32>{return vec4<f32>(v.x/(cfg.forward.w*f32(cfg.dimensions.x)/f32(cfg.dimensions.y)),v.y/cfg.forward.w,.5*v.z,v.z);}
 @vertex
 fn photon_vertex(@builtin(vertex_index) index:u32,@builtin(instance_index) instance:u32)->Vertex{
-    var out:Vertex;out.clip=vec4<f32>(2.,2.,.5,1.);out.world=vec3<f32>(0.);out.color=vec3<f32>(0.);out.edge=0.;
+    var out:Vertex;out.clip=vec4<f32>(2.,2.,.5,1.);out.world=vec3<f32>(0.);out.color=vec3<f32>(0.);out.edge=0.;out.age=0.;
     let slot=instance/32u;let step=instance%32u;
     if(step>=flight_counts[slot]){return out;}
     let flight=flights[instance];let dt=flight.end.w-flight.start.w;
@@ -145,6 +167,9 @@ fn photon_vertex(@builtin(vertex_index) index:u32,@builtin(instance_index) insta
     let corner=array<vec2<f32>,6>(vec2<f32>(0.,-1.),vec2<f32>(1.,-1.),vec2<f32>(0.,1.),vec2<f32>(0.,1.),vec2<f32>(1.,-1.),vec2<f32>(1.,1.))[index];
     out.clip=mix(pa,pb,corner.x);
     out.clip=vec4<f32>(out.clip.xy+side*corner.y*1.4/vec2<f32>(cfg.dimensions.xy)*out.clip.w,out.clip.zw);
+    let birth=flights[slot*32u].start.w;
+    let point_time=mix(flight.start.w,flight.end.w,mix(low,high,corner.x));
+    out.age=max(0.,select(settings.a[2].x,point_time,settings.a[1].w>.5)-birth);
     out.world=mix(a,b,corner.x);out.color=abs(flight.polarization.xyz);out.edge=corner.y;
     return out;
 }
@@ -153,9 +178,27 @@ fn photon_vertex(@builtin(vertex_index) index:u32,@builtin(instance_index) insta
     let depth=textureLoad(detector_depth,location,0).x;
     if(length(in.world-cfg.eye.xyz)>depth+2.){discard;}
     let coverage=1.-smoothstep(.5,1.,abs(in.edge));
-    return vec4<f32>(in.color,settings.a[2].z*coverage);
+    return vec4<f32>(in.color,settings.a[2].z*coverage*select(1.,exp2(-in.age/max(settings.a[3].y,1e-6)),settings.a[3].y>0.));
 }
 @vertex fn fullscreen(@builtin(vertex_index) i:u32)->@builtin(position) vec4<f32>{
     let p=array<vec2<f32>,3>(vec2<f32>(-1.,-1.),vec2<f32>(3.,-1.),vec2<f32>(-1.,3.));return vec4<f32>(p[i],0.,1.);
 }
-@fragment fn background(@builtin(position) p:vec4<f32>)->@location(0) vec4<f32>{return textureLoad(detector_color,vec2<i32>(p.xy),0);}
+fn hit_flash(state:vec4<f32>)->f32{
+    if(state.x==0. || settings.a[1].w>.5){return 0.;}
+    return exp(-max(0.,settings.a[2].x-state.y)/4.);
+}
+@fragment fn background(@builtin(position) p:vec4<f32>)->@location(0) vec4<f32>{
+    var color=textureLoad(detector_color,vec2<i32>(p.xy),0);
+    let sensor=textureLoad(detector_sensor,vec2<i32>(p.xy),0).x;
+    if(sensor>0u){
+        var brightness=settings.a[2].w;
+        if(settings.a[3].x>.5){
+            let state=hit_states[sensor-1u];
+            let intensity=select(0.,.2,state.x>0.)+.8*hit_flash(state);
+            brightness=mix(brightness,1.,intensity);
+        }
+        // Preserve the normal RGB direction: arrival changes brightness only.
+        color=vec4<f32>(color.xyz*brightness,1.);
+    }
+    return color;
+}

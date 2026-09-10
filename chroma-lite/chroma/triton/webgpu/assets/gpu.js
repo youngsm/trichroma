@@ -1,12 +1,18 @@
 // Keep asynchronous WebGPU allocation errors inside the operation that owns them.
-export async function requestGpuDevice({forceFallback = false} = {}) {
+export async function requestGpuDevice({forceFallback = false, storageBufferBytes = 0} = {}) {
   if (!navigator.gpu) throw Error('This browser does not expose WebGPU. Use a compatible browser over HTTPS or localhost.');
   const failures=[];
   for (const fallback of forceFallback ? [true] : [false,true]) {
     try {
       const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance',forceFallbackAdapter:fallback});
       if (!adapter) continue;
-      const device=await adapter.requestDevice();
+      // Larger history buffers are opt-in; other viewers keep the default limits.
+      const requiredLimits={};
+      if(storageBufferBytes){
+        const bytes=Math.min(storageBufferBytes,adapter.limits.maxStorageBufferBindingSize,adapter.limits.maxBufferSize);
+        requiredLimits.maxStorageBufferBindingSize=bytes;requiredLimits.maxBufferSize=bytes;
+      }
+      const device=await adapter.requestDevice({requiredLimits});
       const info=adapter.info;
       const software=!!info.isFallbackAdapter || /swiftshader|llvmpipe|software/i.test(`${info.architecture} ${info.description}`);
       return {adapter,device,software};

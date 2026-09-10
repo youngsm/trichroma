@@ -20,6 +20,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("bundle", type=Path)
     parser.add_argument("--url")
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        help="Previous browser bundle for bitwise transport regression",
+    )
     parser.add_argument("--seeds", type=int, default=1)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -29,6 +34,12 @@ def main():
     )
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = args.url or f"http://localhost:{server.server_port}"
+    baseline_server = None
+    if args.baseline:
+        baseline_server = ThreadingHTTPServer(
+            ("127.0.0.1", 0), partial(Quiet, directory=str(args.baseline))
+        )
+        threading.Thread(target=baseline_server.serve_forever, daemon=True).start()
     report = {}
     errors = []
     try:
@@ -62,9 +73,32 @@ def main():
                 window.schedule=app.requestRender.bind(app);app.requestRender=()=>{};
                 window.digest=async buffer=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',buffer)),x=>x.toString(16).padStart(2,'0')).join('');
                 window.snapshot=async()=>{
-                    const result={};for(const key of ['flights','counts','stats','debug'])result[key]=await digest(await app.download(app.eventBuffers[key]));return result;
+                    const result={};for(const key of ['flights','counts','stats','debug','hits'])result[key]=await digest(await app.download(app.eventBuffers[key]));return result;
                 };
             }""")
+            baseline_page = None
+            if baseline_server:
+                baseline_page = browser.new_page()
+                baseline_page.goto(
+                    f"http://localhost:{baseline_server.server_port}/?manual=1"
+                )
+                baseline_page.evaluate(
+                    "async()=>{await photonHistoriesReady;photonHistories.requestRender=()=>{};}"
+                )
+
+            def baseline_hashes(event, seed, capacity):
+                return baseline_page.evaluate(
+                    """async ({event,seed,capacity})=>{
+                    const app=photonHistories;app.capacity=capacity;
+                    await app.simulate({event,seed,count:8193,debug:4096});
+                    const hashes={};for(const key of ['flights','counts','stats','debug']){
+                        const bytes=await crypto.subtle.digest('SHA-256',await app.download(app.eventBuffers[key]));
+                        hashes[key]=Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,'0')).join('');
+                    }return hashes;
+                }""",
+                    {"event": event, "seed": seed, "capacity": capacity},
+                )
+
             for event in ["muon", "electron"]:
                 r = page.evaluate(
                     """async event=>{
@@ -91,6 +125,37 @@ def main():
                 }""",
                     event,
                 )
+                if baseline_page:
+                    baseline = baseline_hashes(event, 901, 32768)
+                    assert all(
+                        r["hashes"][key] == value for key, value in baseline.items()
+                    ), (event, "baseline mismatch")
+                hit_check = page.evaluate("""async()=>{
+                    const hits=new Float32Array(await app.download(app.eventBuffers.hits));
+                    const flights=new Float32Array(await app.download(app.eventBuffers.flights));
+                    const counts=new Uint32Array(await app.download(app.eventBuffers.counts));
+                    let matched=0;
+                    for(let slot=0;slot<app.retained;slot++){
+                        const id=slot*app.stride,n=counts[slot];if(!n)continue;
+                        const end=(slot*32+n-1)*16;
+                        if(flights[end+13]===1){
+                            if(hits[id*4]!==flights[end+7]||hits[id*4+1]!==flights[end+14]+1||hits[id*4+2]!==flights[end+11])throw Error('Arrival does not match terminal flight');matched++;
+                        }else if(hits[id*4+1]!==0)throw Error('Spurious PMT arrival');
+                    }
+                    for(const time of [0,10,50,100,180,3000,100,0]){
+                        app.timeWindow('full');app.setEventTime(time);await app.render({width:340});
+                        const states=new Float32Array(await app.download(app.eventBuffers.hitStates));
+                        let sum=0;
+                        for(let sensor=0;sensor<app.sensorCount;sensor++){
+                            let count=0,last=-1e30;
+                            for(let i=app.hitOffsets[sensor];i<app.hitOffsets[sensor+1];i++)if(app.hitTimes[i]<=Math.fround(app.eventTime)){count++;last=app.hitTimes[i];}
+                            if(states[sensor*4]!==count || (count && states[sensor*4+1]!==last))throw Error('PMT timeline mismatch');sum+=count;
+                        }
+                        if(sum!==app.arrivedAt(Math.fround(app.eventTime)))throw Error('Total arrival mismatch');
+                    }
+                    app.timeWindow('prompt');return {matched,forward_backward_scrub:true};
+                }""")
+                r["arrivals"] = hit_check
                 debug = np.array(r.pop("debug")).reshape(-1, 16)
                 export = next(
                     e
@@ -183,7 +248,8 @@ def main():
                 report[event] = r
                 # Retain every photon in each additional sample; only batch size varies.
                 for seed in range(902, 901 + args.seeds):
-                    equal = page.evaluate("""async ({event,seed})=>{
+                    equal = page.evaluate(
+                        """async ({event,seed})=>{
                         const oldCapacity=app.capacity;app.capacity=8193;
                         const moduleURL=new URL(document.querySelector('script[type=module]').src);
                         const budget=(await import(new URL('scheduler.js'+moduleURL.search,moduleURL))).gpuBudget;
@@ -194,11 +260,20 @@ def main():
                             await app.simulate({event,seed,count:8193,debug:4096});
                             return JSON.stringify(first)===JSON.stringify(await snapshot());
                         }finally{budget.run=run;app.capacity=oldCapacity;}
-                    }""", {"event": event, "seed": seed})
+                    }""",
+                        {"event": event, "seed": seed},
+                    )
                     assert equal, (event, seed)
+                    if baseline_page:
+                        baseline = baseline_hashes(event, seed, 8193)
+                        current = page.evaluate("async()=>await snapshot()")
+                        assert all(
+                            current[key] == value for key, value in baseline.items()
+                        ), (event, seed, "baseline mismatch")
                 report[event]["bitwise_photon_histories"] = 8193 * args.seeds
+                report[event]["previous_transport_bitwise_equal"] = bool(baseline_page)
                 full = page.evaluate(
-                    """async event=>{const r=await app.simulate({event,seed:901});await app.render();return {photons:r.photons,wall_ms:r.wall_ms,counters:r.counters.slice(0,16),retained:r.retained};}""",
+                    """async event=>{const r=await app.simulate({event,seed:901});await app.render();return {photons:r.photons,wall_ms:r.wall_ms,counters:r.counters.slice(0,16),retained:r.retained,hit_sha256:await digest(await app.download(app.eventBuffers.hits))};}""",
                     event,
                 )
                 report[event]["full_event"] = full
@@ -243,6 +318,143 @@ def main():
                 "play_stop": True,
                 "middle_pan": True,
             }
+            # High precision playback must advance even below the range-input step per frame.
+            page.click("#early")
+            page.wait_for_function("!app.rendering && !app.pending")
+            assert page.evaluate(
+                "app.eventTime===3 && document.getElementById('window').value==='early'"
+            )
+            assert page.evaluate("app.eventGeneration===generation")
+            page.select_option("#window", "first")
+            page.select_option("#speed", "0.01")
+            start = page.evaluate("app.eventTime")
+            page.click("#play")
+            page.wait_for_timeout(1100)
+            page.click("#stop")
+            elapsed = page.evaluate("app.eventTime") - start
+            assert 0.006 < elapsed < 0.035, elapsed
+            report["controls"]["slow_playback_ns_approx_1s"] = elapsed
+            page.select_option("#fade", "1")
+            page.wait_for_function("!app.rendering && !app.pending")
+            assert page.evaluate("app.eventGeneration===generation")
+            page.locator("#view").screenshot(path=str(args.output / "early.png"))
+            page.select_option("#window", "full")
+            page.locator("#time").fill("180")
+            page.locator("#time").dispatch_event("input")
+            page.wait_for_function("!app.rendering && !app.pending")
+            page.locator("#view").screenshot(path=str(args.output / "hits.png"))
+            visible_hits = page.locator("#view").screenshot()
+            page.uncheck("#highlight")
+            page.wait_for_function("!app.rendering && !app.pending")
+            assert (
+                page.locator("#view").screenshot() != visible_hits
+            ), "3D PMT highlights did not change the render"
+            page.check("#highlight")
+            page.select_option("#window", "arrivals")
+            page.wait_for_function("!app.rendering && !app.pending")
+            assert page.evaluate(
+                "app.arrivedAt(app.eventTime)>0 && app.eventTime>app.allHitTimes[0]"
+            )
+            report["controls"]["hits_in_3d"] = True
+            report["controls"]["first_arrivals_window"] = True
+            # Keep every physical photon, then compare arrivals and all non-retention counters.
+            old = page.evaluate(
+                "async()=>({hits:await digest(await app.download(app.eventBuffers.hits)),counters:app.result.counters,eye:app.view,capacity:app.maxCapacity})"
+            )
+            if old["capacity"] >= 272157:
+                page.select_option("#paths", "all")
+                page.wait_for_function(
+                    "!app.busy && app.retained===app.count && !app.rendering && !app.pending"
+                )
+                new = page.evaluate(
+                    "async()=>({hits:await digest(await app.download(app.eventBuffers.hits)),counters:app.result.counters,eye:app.view,paths:app.retained,bytes:app.eventBuffers.flights.size})"
+                )
+                assert old["hits"] == new["hits"] and old["eye"] == new["eye"]
+                assert all(
+                    a == b
+                    for i, (a, b) in enumerate(zip(old["counters"], new["counters"]))
+                    if i != 8
+                )
+                report["controls"]["all_paths"] = {
+                    key: new[key] for key in ["paths", "bytes"]
+                }
+                page.click("#early")
+                page.wait_for_function("!app.rendering && !app.pending")
+                page.locator("#view").screenshot(
+                    path=str(args.output / "early-all.png")
+                )
+                report["controls"]["cached_frame_ms"] = page.evaluate("""async()=>{
+                    const times={};for(const limit of ['8192','all']){
+                        document.getElementById('paths').value=limit;const start=performance.now();
+                        for(let i=0;i<3;i++)await app.render();times[limit]=(performance.now()-start)/3;
+                    }return times;
+                }""")
+                page.select_option("#event", "muon")
+                page.wait_for_function(
+                    "!app.busy && app.source.id==='muon' && app.retained===app.count && !app.rendering && !app.pending"
+                )
+                muon_all = page.evaluate(
+                    "async()=>({hits:await digest(await app.download(app.eventBuffers.hits)),count:app.count,counters:app.result.counters.slice(0,16)})"
+                )
+                assert muon_all["hits"] == report["muon"]["full_event"]["hit_sha256"]
+                assert all(
+                    a == b
+                    for i, (a, b) in enumerate(
+                        zip(
+                            muon_all["counters"],
+                            report["muon"]["full_event"]["counters"],
+                        )
+                    )
+                    if i != 8
+                )
+                report["controls"]["all_muon_paths"] = muon_all["count"]
+                page.locator("#view").screenshot(
+                    path=str(args.output / "muon-early-all.png")
+                )
+                page.select_option("#window", "late")
+                page.wait_for_function("!app.rendering && !app.pending")
+                assert page.evaluate("app.eventTime>2900")
+                report["controls"]["late_window"] = True
+            # Inject an allocation failure without exhausting the host GPU.
+            report["resource_limits"] = page.evaluate("""async()=>{
+                const create=app.device.createBuffer.bind(app.device);let injected=0;
+                app.device.createBuffer=descriptor=>{
+                    if(!injected && descriptor.size===64*1048576){injected++;const error=Error('Injected allocation failure');error.name='GpuMemoryError';throw error;}
+                    return create(descriptor);
+                };
+                try{
+                    app.capacity=32768;document.getElementById('paths').value='8192';
+                    const result=await app.simulate({event:'muon',seed:901});
+                    if(injected!==1||app.capacity!==16384)throw Error('Allocation retry did not reduce history storage');
+                    return {allocation_failure_retry:true,retained:result.retained,hit_sha256:await digest(await app.download(app.eventBuffers.hits))};
+                }finally{app.device.createBuffer=create;}
+            }""")
+            assert (
+                report["resource_limits"]["hit_sha256"]
+                == report["muon"]["full_event"]["hit_sha256"]
+            )
+            limited = browser.new_page()
+            limited.add_init_script("""(()=>{
+                const request=GPUAdapter.prototype.requestDevice;
+                GPUAdapter.prototype.requestDevice=function(descriptor={}){
+                    return request.call(this,{...descriptor,requiredLimits:{...descriptor.requiredLimits,maxStorageBufferBindingSize:128*1048576,maxBufferSize:256*1048576}});
+                };
+            })()""")
+            limited.goto(base.rstrip("/") + "/?manual=1")
+            limits = limited.evaluate("""async()=>{
+                await photonHistoriesReady;const app=photonHistories;app.requestRender=()=>{};
+                await app.simulate({count:8193});
+                return {capacity:app.maxCapacity,all_disabled:document.querySelector('#paths [value="all"]').disabled,errors:app.errors};
+            }""")
+            assert limits == {
+                "capacity": 65536,
+                "all_disabled": True,
+                "errors": [],
+            }, limits
+            report["resource_limits"]["128_MiB_adapter"] = limits
+            limited.close()
+            report["controls"]["fade_reuses_event"] = True
+            report["controls"]["early_closeup"] = True
             assert not errors, errors
             assert not page.evaluate("app.errors"), page.evaluate("app.errors")
             browser.close()
@@ -251,6 +463,9 @@ def main():
         (args.output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
         server.shutdown()
         server.server_close()
+        if baseline_server:
+            baseline_server.shutdown()
+            baseline_server.server_close()
     print(json.dumps(report), flush=True)
 
 
