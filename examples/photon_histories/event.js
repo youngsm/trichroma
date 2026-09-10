@@ -1,4 +1,5 @@
 import {requestGpuDevice, allocateGpu, checkedGpuWork, isGpuMemoryError} from './gpu.js';
+import {poseEvent, rotatePoint, rotateVector} from './event_pose.js';
 import {gpuBudget} from './scheduler.js';
 const $ = id => document.getElementById(id);
 const assetURL = name => {const url=new URL(name,import.meta.url);url.search=new URL(import.meta.url).search;return url;};
@@ -14,7 +15,7 @@ class PhotonHistories {
   constructor(){
     this.view=structuredClone(PRESETS.oblique);this.seed=901;this.errors=[];
     this.pending=false;this.rendering=false;this.busy=false;this.playing=false;
-    this.frame=0;this.eventGeneration=0;this.eventTime=42;
+    this.frame=0;this.eventGeneration=0;this.eventTime=42;this.aim={azimuth:0,elevation:90};
   }
   async initialize(){
     const selected=await requestGpuDevice({storageBufferBytes:640*1048576});Object.assign(this,selected);
@@ -106,11 +107,29 @@ class PhotonHistories {
     for(const option of $('paths').options)if(option.value!=='all')option.disabled=Number(option.value)>this.maxCapacity;
     $('paths').querySelector('[value="all"]').disabled=Math.round(this.source?.total_yield||272157)>this.maxCapacity;
   }
+  readAim(){return {azimuth:Number($('azimuth').value),elevation:Number($('elevation').value)};}
+  aimLabels(){
+    const aim=this.readAim();$('azimuthLabel').textContent=aim.azimuth.toFixed(1)+'°';$('elevationLabel').textContent=aim.elevation.toFixed(1)+'°';
+    $('aimLabel').textContent=`az ${aim.azimuth.toFixed(1)}° · el ${aim.elevation.toFixed(1)}°`;
+  }
+  async applyAim(aim=this.readAim()){
+    if(this.busy)return;
+    $('azimuth').value=aim.azimuth;$('elevation').value=aim.elevation;this.aimLabels();
+    await this.simulate({aim:this.readAim()});
+  }
+  setViewPreset(name){
+    if(name==='early'||name==='origin'){this.focusEmission(name==='origin');return;}
+    this.view=structuredClone(PRESETS[name]);
+    if(name==='cone' && this.pose){
+      for(const key of ['eye','target'])this.view[key]=rotatePoint(this.pose.rotation,this.view[key],this.pose.pivot);
+    }
+    this.requestRender();
+  }
   focusEmission(tight=false){
     if(!this.source)return;
-    const first=this.source.rows.reduce((a,b)=>b[3]<a[3]?b:a);
+    const first=this.sourceRows.reduce((a,b)=>b[3]<a[3]?b:a);
     const target=first.slice(0,3).map((x,i)=>x+first[8+i]*(tight?120:700));
-    const offset=tight?[450,-600,220]:[1500,-2000,700];
+    const offset=rotateVector(this.pose.rotation,tight?[450,-600,220]:[1500,-2000,700]);
     this.view={eye:target.map((x,i)=>x+offset[i]),target,fov:62};this.requestRender();
   }
   async prepareHits(records,expected){
@@ -134,14 +153,16 @@ class PhotonHistories {
     const read=await allocateGpu(this.device,a=>a.buffer(buffer.size,GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ));
     try{const encoder=this.device.createCommandEncoder();encoder.copyBufferToBuffer(buffer,0,read,0,buffer.size);this.device.queue.submit([encoder.finish()]);await read.mapAsync(GPUMapMode.READ);return read.getMappedRange().slice(0);}finally{read.destroy();}
   }
-  async simulate({event=$('event').value,seed=this.seed,count=null,debug=0,disableOptics=false}={}){
+  async simulate({event=$('event').value,seed=this.seed,count=null,debug=0,disableOptics=false,aim=this.readAim()}={}){
     if(this.busy)throw Error('An event is already being simulated');
-    this.busy=true;$('simulate').disabled=true;$('event').disabled=true;$('paths').disabled=true;$('status').classList.remove('error');
+    this.busy=true;for(const id of ['azimuth','elevation','aimCamera','aimReset'])$(id).disabled=true;$('simulate').disabled=true;$('event').disabled=true;$('paths').disabled=true;$('status').classList.remove('error');
     this.playing=false;$('play').textContent='Play';gpuBudget.cancel();
     while(this.rendering)await new Promise(r=>setTimeout(r,10));
     const started=performance.now();
     try{
       this.source=this.events.find(e=>e.id===event);if(!this.source)throw Error('Unknown event');$('event').value=event;
+      this.pose=poseEvent(this.source.rows,aim);this.sourceRows=this.pose.rows;this.aim=this.pose.aim;
+      $('azimuth').value=this.aim.azimuth;$('elevation').value=this.aim.elevation;this.aimLabels();
       this.syncTimeControls();this.timeWindow($('window').value,false);
       this.seed=seed;this.count=count??Math.round(this.source.total_yield);
       if(!Number.isInteger(this.count)||this.count<1||this.count>3000000)throw Error('Invalid photon count');
@@ -153,7 +174,7 @@ class PhotonHistories {
       this.capacity=Math.min(this.maxCapacity,Math.max(this.capacity,Math.min(requested,this.count)));
       this.stride=Math.ceil(this.count/this.capacity);this.retained=Math.ceil(this.count/this.stride);
       for(;;){try{this.eventBuffers=await allocateGpu(this.device,a=>({
-        sources:a.buffer(new Float32Array(this.source.rows.flat()),storage),
+        sources:a.buffer(new Float32Array(this.sourceRows.flat()),storage),
         flights:a.buffer(this.capacity*32*64,storage),counts:a.buffer(this.capacity*4,storage),
         hits:a.buffer(this.count*16,storage),stats:a.buffer((128+this.source.rows.length)*4,storage),debug:a.buffer(Math.max(16,this.debugCount*64),storage)
       }));break;}catch(error){
@@ -176,7 +197,7 @@ class PhotonHistories {
       const terminal=counters.slice(1,6).reduce((a,b)=>a+b,0)+counters[7];
       if(terminal!==this.count)throw Error('Incomplete photon accounting');
       await this.prepareHits(new Float32Array(await this.download(e.hits)),counters[1]);
-      this.result={event,photons:this.count,retained:this.retained,counters,wall_ms:performance.now()-started,geometryFailures:failed};
+      this.result={event,aim:{...this.aim},primary_direction:this.pose.axis.slice(),photons:this.count,retained:this.retained,counters,wall_ms:performance.now()-started,geometryFailures:failed};
       if(this.debugCount)this.result.debug=Array.from(new Float32Array(await this.download(e.debug)));
       if($('window').value==='arrivals')this.timeWindow('arrivals',false);
       this.eventGeneration++;
@@ -184,7 +205,7 @@ class PhotonHistories {
       $('meta').textContent=`HK ${this.source.config} / ${this.source.name} · ${this.source.energy_MeV.toFixed(3)} MeV recorded primary energy · ${this.source.tracks} tracks · ${this.source.input_steps.toLocaleString()} recorded steps · ${(this.eventBuffers.flights.size/1048576).toFixed(0)} MiB path storage`;
       this.syncTimeControls();return this.result;
     }catch(error){this.releaseEvent();throw error;}
-    finally{this.busy=false;$('simulate').disabled=false;$('event').disabled=false;$('paths').disabled=false;if(this.eventBuffers)this.requestRender();}
+    finally{this.busy=false;for(const id of ['azimuth','elevation','aimCamera','aimReset'])$(id).disabled=false;$('simulate').disabled=false;$('event').disabled=false;$('paths').disabled=false;if(this.eventBuffers)this.requestRender();}
   }
   async render({width=this.software?340:(innerWidth<=700?720:1440),height=Math.round(width/(innerWidth<=700?1.2:1.7))}={}){
     if(this.busy||this.rendering||!this.eventBuffers)return;
@@ -234,6 +255,15 @@ class PhotonHistories {
     }catch(error){this.fail(error);}finally{this.scheduled=false;if(this.pending&&!document.hidden&&!this.busy)this.requestRender();}
   }
   controls(){
+    for(const id of ['azimuth','elevation']){
+      $(id).oninput=()=>this.aimLabels();
+      $(id).onchange=()=>this.applyAim().catch(e=>this.fail(e));
+    }
+    $('aimReset').onclick=()=>this.applyAim({azimuth:0,elevation:90}).catch(e=>this.fail(e));
+    $('aimCamera').onclick=()=>{
+      const d=this.basis().forward;
+      this.applyAim({azimuth:Math.atan2(d[1],d[0])*180/Math.PI,elevation:Math.asin(Math.max(-1,Math.min(1,d[2])))*180/Math.PI}).catch(e=>this.fail(e));
+    };
     $('simulate').onclick=()=>{const requested=$('paths').value==='all'?Math.round(this.source?.total_yield||272157):Number($('paths').value);this.capacity=Math.min(this.maxCapacity,Math.max(this.software?2048:32768,requested));this.simulate().catch(e=>this.fail(e));};
     $('event').onchange=()=>{this.seed=901;this.simulate().then(()=>{if(['early','origin'].includes($('preset').value))this.focusEmission($('preset').value==='origin');}).catch(e=>this.fail(e));};
     $('stop').onclick=()=>{this.playing=false;$('play').textContent='Play';this.pending=false;gpuBudget.cancel();};
@@ -248,7 +278,7 @@ class PhotonHistories {
       }
       this.requestRender();
     });
-    $('preset').onchange=()=>{const preset=$('preset').value;if(preset==='early'||preset==='origin')this.focusEmission(preset==='origin');else{this.view=structuredClone(PRESETS[preset]);this.requestRender();}};
+    $('preset').onchange=()=>this.setViewPreset($('preset').value);
     $('window').onchange=()=>this.timeWindow($('window').value);
     $('early').onclick=()=>{
       this.playing=false;$('play').textContent='Play';this.timeWindow('early');this.setEventTime(3);

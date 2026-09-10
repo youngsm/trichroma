@@ -13,6 +13,17 @@ and playback at 0.1 simulated ns per real second. The speed can drop to
 slider windows expose early emission precisely. Playback uses elapsed wall
 time and a floating-point clock independent of slider quantization.
 
+The Particle direction controls set azimuth (from +x toward +y) and elevation
+(−90° for −z, +90° for +z). Releasing a slider reruns the same seed after
+rotating every recorded step position and direction about the first emitting
+point. Times, beta, emission weights and relative track geometry are preserved.
+Use camera direction aligns the primary with the camera's forward direction;
+Reset direction restores the original +z event exactly. Aiming preserves the
+camera. Re-selecting the cone or emission close-up preset frames the new aim.
+The pose transformation is isolated in `event_pose.js`, and always starts from
+the original rows to avoid cumulative roundoff. The default +z pose bypasses
+the transformation entirely.
+
 Photon-age fading has an adjustable half-life and can be disabled. Moving
 trails fade according to the current time minus that photon's emission time;
 complete histories fade along each flight according to its age. This changes
@@ -28,7 +39,7 @@ For PMT arrival times `t_i <= t`, the pulse amplitude is
 `A(t) = sum(exp(-(t-t_i)/tau))` and accumulated charge proxy is the count `N(t)`.
 Every photon has unit weight. Pulses add before the nonlinear display mapping:
 `brightness = base + (1-base) * (1-exp(-gain*(A + weight*N)))`.
-Default decay is 20 ns, accumulated-hit weight 0.35, and display gain 1.
+Default decay is 20 ns, accumulated-hit weight 0.10, and display gain 1.
 Setting the accumulated-hit weight to zero gives a pure decaying response.
 Complete histories show `N` alone. These are relative signals, not calibrated
 charge or voltage: the model does not include QE, gain fluctuations or PMT
@@ -144,15 +155,20 @@ Browser-native WebGPU is required for the default local hardware test.
 163,860 photons (ten seeds per particle) match bitwise across batch sizes and
 against the previously published transport implementation; see
 `expanded-transport.json`. `report.json` records the final presentation and
-resource checks, with another 16,386-history transport comparison.
+resource checks, with another 16,386-history transport comparison. Five orientations per particle
+exercise 81,930 photons, checking rigid geometry, source sampling, cone angles,
+polarization and terminal accounting. Reset reproduces the original GPU buffers
+bit for bit. Direction controls preserve the camera and leave source rows unchanged.
 Both full events have zero unfinished photons and zero traversal failures;
-their measured simulation wall times were 0.211 s and 0.220 s, including
+their measured simulation wall times were 0.212 s and 0.213 s, including
 allocation, readback and arrival indexing but excluding initialization and rendering.
-Cached early-event frames took 3.5 ms with 8,192 displayed paths and 11.0 ms
+Cached early-event frames took 5.6 ms with 8,192 displayed paths and 10.7 ms
 with all 269,860 electron paths (three frames each, at 1440 pixels wide).
 The display still caps playback at 30 updates/s.
 `validation/ring-integrated.png` and `ring-pulses-only.png` compare the same
 muon event at 500 ns from the Along the cone view.
+`validation/desktop-aim-muon.png`, `desktop-aim-electron.png` and
+`mobile-early.png` show the direction controls and rotated events.
 These are local measurements, not a performance guarantee for other GPUs.
 
 References: [Geant4 Cherenkov model](https://geant4.web.cern.ch/documentation/pipelines/master/prm_html/PhysicsReferenceManual/electromagnetic/xray_production/cerenkov.html),

@@ -13,7 +13,7 @@ def build(destination, geometry):
     here = Path(__file__).resolve().parent
     assets = here.parents[1] / "chroma-lite/chroma/triton/webgpu/assets"
     destination.mkdir(parents=True, exist_ok=True)
-    for name in ("index.html", "event.js", "event.wgsl", "events.json"):
+    for name in ("index.html", "event.js", "event_pose.js", "event.wgsl", "events.json"):
         shutil.copyfile(here / name, destination / name)
     for name in ("trace.wgsl", "gpu.js", "scheduler.js", "theme.css", "fonts.css"):
         shutil.copyfile(assets / name, destination / name)

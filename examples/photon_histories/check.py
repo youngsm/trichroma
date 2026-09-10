@@ -67,6 +67,7 @@ def main():
             page.on("pageerror", lambda e: errors.append(str(e)))
             page.goto(base.rstrip("/") + "/?manual=1")
             report["adapter"] = page.evaluate("async()=>await photonHistoriesReady")
+            assert page.locator("#pmtMemory").input_value() == "0.1"
             page.evaluate("""()=>{
                 window.app=photonHistories;
                 // Audit calls explicitly render; keep the normal UI scheduler for controls below.
@@ -504,6 +505,87 @@ def main():
             }, limits
             report["resource_limits"]["128_MiB_adapter"] = limits
             limited.close()
+            # Aim the original step rows as a rigid body; never transform a prior pose.
+            page.evaluate(
+                "app.requestRender=()=>{};document.getElementById('paths').value='8192';app.capacity=8193;"
+            )
+            report["aiming"] = {}
+            for event in ["muon", "electron"]:
+                posed = page.evaluate(
+                    """async event=>{
+                    const raw=app.events.find(e=>e.id===event),original=JSON.stringify(raw.rows);
+                    await app.simulate({event,count:8193,debug:4096,aim:{azimuth:0,elevation:90}});
+                    const initial=await snapshot();const firstDebug=new Float32Array(await app.download(app.eventBuffers.debug));
+                    const beforeView=JSON.stringify(app.view);let lengthError=0,directionError=0,coneError=0,orthogonalError=0;
+                    let rotationError=0,changedHits=0;const cases=[];
+                    for(const aim of [{azimuth:0,elevation:0},{azimuth:90,elevation:0},{azimuth:0,elevation:-90},{azimuth:35,elevation:25},{azimuth:123,elevation:90}]){
+                        const result=await app.simulate({event,count:8193,debug:4096,aim});
+                        const m=app.pose.rotation;
+                        for(let i=0;i<3;i++)for(let j=0;j<3;j++)rotationError=Math.max(rotationError,Math.abs([0,1,2].reduce((sum,k)=>sum+m[k*3+i]*m[k*3+j],0)-(i===j?1:0)));
+                        const phi=aim.azimuth*Math.PI/180,el=aim.elevation*Math.PI/180;
+                        const wanted=[Math.cos(el)*Math.cos(phi),Math.cos(el)*Math.sin(phi),Math.sin(el)];
+                        directionError=Math.max(directionError,Math.hypot(...app.pose.axis.map((x,i)=>x-wanted[i])));
+                        for(let i=0;i<raw.rows.length;i++){
+                            const a=raw.rows[i],b=app.sourceRows[i];
+                            for(const scalar of [3,7,11])if(a[scalar]!==b[scalar])throw Error('Aiming changed scalar source physics');
+                            lengthError=Math.max(lengthError,Math.abs(Math.hypot(...b.slice(4,7).map((x,k)=>x-b[k]))-Math.hypot(...a.slice(4,7).map((x,k)=>x-a[k]))));
+                        }
+                        const debug=new Float32Array(await app.download(app.eventBuffers.debug));
+                        for(let id=0;id<app.debugCount;id++){
+                            const base=id*16,source=app.sourceRows[debug[base+12]],d=debug.slice(base+4,base+7),e=debug.slice(base+8,base+11),w=debug[base+7],beta=debug[base+11];
+                            const axis=source.slice(8,11),scale=Math.hypot(...axis);
+                            coneError=Math.max(coneError,Math.abs(d.reduce((s,x,k)=>s+x*axis[k]/scale,0)-1/(beta*(1.322+3000/(w*w)))));
+                            orthogonalError=Math.max(orthogonalError,Math.abs(d.reduce((s,x,k)=>s+x*e[k],0)));
+                            if(w!==firstDebug[base+7]||debug[base+12]!==firstDebug[base+12])throw Error('Aiming changed emission sampling');
+                        }
+                        if(JSON.stringify(app.view)!==beforeView)throw Error('Aiming moved the camera');
+                        if(result.geometryFailures||result.counters[5]||result.counters[7])throw Error('Aimed transport incomplete');
+                        if(await digest(await app.download(app.eventBuffers.hits))!==initial.hits)changedHits++;
+                        cases.push({aim,photons:result.photons,pmt_arrivals:result.counters[1]});
+                    }
+                    if(lengthError>1e-8||rotationError>1e-12||directionError>1e-12||coneError>5e-6||orthogonalError>5e-6||!changedHits)throw Error('Invalid aimed event');
+                    await app.simulate({event,count:8193,debug:4096,aim:{azimuth:0,elevation:90}});
+                    if(JSON.stringify(await snapshot())!==JSON.stringify(initial))throw Error('Reset did not reproduce original photon bytes');
+                    if(JSON.stringify(raw.rows)!==original||app.sourceRows!==raw.rows)throw Error('Source rows were mutated');
+                    return {cases,lengthError,rotationError,directionError,coneError,orthogonalError,reset_bitwise_equal:true,camera_preserved:true,source_immutable:true};
+                }""",
+                    event,
+                )
+                report["aiming"][event] = posed
+            # Exercise the controls, including setting azimuth while at the +z pole.
+            page.evaluate("app.requestRender=window.schedule;")
+            page.locator("#aimControls summary").click()
+            page.evaluate(
+                "document.getElementById('azimuth').value=35;document.getElementById('azimuth').dispatchEvent(new Event('change'));"
+            )
+            page.wait_for_function(
+                "!app.busy && app.aim.azimuth===35 && app.aim.elevation===90 && !app.rendering && !app.pending"
+            )
+            page.evaluate(
+                "document.getElementById('elevation').value=25;document.getElementById('elevation').dispatchEvent(new Event('change'));"
+            )
+            page.wait_for_function(
+                "!app.busy && app.aim.azimuth===35 && app.aim.elevation===25 && !app.rendering && !app.pending"
+            )
+            forward = page.evaluate("app.basis().forward")
+            view = page.evaluate("app.view")
+            generation = page.evaluate("app.eventGeneration")
+            page.click("#aimCamera")
+            page.wait_for_function(
+                f"app.eventGeneration>{generation} && !app.busy && !app.rendering && !app.pending"
+            )
+            assert np.dot(forward, page.evaluate("app.pose.axis")) > 0.999998
+            assert page.evaluate("app.view") == view
+            page.click("#aimReset")
+            page.wait_for_function(
+                "!app.busy && app.aim.azimuth===0 && app.aim.elevation===90 && !app.rendering && !app.pending"
+            )
+            assert page.evaluate("app.view") == view
+            report["aiming"]["controls"] = {
+                "azimuth_at_pole": True,
+                "camera_direction": True,
+                "reset": True,
+            }
             report["controls"]["fade_reuses_event"] = True
             report["controls"]["early_closeup"] = True
             assert not errors, errors

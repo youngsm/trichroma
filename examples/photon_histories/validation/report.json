@@ -43,7 +43,7 @@
     "previous_transport_bitwise_equal": true,
     "full_event": {
       "photons": 272157,
-      "wall_ms": 210.5999999642372,
+      "wall_ms": 212,
       "counters": [
         272157,
         45652,
@@ -105,7 +105,7 @@
     "previous_transport_bitwise_equal": true,
     "full_event": {
       "photons": 269860,
-      "wall_ms": 219.69999998807907,
+      "wall_ms": 212.5,
       "counters": [
         269860,
         45175,
@@ -133,7 +133,7 @@
     "path_count_reuses_event": true,
     "play_stop": true,
     "middle_pan": true,
-    "slow_playback_ns_approx_1s": 0.011051999999881212,
+    "slow_playback_ns_approx_1s": 0.01109599999964278,
     "hits_in_3d": true,
     "first_arrivals_window": true,
     "all_paths": {
@@ -141,8 +141,8 @@
       "bytes": 552673280
     },
     "cached_frame_ms": {
-      "8192": 3.466666658719381,
-      "all": 10.966666658719381
+      "8192": 5.600000003973643,
+      "all": 10.666666666666666
     },
     "all_muon_paths": 272157,
     "late_window": true,
@@ -168,6 +168,117 @@
       "errors": []
     }
   },
+  "aiming": {
+    "muon": {
+      "cases": [
+        {
+          "aim": {
+            "azimuth": 0,
+            "elevation": 0
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1839
+        },
+        {
+          "aim": {
+            "azimuth": 90,
+            "elevation": 0
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1825
+        },
+        {
+          "aim": {
+            "azimuth": 0,
+            "elevation": -90
+          },
+          "photons": 8193,
+          "pmt_arrivals": 2118
+        },
+        {
+          "aim": {
+            "azimuth": 35,
+            "elevation": 25
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1712
+        },
+        {
+          "aim": {
+            "azimuth": 123,
+            "elevation": 90
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1412
+        }
+      ],
+      "lengthError": 1.8194334927557065e-12,
+      "rotationError": 2.220446049250313e-16,
+      "directionError": 6.123233995736766e-17,
+      "coneError": 2.185868934745372e-07,
+      "orthogonalError": 3.791333587632728e-07,
+      "reset_bitwise_equal": true,
+      "camera_preserved": true,
+      "source_immutable": true
+    },
+    "electron": {
+      "cases": [
+        {
+          "aim": {
+            "azimuth": 0,
+            "elevation": 0
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1636
+        },
+        {
+          "aim": {
+            "azimuth": 90,
+            "elevation": 0
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1645
+        },
+        {
+          "aim": {
+            "azimuth": 0,
+            "elevation": -90
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1617
+        },
+        {
+          "aim": {
+            "azimuth": 35,
+            "elevation": 25
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1610
+        },
+        {
+          "aim": {
+            "azimuth": 123,
+            "elevation": 90
+          },
+          "photons": 8193,
+          "pmt_arrivals": 1404
+        }
+      ],
+      "lengthError": 9.094947017729282e-13,
+      "rotationError": 2.220446049250313e-16,
+      "directionError": 6.123233995736766e-17,
+      "coneError": 2.3526638859294735e-07,
+      "orthogonalError": 6.551895141981845e-07,
+      "reset_bitwise_equal": true,
+      "camera_preserved": true,
+      "source_immutable": true
+    },
+    "controls": {
+      "azimuth_at_pole": true,
+      "camera_direction": true,
+      "reset": true
+    }
+  },
   "errors": [],
-  "baseline_source_commit": "332fa4aab56653b1f8481a58051981955ab59d02"
+  "baseline_source_commit": "b5172c524211ee369f6bfab3467bceffc778ea76"
 }
