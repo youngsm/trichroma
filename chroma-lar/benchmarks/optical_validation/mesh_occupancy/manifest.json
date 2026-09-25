@@ -1,0 +1,27 @@
+{
+  "counts": [
+    15000000,
+    25000000
+  ],
+  "fixture": "theia",
+  "geometry": {
+    "channels": 49684,
+    "coverage": 0.81,
+    "diameter_mm": 508.0,
+    "size_mm": 25500.0
+  },
+  "photons": {
+    "15000000_1910.npz": "340a6f24bfeff9c308c91e1bb613370115d2e835863416cb1ba135b2a3a599a5",
+    "15000000_2919.npz": "2f5128cfb05fc7f3fcced4925930d080a5d71fafdbdd622a0313ede7f6688a86",
+    "15000000_901.npz": "9d636dffe72b4a43765a205b5d0765bffee79c2aff580655c19c7558cb597505",
+    "25000000_1910.npz": "6000166c23504c49e28f4824ca2bd3cf2759a10813c8db43d5fbb35c1097667e",
+    "25000000_2919.npz": "2238964d22d7bd1bff0adf6fe648eedc761ca7fcc98277e101829c5967535e4c",
+    "25000000_901.npz": "4c4183e59e3928447bcce36ec35e2ae4c6c0ff0713476f085eaa63febd5d3148"
+  },
+  "seeds": [
+    901,
+    1910,
+    2919
+  ],
+  "source": "1 m beta=1 Cherenkov track along +z at the centre, 300-650 nm (chroma.triton.examples.theia)"
+}
