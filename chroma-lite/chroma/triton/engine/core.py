@@ -16,7 +16,7 @@ from chroma.triton.engine.scene import compile_scene
 from chroma.triton.engine.traverse import nearest_hit_kernel
 
 BLOCK = 64
-DAQ_STEP = tl.constexpr(0x03FFF800)  # Philox step index reserved for the DAQ
+DAQ_COUNTER = tl.constexpr(0x7FFFFF00)  # Philox draw counters reserved for the DAQ
 SIGN = tl.constexpr(-2147483648)
 
 
@@ -69,9 +69,9 @@ def _daq_kernel(t_ptr, flags_ptr, last_ptr, w_ptr, ids_ptr, start, count,
     ok = ok & (channel >= 0)
     ids = tl.load(ids_ptr + row, mask=valid, other=0)
     weight = tl.load(w_ptr + row, mask=valid, other=1.)
-    ok = ok & (P.rng(ids, seed, DAQ_STEP, 0) < weight)
-    time = tl.load(t_ptr + row, mask=valid, other=0.) + _interp_cdf(tcdf_x, tcdf_y, n_t, P.rng(ids, seed, DAQ_STEP, 1), ok)
-    charge = _interp_cdf(qcdf_x, qcdf_y, n_q, P.rng(ids, seed, DAQ_STEP, 2), ok)
+    ok = ok & (P.philox_uniform(ids, seed, tl.zeros(ids.shape, tl.int32) + (DAQ_COUNTER + 0)) < weight)
+    time = tl.load(t_ptr + row, mask=valid, other=0.) + _interp_cdf(tcdf_x, tcdf_y, n_t, P.philox_uniform(ids, seed, tl.zeros(ids.shape, tl.int32) + (DAQ_COUNTER + 1)), ok)
+    charge = _interp_cdf(qcdf_x, qcdf_y, n_q, P.philox_uniform(ids, seed, tl.zeros(ids.shape, tl.int32) + (DAQ_COUNTER + 2)), ok)
     q_int = (charge / charge_unit + 0.5).to(tl.int32)
     ch = tl.maximum(channel, 0)
     # Chroma compares the raw float bits as unsigned integers; flipping the
@@ -146,6 +146,12 @@ class ProductionEngine(object):
             self.charge_unit = float(np.float32(detector.charge_cdf[0][-1] / 2**16))
             self.nchannels = int(detector.num_channels())
         self._workspace = None
+        self._dummy_f32 = torch.zeros(1, dtype=torch.float32, device=dev)
+        self._dummy_i64 = torch.zeros(1, dtype=torch.int64, device=dev)
+        self.grid = None
+        import os
+        if os.environ.get("CHROMA_TRITON_GRID", "1") != "0":
+            self.enable_grid(detector)
 
     # ------------------------------------------------------------ helpers
 
@@ -159,8 +165,10 @@ class ProductionEngine(object):
             dev = self.device
             ws = dict(
                 capacity=capacity,
-                rows=[torch.empty(capacity, dtype=torch.int32, device=dev) for _ in range(2)],
-                counts=[torch.zeros(1, dtype=torch.int32, device=dev) for _ in range(2)],
+                bulk=[torch.empty(capacity, dtype=torch.int32, device=dev) for _ in range(2)],
+                bulk_count=[torch.zeros(1, dtype=torch.int32, device=dev) for _ in range(2)],
+                boundary=torch.empty(capacity, dtype=torch.int32, device=dev),
+                boundary_count=torch.zeros(1, dtype=torch.int32, device=dev),
                 hit_t=torch.empty(capacity, dtype=torch.float32, device=dev),
                 hit_tri=torch.empty(capacity, dtype=torch.int32, device=dev),
                 hit_n=torch.empty((capacity, 3), dtype=torch.float32, device=dev),
@@ -169,52 +177,147 @@ class ProductionEngine(object):
             self._workspace = ws
         return ws
 
+    def enable_grid(self, geometry, **options):
+        """Build and upload the certified empty-space grid (bulk shortcut)."""
+        from chroma.triton.engine.grid import build_grid
+
+        grid = build_grid(self, geometry, **options)
+        self.grid = grid
+        self.grid_material = _to_device(grid.material, self.device, np.int32)
+        self.grid_boxes = _to_device(grid.boxes, self.device, np.float32)
+        return grid
+
+    def query(self, origins, directions, last_hit=None):
+        """Nearest boundary for arbitrary rays (tensors [N,3]); diagnostics/certification.
+
+        Returns (distance, triangle, unit normal [N,3], codes [N,3] =
+        inner material, outer material, surface).
+        """
+        dev = self.device
+        origins = torch.as_tensor(origins, dtype=torch.float32, device=dev).contiguous()
+        directions = torch.as_tensor(directions, dtype=torch.float32, device=dev).contiguous()
+        n = origins.shape[0]
+        rows = torch.arange(n, dtype=torch.int32, device=dev)
+        count = torch.tensor([n], dtype=torch.int32, device=dev)
+        last = torch.full((n,), -1, dtype=torch.int32, device=dev) if last_hit is None else \
+            torch.as_tensor(last_hit, dtype=torch.int32, device=dev)
+        out_t = torch.empty(n, dtype=torch.float32, device=dev)
+        out_tri = torch.empty(n, dtype=torch.int32, device=dev)
+        out_n = torch.empty((n, 3), dtype=torch.float32, device=dev)
+        out_codes = torch.empty((n, 3), dtype=torch.int32, device=dev)
+        if n:
+            nearest_hit_kernel[(triton.cdiv(n, BLOCK),)](
+                rows, count, origins, directions, last,
+                self.nodes, self.instances, self.tri_data, self.tri_local,
+                self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
+                out_t, out_tri, out_n, out_codes, n, LEAF=self.leaf_size, BLOCK=BLOCK)
+        return out_t, out_tri, out_n, out_codes
+
     # ---------------------------------------------------------- transport
 
-    def propagate(self, photons, *, max_steps, use_weights=False, track=False):
+    def _step_args(self, photons, steps, cursor, norm, renorm):
+        return (photons.pos, photons.dir, photons.pol, photons.wavelengths, photons.t,
+                photons.last_hit_triangles, photons.flags, photons.weights, photons.ids,
+                steps, cursor, norm, self._dummy_f32, self._dummy_i64, renorm, int(renorm.numel()))
+
+    def _material_args(self):
+        return (self.rindex, self.absorption, self.scattering,
+                self.comp_offsets, self.comp_prob, self.comp_wcdf, self.comp_tcdf, self.comp_abs)
+
+    def _boundary_round(self, rows, cnt, count, n, photons, steps, cursor, norm, renorm, out_rows, out_count,
+                        max_steps, use_weights):
+        ws = self._workspace
+        grid = (triton.cdiv(count, BLOCK),)
+        nearest_hit_kernel[grid](
+            rows, cnt, photons.pos, photons.dir, photons.last_hit_triangles,
+            self.nodes, self.instances, self.tri_data, self.tri_local,
+            self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
+            ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"], n,
+            LEAF=self.leaf_size, BLOCK=BLOCK)
+        P.step_kernel[grid](
+            rows, cnt, n, *self._step_args(photons, steps, cursor, norm, renorm),
+            ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"],
+            *self._material_args(),
+            self.s_present, self.s_model, self.s_detect, self.s_absorb, self.s_reemit,
+            self.s_diffuse, self.s_specular, self.s_cdf,
+            out_rows, out_count,
+            self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+            NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp,
+            USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=True, BLOCK=BLOCK)
+
+    def propagate(self, photons, *, max_steps, use_weights=False, track=False, history=16, epochs_per_poll=4):
         n = len(photons)
         if n == 0:
             return [] if track else None
         dev = self.device
         steps = torch.zeros(n, dtype=torch.int32, device=dev)
+        cursor = torch.zeros(n, dtype=torch.int32, device=dev)
+        norm = torch.full((n,), -1, dtype=torch.int32, device=dev)
+        # Production mode normalizes direction/polarization once on entry,
+        # like a single original launch.
+        renorm = torch.zeros(1, dtype=torch.int32, device=dev)
         live = torch.nonzero((photons.flags & TERMINAL) == 0).flatten().to(torch.int32)
         ws = self._buffers(n)
-        cur, nxt = 0, 1
-        ws["rows"][cur][: live.numel()] = live
-        ws["counts"][cur].fill_(live.numel())
         count = live.numel()
+        if track or getattr(self, "grid", None) is None:
+            return self._propagate_stepwise(photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track)
+        g = self.grid
+        cur = 0
+        ws["bulk"][cur][:count] = live
+        ws["bulk_count"][cur].fill_(count)
+        bulk_count = count
+        while True:
+            ws["boundary_count"].zero_()
+            # Bulk epochs: several launches between host polls.
+            while bulk_count > 0:
+                for _ in range(epochs_per_poll):
+                    nxt = 1 - cur
+                    ws["bulk_count"][nxt].zero_()
+                    P.bulk_kernel[(triton.cdiv(bulk_count, BLOCK),)](
+                        ws["bulk"][cur], ws["bulk_count"][cur], n,
+                        *self._step_args(photons, steps, cursor, norm, renorm),
+                        self.grid_material, self.grid_boxes,
+                        float(g.lower[0]), float(g.lower[1]), float(g.lower[2]),
+                        float(g.cell[0]), float(g.cell[1]), float(g.cell[2]),
+                        g.shape[0], g.shape[1], g.shape[2],
+                        *self._material_args(),
+                        ws["bulk"][nxt], ws["bulk_count"][nxt], ws["boundary"], ws["boundary_count"],
+                        self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+                        NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights),
+                        TAPE=False, FIXES=True, HISTORY=history, BLOCK=BLOCK)
+                    cur = nxt
+                bulk_count = int(ws["bulk_count"][cur].item())
+            boundary_count = int(ws["boundary_count"].item())
+            if boundary_count == 0:
+                break
+            ws["bulk_count"][cur].zero_()
+            self._boundary_round(ws["boundary"], ws["boundary_count"], boundary_count, n, photons, steps, cursor,
+                                 norm, renorm, ws["bulk"][cur], ws["bulk_count"][cur], max_steps, use_weights)
+            bulk_count = int(ws["bulk_count"][cur].item())
+        return None
+
+    def _propagate_stepwise(self, photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track):
+        """One full step per round (no bulk shortcut); used for tracking."""
+        ws = self._workspace
+        n = len(photons)
+        count = live.numel()
+        cur = 0
+        ws["bulk"][cur][:count] = live
+        ws["bulk_count"][cur].fill_(count)
         tracks = [] if track else None
         if track:
             tracks.append((live.to(torch.int64), photons.select(live.long()).clone()))
         rounds = 0
         while count > 0 and rounds < max_steps:
-            rows, cnt = ws["rows"][cur], ws["counts"][cur]
-            grid = (triton.cdiv(count, BLOCK),)
-            nearest_hit_kernel[grid](
-                rows, cnt, photons.pos, photons.dir, photons.last_hit_triangles,
-                self.nodes, self.instances, self.tri_data, self.tri_local,
-                self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
-                ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"], n,
-                LEAF=self.leaf_size, BLOCK=BLOCK)
-            ws["counts"][nxt].zero_()
-            P.step_kernel[grid](
-                rows, cnt, n,
-                photons.pos, photons.dir, photons.pol, photons.wavelengths, photons.t,
-                photons.last_hit_triangles, photons.flags, photons.weights, photons.ids, steps,
-                ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"],
-                self.rindex, self.absorption, self.scattering,
-                self.comp_offsets, self.comp_prob, self.comp_wcdf, self.comp_tcdf, self.comp_abs,
-                self.s_present, self.s_model, self.s_detect, self.s_absorb, self.s_reemit,
-                self.s_diffuse, self.s_specular, self.s_cdf,
-                ws["rows"][nxt], ws["counts"][nxt],
-                self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
-                NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp,
-                USE_WEIGHTS=bool(use_weights), BLOCK=BLOCK)
+            nxt = 1 - cur
+            ws["bulk_count"][nxt].zero_()
+            self._boundary_round(ws["bulk"][cur], ws["bulk_count"][cur], count, n, photons, steps, cursor, norm,
+                                 renorm, ws["bulk"][nxt], ws["bulk_count"][nxt], max_steps, use_weights)
             if track:
-                processed = rows[:count].to(torch.int64).clone()
+                processed = ws["bulk"][cur][:count].to(torch.int64).clone()
                 tracks.append((processed, photons.select(processed).clone()))
-            cur, nxt = nxt, cur
-            count = int(ws["counts"][cur].item())
+            cur = nxt
+            count = int(ws["bulk_count"][cur].item())
             rounds += 1
         return tracks
 
