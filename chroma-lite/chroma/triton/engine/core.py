@@ -98,6 +98,7 @@ class ProductionEngine(object):
             # Simulation parameters the tape must match.
             from chroma.triton.engine.exact_mode import ExactMode
 
+            self._workspace = None  # device queues of _buffers(), used by the exact rounds
             self.exact = ExactMode(self, detector, tape, seed=seed, **(simulation or {}))
             return
         self.scene = scene = compile_scene(detector, leaf_size=leaf_size)
