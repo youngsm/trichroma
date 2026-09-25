@@ -195,7 +195,7 @@ class Simulation(object):
         torch = _torch()
         tri = photons.last_hit_triangles
         detected = ((photons.flags & SURFACE_DETECT) != 0) & (tri >= 0)
-        solid = torch.where(detected, self.engine.solid_id[tri.clamp(min=0).long()], 0)
+        solid = torch.where(detected, self.engine.triangle_solid(tri.clamp(min=0)), 0)
         channel = torch.where(detected, self.engine.solid_id_to_channel_index[solid.long()], -1)
         rows = torch.nonzero(detected & (channel >= 0)).flatten()
         hits = photons.select(rows).to_numpy()
