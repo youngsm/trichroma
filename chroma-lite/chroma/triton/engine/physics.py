@@ -55,6 +55,36 @@ def philox_uniform(ids, seed, counter):
     return ((x >> 9).to(tl.float32) + 0.5) * 1.1920928955078125e-7
 
 
+# Production draws: every event of a photon (one loop iteration of Chroma's
+# propagate) takes its uniforms from Philox blocks keyed by (photon id, number
+# of steps done before the event, block); one Philox call yields four. The
+# draws therefore do not depend on batch composition, launch shape, queue order
+# or on which kernel (bulk shortcut, wavefront step, fused) takes the event.
+B_TRANSPORT = tl.constexpr(0)  # absorption, scattering, Rayleigh cos, Rayleigh phi
+B_SURFACE = tl.constexpr(1)  # surface choice, second surface choice, Fresnel polarization, Fresnel reflection
+B_WLS = tl.constexpr(2)  # WLS reflection kind, re-emission wavelength
+B_WLS_DIR = tl.constexpr(3)  # WLS re-emission direction and polarization spheres
+B_BULK_REEMIT = tl.constexpr(4)  # component, re-emission, wavelength, time
+B_BULK_DIR = tl.constexpr(5)  # bulk re-emission direction and polarization spheres
+B_DIFFUSE_POL = tl.constexpr(6)  # diffuse polarization sphere
+B_DIFFUSE = tl.constexpr(8)  # diffuse rejection loop, one block per trial
+
+
+@triton.jit
+def _unit(x):
+    return ((x >> 9).to(tl.float32) + 0.5) * 1.1920928955078125e-7
+
+
+@triton.jit
+def uniforms4(ids, seed, key, block):
+    """Four uniforms in (0,1) from Philox(seed; id_lo, id_hi, key, block)."""
+    low = ids.to(tl.uint64).to(tl.uint32)
+    high = (ids.to(tl.uint64) >> 32).to(tl.uint32)
+    c3 = (tl.zeros(ids.shape, tl.int32) + block).to(tl.uint32)
+    a, b, c, d = philox(seed, low, high, key.to(tl.uint32), c3)
+    return _unit(a), _unit(b), _unit(c), _unit(d)
+
+
 @triton.jit
 def draw(cursor, mask, ids, seed, tape_ptr, tape_off, TAPE: tl.constexpr):
     """Next uniform for lanes in ``mask``; returns (u, advanced cursor)."""
@@ -148,58 +178,61 @@ def rayleigh(dx, dy, dz, px, py, pz, u_cos, u_phi):
 
 @triton.jit
 def bulk_process(absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last,
-                 cursor, ids, seed, tape_ptr, tape_off,
+                 u_cos, u_phi, ids, seed, key,
                  comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
                  wl_start, wl_step, time_start, time_step,
-                 NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr, TAPE: tl.constexpr):
+                 NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr):
     """Chroma's absorption (with multi-component re-emission) and Rayleigh
-    branches of ``propagate_to_boundary`` after the photon has moved."""
-    # Bulk absorption and multi-component re-emission.
-    c_begin = tl.load(comp_offsets + inc, mask=absorbed, other=0)
-    ncomp = tl.load(comp_offsets + inc + 1, mask=absorbed, other=0) - c_begin
-    has_comp = absorbed & (ncomp > 0)
-    u_comp, cursor = draw(cursor, has_comp, ids, seed, tape_ptr, tape_off, TAPE)
-    chosen = c_begin
-    found = tl.zeros(ids.shape, tl.int1)
-    prob = tl.zeros(ids.shape, tl.float32)
-    for c in tl.static_range(MAX_COMP):
-        in_range = has_comp & (c < ncomp) & ~found
-        cabs = interp_uniform(comp_abs, c_begin + c, wl, wl_start, wl_step, NW, in_range)
-        prob = tl.where(in_range, prob + alen / cabs, prob)
-        pick = in_range & ((u_comp < prob) | (c + 1 == ncomp))
-        chosen = tl.where(pick, c_begin + c, chosen)
-        found = found | pick
-    u_re, cursor = draw(cursor, has_comp, ids, seed, tape_ptr, tape_off, TAPE)
-    reemit_p = interp_uniform(comp_prob, chosen, wl, wl_start, wl_step, NW, has_comp)
-    bulk_reemit = has_comp & (u_re < reemit_p)
-    u_w, cursor = draw(cursor, bulk_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    new_wl = sample_uniform_cdf(comp_wcdf, chosen, u_w, wl_start, wl_step, NW, bulk_reemit)
-    u_t, cursor = draw(cursor, bulk_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    dt = sample_uniform_cdf(comp_tcdf, chosen, u_t, time_start, time_step, NT, bulk_reemit)
-    u0, cursor = draw(cursor, bulk_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    u1, cursor = draw(cursor, bulk_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    rdx, rdy, rdz = uniform_sphere(u0, u1)
-    u0, cursor = draw(cursor, bulk_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    u1, cursor = draw(cursor, bulk_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    sx, sy, sz = uniform_sphere(u0, u1)
-    rpx, rpy, rpz = normalize(sy * rdz - sz * rdy, sz * rdx - sx * rdz, sx * rdy - sy * rdx)
-    wl = tl.where(bulk_reemit, new_wl, wl)
-    t = tl.where(bulk_reemit, t + dt, t)
-    dx, dy, dz = tl.where(bulk_reemit, rdx, dx), tl.where(bulk_reemit, rdy, dy), tl.where(bulk_reemit, rdz, dz)
-    px, py, pz = tl.where(bulk_reemit, rpx, px), tl.where(bulk_reemit, rpy, py), tl.where(bulk_reemit, rpz, pz)
-    flags = tl.where(bulk_reemit, flags | BULK_REEMIT, flags)
-    flags = tl.where(absorbed & ~bulk_reemit, flags | BULK_ABSORB, flags)
+    branches of ``propagate_to_boundary`` after the photon has moved.
 
-    # Rayleigh scattering.
-    u0, cursor = draw(cursor, scattered, ids, seed, tape_ptr, tape_off, TAPE)
-    u1, cursor = draw(cursor, scattered, ids, seed, tape_ptr, tape_off, TAPE)
-    sdx, sdy, sdz, spx, spy, spz = rayleigh(dx, dy, dz, px, py, pz, u0, u1)
-    dx, dy, dz = tl.where(scattered, sdx, dx), tl.where(scattered, sdy, dy), tl.where(scattered, sdz, dz)
-    px, py, pz = tl.where(scattered, spx, px), tl.where(scattered, spy, py), tl.where(scattered, spz, pz)
-    flags = tl.where(scattered, flags | RAYLEIGH_SCATTER, flags)
+    Branches that no lane of the warp takes are skipped. (Conditions are
+    computed before each ``if``: a call in a nested loop test makes Triton
+    lower the ``if`` to unstructured branches.)
+    """
+    n_absorbed = tl.sum(absorbed.to(tl.int32), axis=0)
+    if n_absorbed > 0:
+        c_begin = tl.load(comp_offsets + inc, mask=absorbed, other=0)
+        ncomp = tl.load(comp_offsets + inc + 1, mask=absorbed, other=0) - c_begin
+        has_comp = absorbed & (ncomp > 0)
+        reemit_i = tl.zeros(ids.shape, tl.int32)
+        n_comp = tl.sum(has_comp.to(tl.int32), axis=0)
+        if n_comp > 0:
+            u_comp, u_re, u_w, u_t = uniforms4(ids, seed, key, B_BULK_REEMIT)
+            chosen = c_begin
+            found = tl.zeros(ids.shape, tl.int1)
+            prob = tl.zeros(ids.shape, tl.float32)
+            for c in tl.static_range(MAX_COMP):
+                in_range = has_comp & (c < ncomp) & ~found
+                cabs = interp_uniform(comp_abs, c_begin + c, wl, wl_start, wl_step, NW, in_range)
+                prob = tl.where(in_range, prob + alen / cabs, prob)
+                pick = in_range & ((u_comp < prob) | (c + 1 == ncomp))
+                chosen = tl.where(pick, c_begin + c, chosen)
+                found = found | pick
+            reemit_p = interp_uniform(comp_prob, chosen, wl, wl_start, wl_step, NW, has_comp)
+            bulk_reemit = has_comp & (u_re < reemit_p)
+            reemit_i = bulk_reemit.to(tl.int32)
+            n_reemit = tl.sum(reemit_i, axis=0)
+            if n_reemit > 0:
+                new_wl = sample_uniform_cdf(comp_wcdf, chosen, u_w, wl_start, wl_step, NW, bulk_reemit)
+                dt = sample_uniform_cdf(comp_tcdf, chosen, u_t, time_start, time_step, NT, bulk_reemit)
+                s0, s1, s2, s3 = uniforms4(ids, seed, key, B_BULK_DIR)
+                rdx, rdy, rdz = uniform_sphere(s0, s1)
+                sx, sy, sz = uniform_sphere(s2, s3)
+                rpx, rpy, rpz = normalize(sy * rdz - sz * rdy, sz * rdx - sx * rdz, sx * rdy - sy * rdx)
+                wl = tl.where(bulk_reemit, new_wl, wl)
+                t = tl.where(bulk_reemit, t + dt, t)
+                dx, dy, dz = tl.where(bulk_reemit, rdx, dx), tl.where(bulk_reemit, rdy, dy), tl.where(bulk_reemit, rdz, dz)
+                px, py, pz = tl.where(bulk_reemit, rpx, px), tl.where(bulk_reemit, rpy, py), tl.where(bulk_reemit, rpz, pz)
+                flags = tl.where(bulk_reemit, flags | BULK_REEMIT, flags)
+        flags = tl.where(absorbed & (reemit_i == 0), flags | BULK_ABSORB, flags)
+    n_scattered = tl.sum(scattered.to(tl.int32), axis=0)
+    if n_scattered > 0:
+        sdx, sdy, sdz, spx, spy, spz = rayleigh(dx, dy, dz, px, py, pz, u_cos, u_phi)
+        dx, dy, dz = tl.where(scattered, sdx, dx), tl.where(scattered, sdy, dy), tl.where(scattered, sdz, dz)
+        px, py, pz = tl.where(scattered, spx, px), tl.where(scattered, spy, py), tl.where(scattered, spz, pz)
+        flags = tl.where(scattered, flags | RAYLEIGH_SCATTER, flags)
     last = tl.where(absorbed | scattered, -1, last)
-
-    return wl, t, dx, dy, dz, px, py, pz, flags, last, cursor
+    return wl, t, dx, dy, dz, px, py, pz, flags, last
 
 
 @triton.jit
@@ -254,6 +287,189 @@ def renorm_kernel(rows_ptr, count_ptr, capacity, dir_ptr, pol_ptr, steps_ptr, no
 
 
 # ----------------------------------------------------------------- the step
+
+@triton.jit
+def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight, ids, key,
+                  dist, tri, nx, ny, nz, m_inner, m_outer, sidx,
+                  rindex, absorption, scattering,
+                  comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
+                  s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
+                  seed, wl_start, wl_step, time_start, time_step,
+                  NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr,
+                  USE_WEIGHTS: tl.constexpr, FIXES: tl.constexpr):
+    """One Chroma loop iteration after the NaN check, for lanes in ``live``,
+    given their nearest boundary (``dist``, triangle ``tri`` (-1 none, -2
+    wire), unit normal, inner/outer material and surface index). ``key`` is
+    the photon's step count before this event (the draw key)."""
+    # ---- fill_state -----------------------------------------------------
+    missed = live & (tri == -1)
+    flags = tl.where(missed, flags | NO_HIT, flags)
+    last = tl.where(live, tri, last)
+    hit = live & (tri != -1)
+    # Chroma: facing = dot(n, -d) > 0 -> material1 = outer, normal kept;
+    # otherwise material1 = inner and the normal is flipped.
+    facing = (nx * -dx + ny * -dy + nz * -dz) > 0.
+    inc = tl.where(facing, m_outer, m_inner)
+    oth = tl.where(facing, m_inner, m_outer)
+    nx = tl.where(facing, nx, -nx)
+    ny = tl.where(facing, ny, -ny)
+    nz = tl.where(facing, nz, -nz)
+    n1 = interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, hit)
+    n2 = interp_uniform(rindex, oth, wl, wl_start, wl_step, NW, hit)
+    alen = interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, hit)
+    slen = interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, hit)
+
+    # ---- propagate_to_boundary -----------------------------------------------
+    u_abs, u_sca, u_cos, u_phi = uniforms4(ids, seed, key, B_TRANSPORT)
+    da = -alen * tl.log(u_abs)
+    ds = -slen * tl.log(u_sca)
+    if USE_WEIGHTS:
+        weighted = hit & (weight > WEIGHT_LOWER_THRESHOLD)
+        da = tl.where(weighted, 1e30, da)
+    else:
+        weighted = hit & False
+    absorbed = hit & (da <= ds) & (da <= dist)
+    scattered = hit & ~(da <= ds) & (ds <= dist)
+    boundary = hit & ~absorbed & ~scattered
+    if USE_WEIGHTS:
+        weight = tl.where(weighted & scattered, weight * tl.exp(-ds / alen), weight)
+        weight = tl.where(weighted & boundary, weight * tl.exp(-dist / alen), weight)
+    travel = tl.where(absorbed, da, tl.where(scattered, ds, dist))
+    moved = hit
+    # Explicit fma: the bulk shortcut must round the move exactly like this.
+    t = tl.where(moved, t + travel / (SPEED_OF_LIGHT / n1), t)
+    x = tl.where(moved, tl.fma(travel, dx, x), x)
+    y = tl.where(moved, tl.fma(travel, dy, y), y)
+    z = tl.where(moved, tl.fma(travel, dz, z), z)
+
+    wl, t, dx, dy, dz, px, py, pz, flags, last = bulk_process(
+        absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last, u_cos, u_phi, ids, seed, key,
+        comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
+        wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP)
+
+    # ---- propagate_at_surface ----------------------------------------------------
+    # Branches that no lane of the warp takes are skipped; masks leave the
+    # branches as int32.
+    u_s, u_s2, u_pol, u_refl = uniforms4(ids, seed, key, B_SURFACE)
+    safe_s = tl.maximum(sidx, 0)
+    surf = boundary & (sidx != -1)
+    surf_pass = tl.zeros(hit.shape, tl.int32)
+    n_surf = tl.sum(surf.to(tl.int32), axis=0)
+    if n_surf > 0:
+        model = tl.load(s_model + safe_s, mask=surf, other=0)
+        absorb = interp_uniform(s_absorb, safe_s, wl, wl_start, wl_step, NW, surf)
+        detect = interp_uniform(s_detect, safe_s, wl, wl_start, wl_step, NW, surf)
+        diffuse = interp_uniform(s_diffuse, safe_s, wl, wl_start, wl_step, NW, surf)
+        specular = interp_uniform(s_specular, safe_s, wl, wl_start, wl_step, NW, surf)
+        default = surf & (model == 0)
+        wls = surf & (model == 2)
+        if USE_WEIGHTS:
+            reweight = (default | wls) & (weight > WEIGHT_LOWER_THRESHOLD) & (absorb < 1.0 - WEIGHT_LOWER_THRESHOLD)
+            survive = tl.where(reweight, 1.0 - absorb, 1.0)
+            weight = tl.where(reweight, weight * survive, weight)
+            detect = tl.where(reweight & default, detect / survive, detect)
+            diffuse = tl.where(reweight, diffuse / survive, diffuse)
+            specular = tl.where(reweight, specular / survive, specular)
+            absorb = tl.where(reweight, 0., absorb)
+            forced = default & (detect > 0.)
+        else:
+            forced = default & False
+        d_absorb = default & ~forced & (u_s < absorb)
+        d_detect = default & (forced | (~d_absorb & (u_s < absorb + detect)))
+        d_diffuse = default & ~d_absorb & ~d_detect & (u_s < absorb + detect + diffuse)
+        d_specular = default & ~d_absorb & ~d_detect & ~d_diffuse & (u_s < absorb + detect + diffuse + specular)
+        weight = tl.where(forced, weight * detect, weight)
+        flags = tl.where(d_absorb, flags | SURFACE_ABSORB, flags)
+        flags = tl.where(d_detect, flags | SURFACE_DETECT, flags)
+
+        w_specular_i = tl.zeros(hit.shape, tl.int32)
+        w_diffuse_i = tl.zeros(hit.shape, tl.int32)
+        w_transmit_i = tl.zeros(hit.shape, tl.int32)
+        n_wls = tl.sum(wls.to(tl.int32), axis=0)
+        if n_wls > 0:
+            reemit = interp_uniform(s_reemit, safe_s, wl, wl_start, wl_step, NW, wls)
+            u3, u_w, _, _ = uniforms4(ids, seed, key, B_WLS)
+            w_absorbed = wls & (u_s < absorb)
+            w_reemit = w_absorbed & (u_s2 < reemit)
+            w_reflect = wls & ~w_absorbed & (u_s < absorb + specular + diffuse)
+            w_specular = w_reflect & (u3 * (specular + diffuse) < specular)
+            w_diffuse = w_reflect & ~w_specular
+            w_transmit = wls & ~w_absorbed & ~w_reflect
+            flags = tl.where(w_absorbed & ~w_reemit, flags | SURFACE_ABSORB, flags)
+            flags = tl.where(w_transmit, flags | SURFACE_TRANSMIT, flags)
+            w_specular_i = w_specular.to(tl.int32)
+            w_diffuse_i = w_diffuse.to(tl.int32)
+            w_transmit_i = w_transmit.to(tl.int32)
+            # WLS re-emission: new wavelength, isotropic direction, random polarization.
+            n_reemit = tl.sum(w_reemit.to(tl.int32), axis=0)
+            if n_reemit > 0:
+                new_wl = sample_uniform_cdf(s_cdf, safe_s, u_w, wl_start, wl_step, NW, w_reemit)
+                e0, e1, e2, e3 = uniforms4(ids, seed, key, B_WLS_DIR)
+                edx, edy, edz = uniform_sphere(e0, e1)
+                sx, sy, sz = uniform_sphere(e2, e3)
+                epx, epy, epz = normalize(sy * edz - sz * edy, sz * edx - sx * edz, sx * edy - sy * edx)
+                wl = tl.where(w_reemit, new_wl, wl)
+                dx, dy, dz = tl.where(w_reemit, edx, dx), tl.where(w_reemit, edy, dy), tl.where(w_reemit, edz, dz)
+                px, py, pz = tl.where(w_reemit, epx, px), tl.where(w_reemit, epy, py), tl.where(w_reemit, epz, pz)
+                flags = tl.where(w_reemit, flags | SURFACE_REEMIT, flags)
+        w_specular = w_specular_i != 0
+        w_diffuse = w_diffuse_i != 0
+        w_transmit = w_transmit_i != 0
+
+        # Diffuse reflector: rejection sampling about the incident-side normal.
+        diff = d_diffuse | w_diffuse
+        n_diff = tl.sum(diff.to(tl.int32), axis=0)
+        if n_diff > 0:
+            pending = diff
+            trial = n_diff * 0
+            n_pending = n_diff
+            while n_pending > 0:
+                a0, a1, aa, _ = uniforms4(ids, seed, key, B_DIFFUSE + trial)
+                cx, cy, cz = uniform_sphere(a0, a1)
+                ndotv = cx * nx + cy * ny + cz * nz
+                flip = ndotv < 0.
+                cx, cy, cz = tl.where(flip, -cx, cx), tl.where(flip, -cy, cy), tl.where(flip, -cz, cz)
+                ndotv = tl.where(flip, -ndotv, ndotv)
+                dx, dy, dz = tl.where(pending, cx, dx), tl.where(pending, cy, dy), tl.where(pending, cz, dz)
+                pending = pending & ~(aa < ndotv)
+                n_pending = tl.sum(pending.to(tl.int32), axis=0)
+                trial += 1
+            q0, q1, _, _ = uniforms4(ids, seed, key, B_DIFFUSE_POL)
+            sx, sy, sz = uniform_sphere(q0, q1)
+            lpx, lpy, lpz = normalize(sy * dz - sz * dy, sz * dx - sx * dz, sx * dy - sy * dx)
+            px, py, pz = tl.where(diff, lpx, px), tl.where(diff, lpy, py), tl.where(diff, lpz, pz)
+            flags = tl.where(diff, flags | REFLECT_DIFFUSE, flags)
+
+        # Specular reflector.
+        spec = d_specular | w_specular
+        dn = dx * nx + dy * ny + dz * nz
+        rdx, rdy, rdz = dx - 2.0 * dn * nx, dy - 2.0 * dn * ny, dz - 2.0 * dn * nz
+        if FIXES:
+            pn = px * nx + py * ny + pz * nz
+            px = tl.where(spec, px - 2.0 * pn * nx, px)
+            py = tl.where(spec, py - 2.0 * pn * ny, py)
+            pz = tl.where(spec, pz - 2.0 * pn * nz, pz)
+        dx, dy, dz = tl.where(spec, rdx, dx), tl.where(spec, rdy, dy), tl.where(spec, rdz, dz)
+        flags = tl.where(spec, flags | REFLECT_SPECULAR, flags)
+        surf_pass = ((default & ~d_absorb & ~d_detect & ~d_diffuse & ~d_specular) | w_transmit).to(tl.int32)
+
+    # ---- propagate_at_boundary (PASS) ------------------------------------------------
+    passed = boundary & (~surf | (surf_pass != 0))
+    n_passed = tl.sum(passed.to(tl.int32), axis=0)
+    if n_passed > 0:
+        if FIXES:
+            fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step(
+                dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u_pol, u_refl)
+        else:
+            # Literal photon.h propagate_at_boundary (NaN at exactly normal incidence).
+            fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step_chroma(
+                dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u_pol, u_refl)
+        dx, dy, dz = tl.where(passed, fdx, dx), tl.where(passed, fdy, dy), tl.where(passed, fdz, dz)
+        px, py, pz = tl.where(passed, fpx, px), tl.where(passed, fpy, py), tl.where(passed, fpz, pz)
+        flags = tl.where(passed & reflected, flags | REFLECT_SPECULAR, flags)
+
+    return x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight
+
 
 @triton.jit
 def step_kernel(
@@ -320,157 +536,13 @@ def step_kernel(
     m_inner = tl.load(hit_codes + lane * 3 + 0, mask=live, other=0)
     m_outer = tl.load(hit_codes + lane * 3 + 1, mask=live, other=0)
     sidx = tl.load(hit_codes + lane * 3 + 2, mask=live, other=-1)
-    missed = live & (tri == -1)
-    flags = tl.where(missed, flags | NO_HIT, flags)
-    last = tl.where(live, tri, last)
-    hit = live & (tri != -1)
-    # Chroma: facing = dot(n, -d) > 0 -> material1 = outer, normal kept;
-    # otherwise material1 = inner and the normal is flipped.
-    facing = (nx * -dx + ny * -dy + nz * -dz) > 0.
-    inc = tl.where(facing, m_outer, m_inner)
-    oth = tl.where(facing, m_inner, m_outer)
-    nx = tl.where(facing, nx, -nx)
-    ny = tl.where(facing, ny, -ny)
-    nz = tl.where(facing, nz, -nz)
-    n1 = interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, hit)
-    n2 = interp_uniform(rindex, oth, wl, wl_start, wl_step, NW, hit)
-    alen = interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, hit)
-    slen = interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, hit)
-
-    # ---- propagate_to_boundary -----------------------------------------------
-    u_abs, cursor = draw(cursor, hit, ids, seed, tape_ptr, tape_off, TAPE)
-    u_sca, cursor = draw(cursor, hit, ids, seed, tape_ptr, tape_off, TAPE)
-    da = -alen * tl.log(u_abs)
-    ds = -slen * tl.log(u_sca)
-    if USE_WEIGHTS:
-        weighted = hit & (weight > WEIGHT_LOWER_THRESHOLD)
-        da = tl.where(weighted, 1e30, da)
-    else:
-        weighted = hit & False
-    absorbed = hit & (da <= ds) & (da <= dist)
-    scattered = hit & ~(da <= ds) & (ds <= dist)
-    boundary = hit & ~absorbed & ~scattered
-    if USE_WEIGHTS:
-        weight = tl.where(weighted & scattered, weight * tl.exp(-ds / alen), weight)
-        weight = tl.where(weighted & boundary, weight * tl.exp(-dist / alen), weight)
-    travel = tl.where(absorbed, da, tl.where(scattered, ds, dist))
-    moved = hit
-    # Explicit fma: the bulk kernel must round the move exactly like this.
-    t = tl.where(moved, t + travel / (SPEED_OF_LIGHT / n1), t)
-    x = tl.where(moved, tl.fma(travel, dx, x), x)
-    y = tl.where(moved, tl.fma(travel, dy, y), y)
-    z = tl.where(moved, tl.fma(travel, dz, z), z)
-
-    wl, t, dx, dy, dz, px, py, pz, flags, last, cursor = bulk_process(
-        absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last,
-        cursor, ids, seed, tape_ptr, tape_off,
+    x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight = boundary_step(
+        live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight, ids, step - 1,
+        dist, tri, nx, ny, nz, m_inner, m_outer, sidx,
+        rindex, absorption, scattering,
         comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
-        wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, TAPE)
-
-    # ---- propagate_at_surface ----------------------------------------------------
-    safe_s = tl.maximum(sidx, 0)
-    surf = boundary & (sidx != -1)
-    model = tl.load(s_model + safe_s, mask=surf, other=0)
-    absorb = interp_uniform(s_absorb, safe_s, wl, wl_start, wl_step, NW, surf)
-    detect = interp_uniform(s_detect, safe_s, wl, wl_start, wl_step, NW, surf)
-    diffuse = interp_uniform(s_diffuse, safe_s, wl, wl_start, wl_step, NW, surf)
-    specular = interp_uniform(s_specular, safe_s, wl, wl_start, wl_step, NW, surf)
-    reemit = interp_uniform(s_reemit, safe_s, wl, wl_start, wl_step, NW, surf & (model == 2))
-    default = surf & (model == 0)
-    wls = surf & (model == 2)
-    u, cursor = draw(cursor, default | wls, ids, seed, tape_ptr, tape_off, TAPE)
-    if USE_WEIGHTS:
-        reweight = (default | wls) & (weight > WEIGHT_LOWER_THRESHOLD) & (absorb < 1.0 - WEIGHT_LOWER_THRESHOLD)
-        survive = tl.where(reweight, 1.0 - absorb, 1.0)
-        weight = tl.where(reweight, weight * survive, weight)
-        detect = tl.where(reweight & default, detect / survive, detect)
-        diffuse = tl.where(reweight, diffuse / survive, diffuse)
-        specular = tl.where(reweight, specular / survive, specular)
-        absorb = tl.where(reweight, 0., absorb)
-        forced = default & (detect > 0.)
-    else:
-        forced = default & False
-    d_absorb = default & ~forced & (u < absorb)
-    d_detect = default & (forced | (~d_absorb & (u < absorb + detect)))
-    d_diffuse = default & ~d_absorb & ~d_detect & (u < absorb + detect + diffuse)
-    d_specular = default & ~d_absorb & ~d_detect & ~d_diffuse & (u < absorb + detect + diffuse + specular)
-    weight = tl.where(forced, weight * detect, weight)
-
-    w_absorbed = wls & (u < absorb)
-    u2, cursor = draw(cursor, w_absorbed, ids, seed, tape_ptr, tape_off, TAPE)
-    w_reemit = w_absorbed & (u2 < reemit)
-    w_reflect = wls & ~w_absorbed & (u < absorb + specular + diffuse)
-    u3, cursor = draw(cursor, w_reflect, ids, seed, tape_ptr, tape_off, TAPE)
-    w_specular = w_reflect & (u3 * (specular + diffuse) < specular)
-    w_diffuse = w_reflect & ~w_specular
-    w_transmit = wls & ~w_absorbed & ~w_reflect
-
-    flags = tl.where(d_absorb | (w_absorbed & ~w_reemit), flags | SURFACE_ABSORB, flags)
-    flags = tl.where(d_detect, flags | SURFACE_DETECT, flags)
-    flags = tl.where(w_transmit, flags | SURFACE_TRANSMIT, flags)
-
-    # WLS re-emission: new wavelength, isotropic direction, random polarization.
-    u_w, cursor = draw(cursor, w_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    new_wl = sample_uniform_cdf(s_cdf, safe_s, u_w, wl_start, wl_step, NW, w_reemit)
-    u0, cursor = draw(cursor, w_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    u1, cursor = draw(cursor, w_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    edx, edy, edz = uniform_sphere(u0, u1)
-    u0, cursor = draw(cursor, w_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    u1, cursor = draw(cursor, w_reemit, ids, seed, tape_ptr, tape_off, TAPE)
-    sx, sy, sz = uniform_sphere(u0, u1)
-    epx, epy, epz = normalize(sy * edz - sz * edy, sz * edx - sx * edz, sx * edy - sy * edx)
-    wl = tl.where(w_reemit, new_wl, wl)
-    dx, dy, dz = tl.where(w_reemit, edx, dx), tl.where(w_reemit, edy, dy), tl.where(w_reemit, edz, dz)
-    px, py, pz = tl.where(w_reemit, epx, px), tl.where(w_reemit, epy, py), tl.where(w_reemit, epz, pz)
-    flags = tl.where(w_reemit, flags | SURFACE_REEMIT, flags)
-
-    # Diffuse reflector: rejection sampling about the incident-side normal.
-    diff = d_diffuse | w_diffuse
-    pending = diff
-    while tl.sum(pending.to(tl.int32), axis=0) > 0:
-        u0, cursor = draw(cursor, pending, ids, seed, tape_ptr, tape_off, TAPE)
-        u1, cursor = draw(cursor, pending, ids, seed, tape_ptr, tape_off, TAPE)
-        cx, cy, cz = uniform_sphere(u0, u1)
-        ndotv = cx * nx + cy * ny + cz * nz
-        flip = ndotv < 0.
-        cx, cy, cz = tl.where(flip, -cx, cx), tl.where(flip, -cy, cy), tl.where(flip, -cz, cz)
-        ndotv = tl.where(flip, -ndotv, ndotv)
-        dx, dy, dz = tl.where(pending, cx, dx), tl.where(pending, cy, dy), tl.where(pending, cz, dz)
-        ua, cursor = draw(cursor, pending, ids, seed, tape_ptr, tape_off, TAPE)
-        pending = pending & ~(ua < ndotv)
-    u0, cursor = draw(cursor, diff, ids, seed, tape_ptr, tape_off, TAPE)
-    u1, cursor = draw(cursor, diff, ids, seed, tape_ptr, tape_off, TAPE)
-    sx, sy, sz = uniform_sphere(u0, u1)
-    lpx, lpy, lpz = normalize(sy * dz - sz * dy, sz * dx - sx * dz, sx * dy - sy * dx)
-    px, py, pz = tl.where(diff, lpx, px), tl.where(diff, lpy, py), tl.where(diff, lpz, pz)
-    flags = tl.where(diff, flags | REFLECT_DIFFUSE, flags)
-
-    # Specular reflector.
-    spec = d_specular | w_specular
-    dn = dx * nx + dy * ny + dz * nz
-    rdx, rdy, rdz = dx - 2.0 * dn * nx, dy - 2.0 * dn * ny, dz - 2.0 * dn * nz
-    if FIXES:
-        pn = px * nx + py * ny + pz * nz
-        px = tl.where(spec, px - 2.0 * pn * nx, px)
-        py = tl.where(spec, py - 2.0 * pn * ny, py)
-        pz = tl.where(spec, pz - 2.0 * pn * nz, pz)
-    dx, dy, dz = tl.where(spec, rdx, dx), tl.where(spec, rdy, dy), tl.where(spec, rdz, dz)
-    flags = tl.where(spec, flags | REFLECT_SPECULAR, flags)
-
-    # ---- propagate_at_boundary (PASS) ------------------------------------------------
-    passed = boundary & (~surf | (default & ~d_absorb & ~d_detect & ~d_diffuse & ~d_specular) | w_transmit)
-    u0, cursor = draw(cursor, passed, ids, seed, tape_ptr, tape_off, TAPE)
-    u1, cursor = draw(cursor, passed, ids, seed, tape_ptr, tape_off, TAPE)
-    if FIXES:
-        fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step(
-            dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u0, u1)
-    else:
-        # Literal photon.h propagate_at_boundary (NaN at exactly normal incidence).
-        fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step_chroma(
-            dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u0, u1)
-    dx, dy, dz = tl.where(passed, fdx, dx), tl.where(passed, fdy, dy), tl.where(passed, fdz, dz)
-    px, py, pz = tl.where(passed, fpx, px), tl.where(passed, fpy, py), tl.where(passed, fpz, pz)
-    flags = tl.where(passed & reflected, flags | REFLECT_SPECULAR, flags)
+        s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
+        seed, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES)
 
     if FIXES:
         terminal = TERMINAL_32
@@ -504,6 +576,68 @@ def append_rows(rows, mask, output, output_count):
     offset = tl.cumsum(selected, axis=0) - selected
     start = tl.atomic_add(output_count, total)
     tl.store(output + start + offset, rows, mask=mask)
+
+
+@triton.jit
+def bulk_attempt(active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight, ids, step,
+                 lx, ly, lz, ux, uy, uz, inc, n1, alen, slen,
+                 comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs, rindex, absorption, scattering,
+                 seed, max_steps, wl_start, wl_step, time_start, time_step,
+                 NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr, USE_WEIGHTS: tl.constexpr,
+                 FIXES: tl.constexpr):
+    """One bulk collision attempt inside the certified box ``[l, u]`` of
+    material ``inc`` for lanes in ``active`` (direction and position finite).
+
+    The event's distance draws (keyed by ``step``) decide a collision; it is
+    committed only before the shrunk box exit, where Chroma's ``fill_state``
+    would report this material and a farther boundary, so the outcome equals a
+    full step with the same draws. Returns the updated state, whether each lane
+    committed a collision, and whether it remains in the bulk (not terminal,
+    below ``max_steps``).
+    """
+    if FIXES:
+        terminal = TERMINAL_32
+    else:
+        terminal = TERMINAL_16
+    u_abs, u_sca, u_cos, u_phi = uniforms4(ids, seed, step, B_TRANSPORT)
+    da = -alen * tl.log(u_abs)
+    ds = -slen * tl.log(u_sca)
+    if USE_WEIGHTS:
+        weighted = active & (weight > WEIGHT_LOWER_THRESHOLD)
+        da = tl.where(weighted, 1e30, da)
+    else:
+        weighted = active & False
+    tx = tl.where(dx > 0., (ux - x) / dx, tl.where(dx < 0., (lx - x) / dx, float("inf")))
+    ty = tl.where(dy > 0., (uy - y) / dy, tl.where(dy < 0., (ly - y) / dy, float("inf")))
+    tz = tl.where(dz > 0., (uz - z) / dz, tl.where(dz < 0., (lz - z) / dz, float("inf")))
+    exit_d = tl.minimum(tl.minimum(tx, ty), tz)
+    safe = exit_d - tl.maximum(0.01, 2e-6 * exit_d)
+    absorbed = active & (da <= ds) & (da < safe)
+    scattered = active & ~(da <= ds) & (ds < safe)
+    commit = absorbed | scattered
+    key = step
+    step = step + commit.to(tl.int32)
+    if USE_WEIGHTS:
+        weight = tl.where(weighted & scattered, weight * tl.exp(-ds / alen), weight)
+    travel = tl.where(absorbed, da, ds)
+    t = tl.where(commit, t + travel / (SPEED_OF_LIGHT / n1), t)
+    x = tl.where(commit, tl.fma(travel, dx, x), x)
+    y = tl.where(commit, tl.fma(travel, dy, y), y)
+    z = tl.where(commit, tl.fma(travel, dz, z), z)
+    wl_before = wl
+    wl, t, dx, dy, dz, px, py, pz, flags, last = bulk_process(
+        absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last, u_cos, u_phi, ids, seed, key,
+        comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
+        wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP)
+    active = commit & ((flags & terminal) == 0) & (step < max_steps)
+    changed = active & (wl != wl_before)
+    n_changed = tl.sum(changed.to(tl.int32), axis=0)
+    if n_changed > 0:
+        n1 = tl.where(changed, interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, changed), n1)
+        alen = tl.where(changed, interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, changed), alen)
+        slen = tl.where(changed, interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, changed), slen)
+    return (x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight, step, n1, alen, slen,
+            commit, active)
 
 
 @triton.jit
@@ -591,48 +725,15 @@ def bulk_kernel(
                                                              renorm_ptr, n_renorm)
         product = dx * dy * dz * x * y * z
         odd = active & (product != product)
-        handoff = handoff | odd
         active = active & ~odd
-        # Peek at the step's two distance draws without committing them.
-        u_abs, c1 = draw(cursor, active, ids, seed, tape_ptr, tape_off, TAPE)
-        u_sca, c2 = draw(c1, active, ids, seed, tape_ptr, tape_off, TAPE)
-        da = -alen * tl.log(u_abs)
-        ds = -slen * tl.log(u_sca)
-        if USE_WEIGHTS:
-            weighted = active & (weight > WEIGHT_LOWER_THRESHOLD)
-            da = tl.where(weighted, 1e30, da)
-        else:
-            weighted = active & False
-        tx = tl.where(dx > 0., (ux - x) / dx, tl.where(dx < 0., (lx - x) / dx, float("inf")))
-        ty = tl.where(dy > 0., (uy - y) / dy, tl.where(dy < 0., (ly - y) / dy, float("inf")))
-        tz = tl.where(dz > 0., (uz - z) / dz, tl.where(dz < 0., (lz - z) / dz, float("inf")))
-        exit_d = tl.minimum(tl.minimum(tx, ty), tz)
-        safe = exit_d - tl.maximum(0.01, 2e-6 * exit_d)
-        absorbed = active & (da <= ds) & (da < safe)
-        scattered = active & ~(da <= ds) & (ds < safe)
-        commit = absorbed | scattered
-        handoff = handoff | (active & ~commit)
-        cursor = tl.where(commit, c2, cursor)
-        step = step + commit.to(tl.int32)
-        if USE_WEIGHTS:
-            weight = tl.where(weighted & scattered, weight * tl.exp(-ds / alen), weight)
-        travel = tl.where(absorbed, da, ds)
-        t = tl.where(commit, t + travel / (SPEED_OF_LIGHT / n1), t)
-        x = tl.where(commit, tl.fma(travel, dx, x), x)
-        y = tl.where(commit, tl.fma(travel, dy, y), y)
-        z = tl.where(commit, tl.fma(travel, dz, z), z)
-        wl_before = wl
-        wl, t, dx, dy, dz, px, py, pz, flags, last, cursor = bulk_process(
-            absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last,
-            cursor, ids, seed, tape_ptr, tape_off,
-            comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
-            wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, TAPE)
-        active = commit & ((flags & terminal) == 0) & (step < max_steps)
-        changed = active & (wl != wl_before)
-        if tl.sum(changed.to(tl.int32), axis=0) > 0:
-            n1 = tl.where(changed, interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, changed), n1)
-            alen = tl.where(changed, interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, changed), alen)
-            slen = tl.where(changed, interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, changed), slen)
+        attempted = active
+        (x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight, step, n1, alen, slen,
+         commit, active) = bulk_attempt(
+            active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight, ids, step,
+            lx, ly, lz, ux, uy, uz, inc, n1, alen, slen,
+            comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs, rindex, absorption, scattering,
+            seed, max_steps, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES)
+        handoff = handoff | odd | (attempted & ~commit)
         h += 1
         go = active & (h < HISTORY)
 
