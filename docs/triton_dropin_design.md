@@ -30,6 +30,11 @@ shared specification for everyone working on the drop-in.
 | `CHROMA_TRITON_TAPE` | unset/`off`, `canonical`, `record:<dir>`, `replay:<dir>` | Bitwise legacy mode (see below) |
 | `CHROMA_TRITON_TAPE_SORT` | `1` | Record with sorted survivor queues (the `canonical` schedule) |
 | `CHROMA_TRITON_DEVICE` | CUDA ordinal | Overrides `cuda_device` for the Triton backend |
+| `CHROMA_TRITON_FUSED` | `1` (default), `0` | Fused register-resident transport kernel; `0` selects the wavefront scheduler |
+| `CHROMA_TRITON_GRID` | `1` (default), `0` | Certified empty-space grid (bulk shortcut of the wavefront scheduler) |
+| `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production fixes it (specular polarization, literal Fresnel, 16-bit history, FP32 wire intersection), with the production RNG: a statistical like-for-like comparison with CUDA Chroma |
+| `CHROMA_TRITON_LEGACY_WIRES` | unset, `0`, `1` | Override the wire algorithm alone (default: legacy iff `CHROMA_TRITON_FIXES=0`) |
+| `CHROMA_TRITON_ROULETTE` | weight, e.g. `0.05` | Opt-in, weighted mode only: Russian roulette below that weight (unbiased for every tally; not W's weighted-mode semantics) |
 | `TRITON_CACHE_DIR` | path | Put Triton's JIT cache on `/lscratch`; `$HOME` has little quota |
 
 `chroma.sim` reads `CHROMA_BACKEND` at import time. `chroma.sim.Simulation`
@@ -60,38 +65,69 @@ Production-mode deviations from W, all deliberate and documented:
 * `use_packed=True` returns the true final photon states (W returns the
   initial positions/directions).
 * Photon histories are kept in 32 bits (W truncates to 16 on the device).
-* Counter-based Philox RNG keyed by photon id: results do not depend on the
-  batch size, thread count or queue order.
+* Counter-based Philox RNG: each event (one iteration of W's loop) takes its
+  uniforms from Philox blocks keyed by (photon id, steps done, block), four
+  per call. Results do not depend on batch size, thread count, queue order or
+  scheduler (fused, wavefront, bulk shortcut).
+* Analytic wires: W forms the discriminant as `B*B - A*C`, whose two terms
+  are ~`t*t` while their difference is ~`r*r`; beyond a few hundred mm FP32
+  rounding decides far hits. On 16.5M captured LAr boundary rays W reports 42%
+  more wire hits than a float64 reference (and a 4 degree median normal
+  error); production uses the identical `A*r*r - (wv*dn - wn0*dv)**2` and
+  agrees with float64 to 0.2% (FP32-limited: on-wire origins, tangent grazes).
+  On the LAr LUT fixture this raises the detected light by 8.6%.
+* Analytic boxes do not re-hit the coplanar neighbour of the face a photon
+  just left (W's mesh traversal occasionally does, at t ~ 1e-5 mm).
 Flight time uses the phase velocity like W unless a material provides
 `group_velocity`; surface re-emission is instantaneous unless the surface
 provides `reemission_time_cdf`.
 
 ## Engine (production mode)
 
-Compiled once per `Simulation` from the unflattened detector when available.
+Compiled once per `Simulation` (`engine/scene.py`).
 
-* **Instances.** Solids that share one `Mesh` object become instances of one
-  bottom-level structure (BLAS) with their rotation and displacement. Each
-  unique mesh gets one BLAS in its local frame. Global triangle ids stay
-  identical to `geometry.flatten()` so `last_hit_triangles`, solid ids and
-  channel ids are unchanged.
-* **Top level.** A threaded (escape-link) BVH over instance world bounds.
-* **Bottom level.** Threaded BVHs with small leaves in local FP32 coordinates.
-  Traversal is stackless: no global-memory stack.
-* **Wires.** W's wire-plane records and FP32 intersection, merged with the
-  mesh hit exactly as W does (`t_wire + 1e-6 < t_mesh`).
-* **Empty-space grid.** A uniform grid over the world bounds marks cells that
-  no triangle, wire slab or instance bound touches. Connected empty cells of
-  one certified material are expanded to per-cell safe boxes. Inside a safe box,
-  absorption/scattering/re-emission run without geometry queries. A photon
-  whose free path would leave the box is handed to the boundary query with the
-  same random streams, so the shortcut does not change the random process.
-* **Scheduler.** Device queues with block-level atomics, several bulk
-  collisions per launch, one fused boundary query + interaction kernel, and at
-  most one host synchronization per round. Photon state stays on the device
-  from input to output.
-* **Physics.** All of W's surface models (default, complex, WLS, dichroic,
-  angular), multi-component bulk re-emission, weights, `max_steps`.
+* **Instances.** Solids with identical meshes (content hash) become instances
+  of one bottom-level structure (BLAS) in the mesh's local frame. Global
+  triangle ids stay identical to `geometry.flatten()`, so `last_hit_triangles`,
+  solid ids and channel ids are unchanged.
+* **Trees.** Top-level and bottom-level trees are binned-SAH BVHs stored as
+  eight threaded (escape-link) copies, one per ray-direction octant, near
+  child first. Traversal is stackless and picks the copy from the sign bits of
+  the (local) ray direction.
+* **Analytic boxes.** Axis-aligned box solids (up to 64 triangles) are tested
+  analytically before the top-level tree: slab method for the crossing face
+  (entry face, or exit face when starting inside or on the box; the face of
+  the last-hit triangle decides a ray leaving it), then Moller-Trumbore on that
+  face's triangles for exact triangle ids.
+* **Wires.** W's wire-plane records; the accurate intersection above (or W's
+  exactly with `CHROMA_TRITON_LEGACY_WIRES=1`), merged with the mesh hit as W
+  does (`t_wire + 1e-6 < t_mesh`).
+* **Fused transport** (`engine/fused.py`, default). Persistent one-warp
+  programs keep 32 photons in registers and run them to completion, taking new
+  photons from the work list as lanes free up. Each iteration takes one W step
+  for every live lane: boxes and the top-level tree, wires, boundary physics.
+  A lane whose ray reaches an instance waits with its top-level result until
+  8 lanes of the warp (or all its live lanes) need an instance descent; the
+  warp then descends for them together, resuming the top-level walk where it
+  stopped. Rare branches (re-emission, WLS, diffuse, Fresnel) run only when
+  some lane takes them.
+* **Wavefront scheduler** (`CHROMA_TRITON_FUSED=0`, and photon tracking).
+  Device queues with one host read per round: a certified empty-space grid
+  lets bulk collisions run without geometry queries (same draws, so the
+  outcome equals a full step), a two-pass boundary query (top level for every
+  ray, instance descent for the compacted rays that reach one), and the same
+  boundary physics. The last rounds replay from a CUDA graph.
+* **Physics.** W's default and WLS surface models, multi-component bulk
+  re-emission, weights, `max_steps`. The complex, dichroic and angular surface
+  models are implemented in exact mode only; the production engine raises
+  `NotImplementedError` for them (to do).
+
+Throughput on the A100 (reflect3wires, 128 nm, 30M photons): unweighted bomb
+at (-1000, 0, 0) 86M photons/s in the engine; weighted LUT voxel at
+(-450, 60, -120) (~90 steps and ~5.7 PMT-mesh descents per photon) 15M
+photons/s through `Simulation.simulate` with flat hits, 27M photons/s with
+`CHROMA_TRITON_ROULETTE=0.05`. CUDA Chroma: 0.64M photons/s on the weighted
+workload.
 
 ## Bitwise legacy mode
 

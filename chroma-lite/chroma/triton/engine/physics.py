@@ -40,8 +40,9 @@ SURFACE_TRANSMIT = tl.constexpr(256)
 BULK_REEMIT = tl.constexpr(512)
 NAN_ABORT_32 = tl.constexpr(-2147483648)  # 1 << 31 as int32
 NAN_ABORT_16 = tl.constexpr(32768)  # original device history bit
-TERMINAL_32 = tl.constexpr(1 | 2 | 4 | 8 | -2147483648)
-TERMINAL_16 = tl.constexpr(1 | 2 | 4 | 8 | 32768)
+ROULETTE_KILL = tl.constexpr(536870912)  # 1 << 29: ended by Russian roulette (opt-in, weighted mode)
+TERMINAL_32 = tl.constexpr(1 | 2 | 4 | 8 | 536870912 | -2147483648)
+TERMINAL_16 = tl.constexpr(1 | 2 | 4 | 8 | 536870912 | 32768)
 
 
 # ---------------------------------------------------------------- randoms
@@ -67,6 +68,7 @@ B_WLS_DIR = tl.constexpr(3)  # WLS re-emission direction and polarization sphere
 B_BULK_REEMIT = tl.constexpr(4)  # component, re-emission, wavelength, time
 B_BULK_DIR = tl.constexpr(5)  # bulk re-emission direction and polarization spheres
 B_DIFFUSE_POL = tl.constexpr(6)  # diffuse polarization sphere
+B_ROULETTE = tl.constexpr(7)  # Russian roulette
 B_DIFFUSE = tl.constexpr(8)  # diffuse rejection loop, one block per trial
 
 
@@ -174,6 +176,21 @@ def rayleigh(dx, dy, dz, px, py, pz, u_cos, u_phi):
     npx, npy, npz = normalize(npx, npy, npz)
     return ndx, ndy, ndz, npx, npy, npz
 
+
+
+@triton.jit
+def roulette(alive, weight, flags, ids, seed, key, w_rr):
+    """Russian roulette for weighted photons below ``w_rr`` (opt-in): survive
+    with probability ``weight / w_rr`` at weight ``w_rr``, else end with
+    ROULETTE_KILL. The expected weight of every future tally is unchanged."""
+    cand = alive & (weight < w_rr) & (weight > 0.)
+    n_cand = tl.sum(cand.to(tl.int32), axis=0)
+    if n_cand > 0:
+        u, _, _, _ = uniforms4(ids, seed, key, B_ROULETTE)
+        survive = cand & (u * w_rr < weight)
+        weight = tl.where(survive, w_rr, weight)
+        flags = tl.where(cand & ~survive, flags | ROULETTE_KILL, flags)
+    return weight, flags
 
 
 @triton.jit
@@ -296,7 +313,7 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
                   s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
                   seed, wl_start, wl_step, time_start, time_step,
                   NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr,
-                  USE_WEIGHTS: tl.constexpr, FIXES: tl.constexpr):
+                  USE_WEIGHTS: tl.constexpr, FIXES: tl.constexpr, ROULETTE: tl.constexpr, w_rr):
     """One Chroma loop iteration after the NaN check, for lanes in ``live``,
     given their nearest boundary (``dist``, triangle ``tri`` (-1 none, -2
     wire), unit normal, inner/outer material and surface index). ``key`` is
@@ -468,6 +485,12 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
         px, py, pz = tl.where(passed, fpx, px), tl.where(passed, fpy, py), tl.where(passed, fpz, pz)
         flags = tl.where(passed & reflected, flags | REFLECT_SPECULAR, flags)
 
+    if ROULETTE:
+        if FIXES:
+            terminal = TERMINAL_32
+        else:
+            terminal = TERMINAL_16
+        weight, flags = roulette(live & ((flags & terminal) == 0), weight, flags, ids, seed, key, w_rr)
     return x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight
 
 
@@ -484,6 +507,7 @@ def step_kernel(
     seed, max_steps, wl_start, wl_step, time_start, time_step,
     NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr,
     USE_WEIGHTS: tl.constexpr, TAPE: tl.constexpr, FIXES: tl.constexpr, BLOCK: tl.constexpr,
+    ROULETTE: tl.constexpr = False, w_rr=0.0,
 ):
     lane = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     count = tl.load(count_ptr)
@@ -542,7 +566,7 @@ def step_kernel(
         rindex, absorption, scattering,
         comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
         s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
-        seed, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES)
+        seed, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES, ROULETTE, w_rr)
 
     if FIXES:
         terminal = TERMINAL_32
@@ -584,7 +608,7 @@ def bulk_attempt(active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, we
                  comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs, rindex, absorption, scattering,
                  seed, max_steps, wl_start, wl_step, time_start, time_step,
                  NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr, USE_WEIGHTS: tl.constexpr,
-                 FIXES: tl.constexpr):
+                 FIXES: tl.constexpr, ROULETTE: tl.constexpr, w_rr):
     """One bulk collision attempt inside the certified box ``[l, u]`` of
     material ``inc`` for lanes in ``active`` (direction and position finite).
 
@@ -629,6 +653,8 @@ def bulk_attempt(active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, we
         absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last, u_cos, u_phi, ids, seed, key,
         comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
         wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP)
+    if ROULETTE:
+        weight, flags = roulette(commit & ((flags & terminal) == 0), weight, flags, ids, seed, key, w_rr)
     active = commit & ((flags & terminal) == 0) & (step < max_steps)
     changed = active & (wl != wl_before)
     n_changed = tl.sum(changed.to(tl.int32), axis=0)
@@ -652,6 +678,7 @@ def bulk_kernel(
     seed, max_steps, wl_start, wl_step, time_start, time_step,
     NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr, USE_WEIGHTS: tl.constexpr,
     TAPE: tl.constexpr, FIXES: tl.constexpr, HISTORY: tl.constexpr, BLOCK: tl.constexpr,
+    ROULETTE: tl.constexpr = False, w_rr=0.0,
 ):
     """Up to HISTORY bulk collisions per photon inside its certified safe box.
 
@@ -732,7 +759,8 @@ def bulk_kernel(
             active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight, ids, step,
             lx, ly, lz, ux, uy, uz, inc, n1, alen, slen,
             comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs, rindex, absorption, scattering,
-            seed, max_steps, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES)
+            seed, max_steps, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES,
+            ROULETTE, w_rr)
         handoff = handoff | odd | (attempted & ~commit)
         h += 1
         go = active & (h < HISTORY)

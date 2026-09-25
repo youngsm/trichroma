@@ -32,7 +32,8 @@ SCINTILLATION = 1 << 11
 NAN_ABORT = 1 << 31
 # Photons with any of these bits are not propagated (W propagate.cu:295 also
 # skips bit 15, the device NaN flag).
-TERMINAL = NO_HIT | BULK_ABSORB | SURFACE_DETECT | SURFACE_ABSORB | NAN_ABORT
+ROULETTE_KILL = 1 << 29  # ended by Russian roulette (opt-in, CHROMA_TRITON_ROULETTE)
+TERMINAL = NO_HIT | BULK_ABSORB | SURFACE_DETECT | SURFACE_ABSORB | NAN_ABORT | ROULETTE_KILL
 DEVICE_NAN_ABORT_16 = 1 << 15
 
 # last_hit_triangles value for an analytic wire (W photon.h).
