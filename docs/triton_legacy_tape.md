@@ -20,8 +20,12 @@ Triton side must produce the same bits as W for `photons_end` (every field),
    `CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:<dir>`. The tape holds the
    inputs as copied to the GPU, every uniform draw each photon consumed,
    the launch schedule, the DAQ draws, and the outputs.
-2. **Replay** the tape on the Triton side, drawing uniforms from the tape
-   instead of XORWOW, and compare every output word.
+2. **Replay** the tape on the Triton side through the same public API and the
+   same engine as production: `CHROMA_BACKEND=triton
+   CHROMA_TRITON_TAPE=replay:<dir>` makes `chroma.sim.Simulation` build
+   `ProductionEngine(detector, ..., tape=...)`, whose exact mode runs the
+   production round scheduler with W's arithmetic and draws every uniform
+   from the tape instead of XORWOW. Every output word is compared.
 3. **Transparency**: the recorded run's outputs are bitwise identical to the
    same run without recording (shown on every fixture, section 7).
 
@@ -109,7 +113,58 @@ replay.check_simulation(seed=, nthreads_per_block=, max_blocks=, photon_tracking
 batch = replay.next_batch(photons, max_steps=, use_weights=)   # checks inputs bitwise
 ```
 
-## 4. What a replaying engine must do
+## 4. Replay by the production engine (exact mode)
+
+`ProductionEngine(detector, seed=, device=, tape=TapeMode('replay', dir),
+simulation=dict(nthreads_per_block=, max_blocks=, photon_tracking=,
+use_packed=))` (the compatibility layer passes the Simulation's values)
+selects the exact mode, implemented in `chroma/triton/engine/exact_mode.py`
+(`ExactMode`); `propagate()` and `acquire()` dispatch to it. Construction
+checks the tape's Simulation parameters, compares the detector's uploaded
+words with the recorded scene (materials and surfaces are matched by content,
+because W numbers them in Python set order), applies the fail-closed limits
+and uploads the *recorded* words (W's BVH and the word after every table).
+There is no empty-space grid, bulk shortcut or CUDA-graph tail.
+
+`propagate()` reads the next batch, checks the inputs bitwise on the device,
+uploads the draws, and runs the production scheduler: the live photons (16-bit
+history not terminal) form the first device queue; every round is one global
+step; survivors are appended to the next queue on the device
+(`physics.append_rows`) and the host reads one queue length per round. A round
+is three kernels, as in production:
+
+1. `exact_renorm_kernel` -- W's launch-entry `dir/pol /= norm()` (exact
+   `normalize3`) for photons whose step count is a recorded launch start and
+   that were not yet normalized at that step (launched only at launch starts);
+2. `exact_geometry_kernel` -- `fill_state`'s boundary part: W's flattened BVH
+   (global-memory stack, bound from the tree) and the FP32 wires;
+3. `exact_step_kernel` -- one iteration of W's loop body with every uniform
+   read from the photon's tape segment; the history is stored as W's 16-bit
+   word; survivors with fewer than `max_steps` steps are appended.
+
+After the rounds the replay checks the schedule (at every recorded launch
+start the queue held exactly `launch_nphotons` photons; no photon outlived the
+last launch) and that every photon consumed exactly its recorded draws, with no
+harness error (stack overflow, table lookups past the end, unknown model).
+`track=True` returns W's records: all photons before propagation and after the
+first step (W's first queue holds every photon), then the queue of every later
+step. `acquire(photons, start, count)` replays `run_daq` for the next recorded
+event with the recorded DAQ draws and W's integer atomics.
+`ExactMode.timing` holds the seconds of the last `propagate()` (tape read,
+preparation, rounds, checks).
+
+With `use_packed=True` the compatibility layer reproduces W's
+`GPUPhotons(use_packed=True)` in exact mode: `photons_end` holds the *initial*
+position, direction, polarization, wavelength, time and weight words
+(`get()` reads the unpacked arrays that `propagate_packed` never updates), and
+the DAQ reads the initial times and weights unless hits were extracted first
+(`get_flat_hits()` syncs the packed state back). Production mode keeps
+returning the true final states.
+
+`chroma/triton/legacy/reference.py` drives the same exact kernels launch by
+launch from the host (active rows compacted after every step), like W's host
+loop. It needs no detector, backs `python -m chroma.triton.legacy.verify tape`
+and is the timing baseline.
 
 **Launch schedule.** Launch `k` covers global steps
 `[launch_starts[k], launch_starts[k] + launch_nsteps[k])`. Launch 0's queue is
@@ -127,7 +182,9 @@ For every photon in a launch's queue W:
 4. runs up to `nsteps` steps, then stores all fields (history zero-extended).
 
 The replay does not need RNG slots or queue order: the per-photon draw
-sequence already encodes them.
+sequence already encodes them. One engine round per global step reproduces
+every launch shape, because a photon alive at the end of a launch has run all
+of that launch's steps (every early exit of W's loop sets a terminal bit).
 
 **Draw order of one step** (`propagate`, photon alive):
 
@@ -175,7 +232,10 @@ undefined or unrecorded:
   table), unknown surface models.
 * `scatter_first != 0`, `CHROMA_DEVICE_PROFILE`, replaying with other
   Simulation parameters, inputs, detector words or batch boundaries than
-  recorded.
+  recorded, a replay whose queue lengths at the recorded launch starts differ
+  or whose photons use more or fewer draws than recorded, DAQ calls that are
+  not the next recorded event. `CHROMA_TRITON_TAPE=canonical` on the Triton
+  backend (no tape to replay) raises `NotImplementedError`.
 * Bitwise mode needs W's BVH (`geometry.bvh`, from Chroma's cache or the
   PyCUDA builder). A NumPy/Triton port of the builder is not bit-identical
   (the leaf quantization runs in a fast-math kernel and NumPy's argsort tie
@@ -266,9 +326,9 @@ compared against the integrated lowering where they differ.
   charge_unit)`, `daq_charge_float(q_int, charge_unit)`.
 
 A complete step built from these functions is
-`chroma/triton/legacy/reference.py` (`geometry_kernel` + `physics_kernel`),
-the minimal reference loop used to validate tapes until the production
-engine's exact mode consumes them.
+`chroma/triton/engine/exact_mode.py` (`exact_geometry_kernel` +
+`exact_step_kernel`), used by the production engine's exact mode and by the
+reference loop.
 
 ## 7. Demonstrating equality
 
@@ -276,52 +336,76 @@ engine's exact mode consumes them.
 # CUDA environment (PyCUDA): record through the public Simulation API
 CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:/lscratch/$USER/t \
     python -m chroma.triton.legacy.verify run --fixture reflect3wires --run visible --output cuda.npz
-# Triton environment: replay and compare every word with the recorded outputs
+# Triton environment, public API: chroma.sim.Simulation -> ProductionEngine exact mode;
+# every Event output compared with the outputs the tape recorded
+CHROMA_BACKEND=triton python -m chroma.triton.legacy.verify replay --fixture reflect3wires --run visible \
+    --tape /lscratch/$USER/t --report replay.json
+# Reference loop (no detector needed): final device words, photons_end, hits, channels, tracks
 python -m chroma.triton.legacy.verify tape --tape /lscratch/$USER/t --report report.json
 # Or everything, including the transparency check and the Simulation-level replay:
 python -m chroma.triton.legacy.verify all --fixture synthetic --work /lscratch/$USER/w \
     --cuda-python <cuda env python> --triton-python <triton env python> --transparency
 ```
 
-`verify tape` reports, per batch, the first differing photon and word (or
-`null`) for the final device state and `photons_end`, hit and channel equality
-and the draw-count check (every photon must consume exactly its recorded draws).
+`verify replay` and `verify compare` report the first differing photon and
+word of `photons_end`, hits (in photon order), channels and `photon_tracks`;
+`verify tape` reports the same per batch plus the final device state and the
+draw-count check (every photon must consume exactly its recorded draws).
 `python -m chroma.triton.legacy.probes generate` regenerates the unit ground
 truth used by `test/test_legacy_exact.py`.
 
 ### Results (A100, CUDA 12.4 / PyCUDA for W, Triton 3.1.0, 2026-09-25)
 
-Every tape below replays bit for bit from a fresh Triton cache (`verify tape`:
-final device state, `photons_end`, hits in photon order, channels,
-`photon_tracks`, and every photon consumed exactly its recorded draws).
-"Public API" is the same run made through `chroma.sim.Simulation` with
-`CHROMA_BACKEND=triton CHROMA_TRITON_TAPE=replay:<dir>` and compared with the
-CUDA outputs by `verify compare`.
+"Public API" is `CHROMA_BACKEND=triton CHROMA_TRITON_TAPE=replay:<dir>`
+through `chroma.sim.Simulation`, i.e. `ProductionEngine` in exact mode
+(`verify replay`: every Event output against the outputs the tape recorded;
+`verify all`: against the CUDA run's outputs). "Reference loop" is `verify
+tape` (final device words, `photons_end`, hits, channels, tracks, draw
+counts). Both were run from a fresh Triton cache on every tape below, in the
+recorded (warp-atomic) and in the sorted queue order.
 
-| Fixture / run | Photons | Launches | Draws | Hits | Tape replay | Public API | Transparency |
+| Fixture / run | Photons | Launches | Draws | Hits | Public API | Reference loop | Transparency |
 |---|---|---|---|---|---|---|---|
 | reflect3wires / visible | 100,000 | 9 | 6,113,660 | 3,838 | equal | equal | canonical = recorded |
 | reflect3wires_vuv (TPB WLS) / vuv | 100,000 | 9 | 6,198,479 | 1,614 | equal | equal | canonical = recorded |
 | pixel_vuv / vuv | 100,000 | 6 | 4,162,873 | 952 | equal | equal | canonical = recorded |
 | synthetic / multi_launch (2 batches) | 200,000 | 4+4 | 8,123,179 | 6,716 | equal | equal | canonical = recorded |
 | synthetic / weights (use_weights) | 50,000 | 1 | 9,209,627 | 13,458 | equal | equal | plain = recorded |
-| synthetic / tracking | 4,000 | 60 | 154,361 | 120 | equal (+tracks) | equal | canonical = recorded |
-| synthetic / packed (use_packed) | 80,000 | 3 | 3,243,394 | 2,593 | equal | fails closed | canonical = recorded |
+| synthetic / tracking | 4,000 | 60 | 154,361 | 120 | equal (+tracks) | equal (+tracks) | canonical = recorded |
+| synthetic / packed (use_packed) | 80,000 | 3 | 3,243,394 | 2,593 | equal | equal | canonical = recorded |
 | synthetic / small_threads (64x16) | 30,000 | 9 | 1,207,309 | 1,052 | equal | equal | canonical = recorded |
 | synthetic / adversarial | 32,000 | 1 | 1,341,297 | 2,186 | equal | equal | plain = recorded |
+| synthetic / tiny (test data) | 72 | 30 | 7,392 | 20 | equal (+tracks) | equal | canonical = recorded |
+| synthetic / tiny_packed (test data; DAQ on W's initial times) | 72 | 1 | 2,348 | -- | equal | equal | canonical = recorded |
 
-The sorted-queue tapes of every synthetic run replay equally. The synthetic
-detector exercises every surface model (default, WLS with re-emission,
-dichroic, angular, complex incl. refraction and forced detection), bulk
-re-emission, Rayleigh, diffuse/specular reflection, Fresnel, analytic wires
-and NaN aborts (adversarial inputs). Two *unrecorded* CUDA runs of
-reflect3wires differ in 96,391 of 100,000 photons (queue order after the
-first one-step launch), which is why equality is stated against the recorded
-schedule or the canonical one.
+`python -m chroma.triton.legacy.verify all --transparency` (fresh CUDA
+recordings with sorted queues, the unrecorded canonical run, the reference
+loop and the public-API replay) prints `ALL BITWISE EQUAL` for
+`reflect3wires`, `reflect3wires_vuv`, `pixel_vuv` and all eight synthetic runs.
+The synthetic detector exercises every surface model (default, WLS with
+re-emission, dichroic, angular, complex incl. refraction and forced
+detection), bulk re-emission, Rayleigh, diffuse/specular reflection, Fresnel,
+analytic wires and NaN aborts (adversarial inputs). Two *unrecorded* CUDA
+runs of reflect3wires differ in 96,391 of 100,000 photons (queue order after
+the first one-step launch), which is why equality is stated against the
+recorded schedule or the canonical one.
 
-Cost: recording adds about 0.3 s per 100k-photon LAr batch (2.2-2.5 s
-unrecorded, 2.8-3.0 s recorded) plus about 2 s at Simulation construction
-(scene read-back). A 100k-photon reflect3wires batch takes 51 MB (24.5 MB of
-draws; 36 MB after `tape.compact`) and its scene 14 MB compressed. The reference
-loop replays 100k LAr photons in 2-7 s once compiled (the first compile takes
-about 75 s); it is a validation tool, not the production engine.
+**Replay time per 100k photons** (warm; the A100 was shared with other jobs):
+
+| Fixture | Engine rounds | Tape read + hash check | Engine `propagate()` | `simulate()` (whole batch) | Reference loop |
+|---|---|---|---|---|---|
+| reflect3wires (152 steps) | 0.16 s | 0.11 s | 0.28 s | 0.30 s | 0.19 s |
+| reflect3wires_vuv (163 steps) | 0.17 s | 0.10 s | 0.28 s | 0.31 s | 0.19 s |
+| pixel_vuv (118 steps) | 0.05 s | 0.07 s | 0.12 s | 0.14 s | 0.07 s |
+
+"Engine rounds" is the round loop of the exact mode (renorm, geometry, step,
+one host read per round); the reference loop's time excludes reading the
+tape. The first `simulate()` in a process adds about 0.5 s (Triton loads the
+cached kernels); compiling the exact kernels into an empty cache takes about
+40 s. For scale: the CUDA backend's `simulate()` of the same batch took
+2.2-2.5 s.
+
+Recording costs about 0.3 s per 100k-photon LAr batch (2.2-2.5 s unrecorded,
+2.8-3.0 s recorded) plus about 2 s at Simulation construction (scene
+read-back). A 100k-photon reflect3wires batch takes 51 MB (24.5 MB of draws;
+36 MB after `tape.compact`) and its scene 14 MB compressed.
