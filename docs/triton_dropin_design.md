@@ -118,17 +118,33 @@ Bitwise equality is demonstrated on the *recorded schedule* of a real CUDA run
   `fma.rn` wherever the original SASS contracted, fast-math intrinsics,
   libdevice transcriptions, FP32 wires, the thin-film block as extracted PTX)
   and take pre-drawn uniforms.
-* **Replay** (`CHROMA_BACKEND=triton CHROMA_TRITON_TAPE=replay:<dir>`):
-  consumes the per-photon draws. Until the production engine has an exact
-  mode, `chroma.triton.legacy.engine.LegacyEngine` plugs the minimal
-  reference loop (`chroma.triton.legacy.reference`, built from `exact.py`)
-  into the compatibility layer; `python -m chroma.triton.legacy.verify`
-  records, replays and compares `photons_end`, hits, channels and tracks
-  word by word.
+* **Replay** (`CHROMA_BACKEND=triton CHROMA_TRITON_TAPE=replay:<dir>`)
+  runs through the same `Simulation`, the same `ProductionEngine` class, its
+  device-queue round scheduler and the same DAQ plumbing as production: the
+  compatibility layer builds `ProductionEngine(detector, seed=, device=,
+  tape=TapeMode, simulation=...)`, whose exact mode
+  (`chroma/triton/engine/exact_mode.py`) swaps in exact kernels. A round is
+  W's launch-entry normalization at the recorded launch starts (exact
+  `normalize3`), `fill_state`'s boundary part (W's BVH and FP32 wires) and one
+  loop-body step whose uniforms come from the photon's tape segment;
+  survivors are appended to the next device queue, one host read per round.
+  `acquire()` replays `run_daq` with the recorded draws. No grid, bulk
+  shortcut or graph tail in this mode. The scene is the recorded one after a
+  check against the detector (material/surface labels matched by content).
+  With `use_packed` the compatibility layer returns W's initial
+  pos/dir/pol/wavelength/time/weight words in `photons_end` and feeds the DAQ
+  the initial times/weights unless hits were extracted, as W does.
+  `chroma.triton.legacy.reference` drives the same kernels launch by launch
+  from the host (reference loop, timing baseline);
+  `python -m chroma.triton.legacy.verify` records, replays (public API and
+  reference loop) and compares `photons_end`, hits, channels and tracks word
+  by word.
 * **Fail closed** where W's behaviour is undefined or unrecorded (DAQ CDFs
   whose `cdf_y` is one entry short, indices >= 128, BVH stack > 1000,
   out-of-table dichroic/angular lookups, `scatter_first`, device profiling,
-  mismatching parameters/inputs/detector).
+  mismatching parameters/inputs/detector, a replay whose launch queue lengths
+  or per-photon draw counts differ from the tape). `canonical` on the Triton
+  backend is not implemented (there is no tape to replay).
 
 ## Validation
 
