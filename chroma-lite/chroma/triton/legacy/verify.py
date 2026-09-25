@@ -206,8 +206,8 @@ def main(argv=None):
     p.add_argument("--sort-queues", action="store_true",
                    help="record with ascending survivor queues (CHROMA_TRITON_TAPE_SORT=1)")
     p.add_argument("--transparency", action="store_true",
-                   help="also run CUDA without recording and require identical outputs "
-                        "(needs --sort-queues for multi-launch batches)")
+                   help="also run CUDA without recording (CHROMA_TRITON_TAPE=canonical) and require identical "
+                        "outputs; implies --sort-queues (unsorted multi-launch runs are not repeatable)")
     p.add_argument("--reference-only", action="store_true",
                    help="replay with the reference harness only (no Triton Simulation run)")
     args = parser.parse_args(argv)
@@ -240,6 +240,12 @@ def _all(args):
     from chroma.triton.legacy import fixtures
 
     os.makedirs(args.work, exist_ok=True)
+    if args.transparency and not args.sort_queues:
+        # Original Chroma appends survivors to the next launch's queue with
+        # warp-level atomics, so two unrecorded multi-launch runs already
+        # differ from each other; compare under the canonical (sorted) order.
+        print("--transparency: recording with sorted queues (CHROMA_TRITON_TAPE_SORT=1)")
+        args.sort_queues = True
     runs = args.runs or [r["name"] for r in fixtures.RUNS[args.fixture]]
     summary = {}
     base_env = dict(os.environ)

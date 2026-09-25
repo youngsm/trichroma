@@ -30,7 +30,15 @@ def reg_type(name):
     raise ValueError(name)
 
 
-def extract(lines, outputs, rename_labels=True, drop_ops=('st.',), input_order=None):
+def extract(lines, outputs, rename_labels=True, drop_ops=('st.',), input_order=None, prefix='cx'):
+    """Returns (asm, constraints, inputs).
+
+    Every register of the block is renamed ``%<prefix><name>`` (``%f493`` ->
+    ``%cxf493``). The block's registers are declared inside ``{ }`` but the
+    ``$n`` operands are the *enclosing* kernel's registers, which LLVM also
+    names ``%f<N>``/``%r<N>``/``%p<N>``: without the prefix a scoped
+    declaration can shadow the very register an operand refers to.
+    """
     body = []
     defined = set()
     inputs = []
@@ -65,7 +73,7 @@ def extract(lines, outputs, rename_labels=True, drop_ops=('st.',), input_order=N
             continue
         srcs = parts[1:] if not op.startswith(('bra',)) else []
         if op.startswith('bra'):
-            body.append(('bra', pred, t))
+            body.append(('bra', pred, text))  # keep the guard: '@%p bra L;'
             if pred:
                 r = pred.lstrip('@!')
                 if r not in defined and r not in inputs:
@@ -96,36 +104,39 @@ def extract(lines, outputs, rename_labels=True, drop_ops=('st.',), input_order=N
             regs.add(rest[0].lstrip('@!'))
     regs.update(inputs)
     regs.update(outputs)
+    def rn(text):
+        return REG.sub(lambda m: '%' + prefix + m.group(0)[1:], text)
+
     labels = {}
     out = ['{']
     for r in sorted(regs):
-        out.append('.reg .%s %s;' % (reg_type(r), r))
+        out.append('.reg .%s %s;' % (reg_type(r), rn(r)))
     nout = len(outputs)
     for i, r in enumerate(inputs):
         typ = reg_type(r)
         if typ == 'pred':
-            out.append('setp.ne.u32 %s, $%d, 0;' % (r, nout + i))
+            out.append('setp.ne.u32 %s, $%d, 0;' % (rn(r), nout + i))
         elif typ == 'f32':
-            out.append('mov.f32 %s, $%d;' % (r, nout + i))
+            out.append('mov.f32 %s, $%d;' % (rn(r), nout + i))
         elif typ == 'b32':
-            out.append('mov.b32 %s, $%d;' % (r, nout + i))
+            out.append('mov.b32 %s, $%d;' % (rn(r), nout + i))
         elif typ == 'b64':
-            out.append('mov.b64 %s, $%d;' % (r, nout + i))
+            out.append('mov.b64 %s, $%d;' % (rn(r), nout + i))
         else:
             raise ValueError('unsupported input type %s' % r)
     for kind, *rest in body:
         if kind == 'label':
             out.append('%s:' % rest[0].replace('$', 'X_'))
         else:
-            out.append(rest[-1].replace('$L__', 'X_L__') + ('' if rest[-1].endswith(';') else ';'))
+            out.append(rn(rest[-1]).replace('$L__', 'X_L__') + ('' if rest[-1].endswith(';') else ';'))
     for i, r in enumerate(outputs):
         typ = reg_type(r)
         if typ == 'f32':
-            out.append('mov.f32 $%d, %s;' % (i, r))
+            out.append('mov.f32 $%d, %s;' % (i, rn(r)))
         elif typ == 'b32':
-            out.append('mov.b32 $%d, %s;' % (i, r))
+            out.append('mov.b32 $%d, %s;' % (i, rn(r)))
         elif typ == 'pred':
-            out.append('selp.u32 $%d, 1, 0, %s;' % (i, r))
+            out.append('selp.u32 $%d, 1, 0, %s;' % (i, rn(r)))
         else:
             raise ValueError(r)
     out.append('}')
