@@ -293,3 +293,13 @@ class Simulation(object):
 
     def __del__(self):
         self.context.pop()
+
+
+# Bitwise legacy mode hook (see chroma.backend.tape_mode). Only active when
+# CHROMA_TRITON_TAPE is set: record:<dir> records a native RNG tape of every
+# batch, canonical sorts each launch's survivor queue (a legal original
+# schedule). The kernels and this module's code paths are unchanged otherwise.
+from chroma.backend import tape_mode as _tape_mode
+if _tape_mode().enabled:
+    from chroma.triton.legacy.record_cuda import install as _install_tape
+    Simulation = _install_tape(Simulation, _tape_mode())
