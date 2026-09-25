@@ -1,11 +1,17 @@
-"""Native RNG tape: format round trip, scene checks and a bitwise replay.
+"""Native RNG tape: format round trip, scene checks and bitwise replays.
 
-``test/data/legacy_tape_tiny`` was recorded from the unmodified CUDA backend
-through ``chroma.sim.Simulation`` (``CHROMA_BACKEND=cuda
-CHROMA_TRITON_TAPE=record:<dir> python -m chroma.triton.legacy.verify run
---fixture synthetic --run tiny``; 72 photons, photon tracking, use_weights,
-30 launches, DAQ) and compacted with ``chroma.triton.legacy.tape.compact``.
-Set ``CHROMA_LEGACY_TAPE`` to replay another tape in the GPU test.
+``test/data/legacy_tape_tiny`` and ``legacy_tape_tiny_packed`` were recorded
+from the unmodified CUDA backend through ``chroma.sim.Simulation``
+(``CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:<dir> python -m
+chroma.triton.legacy.verify run --fixture synthetic --run tiny`` /
+``tiny_packed``) and compacted with ``chroma.triton.legacy.tape.compact``:
+72 photons each; ``tiny`` with photon tracking, use_weights, 30 launches and
+the DAQ; ``tiny_packed`` with use_packed and the DAQ reading W's initial
+times (no hit extraction).
+
+The GPU tests replay them through the public API (the Triton ``Simulation``,
+i.e. ``ProductionEngine`` in exact mode) and through the reference loop. Set
+``CHROMA_LEGACY_TAPE`` to replay another tape in the reference-loop test.
 """
 
 import os
@@ -18,6 +24,7 @@ from chroma.triton.legacy.scene import (check_daq_limits, check_legacy_limits, c
                                         relabel_scene)
 
 TINY = os.path.join(os.path.dirname(__file__), "data", "legacy_tape_tiny")
+TINY_PACKED = os.path.join(os.path.dirname(__file__), "data", "legacy_tape_tiny_packed")
 
 
 def _fake_batch(n=5, draws_per=(3, 0, 7, 1, 2)):
@@ -141,16 +148,54 @@ def test_fail_closed_limits(tiny):
         check_daq_limits(dict(words, time_cdf_y=np.asarray(words["time_cdf_y"])[:-1]))
 
 
-def test_replay_bitwise(tiny):
+@pytest.mark.parametrize("directory", [TINY, TINY_PACKED])
+def test_replay_bitwise(directory):
+    """The reference loop (same exact kernels, host-scheduled) reproduces the recorded outputs."""
     torch = pytest.importorskip("torch")
     pytest.importorskip("triton")
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
+    directory = os.environ.get("CHROMA_LEGACY_TAPE", directory)
+    if not os.path.exists(os.path.join(directory, "manifest.json")):
+        pytest.skip("tape %s not found" % directory)
     from chroma.triton.legacy.reference import replay_tape
 
-    report = replay_tape(os.environ.get("CHROMA_LEGACY_TAPE", TINY))
+    report = replay_tape(directory)
     for batch in report["batches"]:
         assert batch["draw_count_mismatch"] == 0 and batch["harness_errors"] == 0, batch
         for key in ("final_equal", "photons_end_equal", "hits_equal", "channels_equal", "tracks_equal"):
             assert batch.get(key, True) in (True, None), (key, batch)
     assert report["equal"]
+
+
+@pytest.mark.parametrize("run, directory", [("tiny", TINY), ("tiny_packed", TINY_PACKED)])
+def test_public_api_replay(run, directory):
+    """chroma.triton.compat Simulation -> ProductionEngine(tape=...) -> every output equals the tape's."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("triton")
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA device required")
+    if not os.path.exists(os.path.join(directory, "manifest.json")):
+        pytest.skip("tape %s not found" % directory)
+    from chroma.triton.compat.simulation import Simulation
+    from chroma.triton.legacy.verify import replay_fixture
+
+    ok, report, info = replay_fixture("synthetic", run, directory, simulation_class=Simulation)
+    assert ok, report
+    assert set(report) >= {"photons_end", "channels_t"}, report
+    assert info["simulation"] == "chroma.triton.compat.simulation.Simulation"
+
+
+def test_exact_mode_fails_closed(tiny):
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("triton")
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA device required")
+    from chroma.backend import TapeMode
+    from chroma.triton.engine.core import ProductionEngine
+
+    with pytest.raises(tapefmt.TapeError):  # a different seed than recorded
+        ProductionEngine(None, seed=1, device="cuda", tape=TapeMode("replay", TINY),
+                         simulation=dict(nthreads_per_block=512, max_blocks=1024, photon_tracking=True))
+    with pytest.raises(NotImplementedError):  # canonical schedules are not replayed without a tape
+        ProductionEngine(None, seed=23, device="cuda", tape=TapeMode("canonical"))

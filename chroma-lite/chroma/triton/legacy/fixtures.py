@@ -258,10 +258,14 @@ RUNS = {
         dict(name="adversarial", sim=dict(seed=17), source="adversarial", simulate=dict(
             keep_photons_end=True, run_daq=True, max_steps=300, photons_per_batch=100000),
              events=[16000, 16000], seed=16),
-        # small enough to ship as test data (test/data/legacy_tape_tiny)
+        # small enough to ship as test data (test/data/legacy_tape_tiny, legacy_tape_tiny_packed)
         dict(name="tiny", sim=dict(seed=23, photon_tracking=True), simulate=dict(
             keep_photons_end=True, run_daq=True, max_steps=30, use_weights=True, photons_per_batch=1000),
              events=[24, 24, 24], seed=17),
+        # use_packed without hit extraction: W's DAQ then reads the *initial* times
+        dict(name="tiny_packed", sim=dict(seed=29, use_packed=True), simulate=dict(
+            keep_photons_end=True, keep_hits=False, keep_flat_hits=False, run_daq=True, max_steps=30,
+            photons_per_batch=1000), events=[24, 24, 24], seed=18),
     ],
     "reflect3wires": [
         dict(name="visible", sim=dict(seed=1981), simulate=dict(
