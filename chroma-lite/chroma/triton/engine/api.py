@@ -119,8 +119,8 @@ class TransportEngine(Protocol):
 
     #: torch.device used for all state
     device: "object"
-    #: int32 tensor [ntriangles]: solid id of every flattened triangle
-    solid_id: "object"
+    def triangle_solid(self, triangles):
+        """Solid id (int64 tensor) of flattened triangle ids ``triangles``."""
     #: int32 tensor [nsolids]: channel index or -1 (Detector only)
     solid_id_to_channel_index: Optional["object"]
 
