@@ -4,7 +4,11 @@ import time
 
 from chroma.log import logger
 from chroma.cache import Cache
-from chroma.bvh import make_simple_bvh, make_recursive_grid_bvh
+try:
+    from chroma.bvh import make_recursive_grid_bvh
+except ImportError:
+    make_simple_bvh = None
+    make_recursive_grid_bvh = None
 from chroma.geometry import Geometry, Solid, Mesh, vacuum
 from chroma.detector import Detector
 from chroma.stl import mesh_from_stl
@@ -181,7 +185,7 @@ def create_geometry_from_obj(obj, bvh_name="default",
 
     geometry.flatten()
 
-    if geometry.bvh is None:
+    if geometry.bvh is None and make_recursive_grid_bvh is not None:
         geometry.bvh = load_bvh(geometry, auto_build_bvh=auto_build_bvh,
                                 read_bvh_cache=read_bvh_cache,
                                 update_bvh_cache=update_bvh_cache,

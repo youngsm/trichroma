@@ -365,4 +365,171 @@ propagate(int first_photon, int nthreads, const unsigned int *__restrict__ input
     }
 } // propagate
 
+
+// GPU pack/unpack kernels to avoid CPU roundtrips
+__global__ void
+pack_photons(int nthreads,
+    const float3 *__restrict__ positions, const float3 *__restrict__ directions,
+    const float3 *__restrict__ polarizations,
+    const float *__restrict__ wavelengths, const float *__restrict__ times,
+    const float *__restrict__ weights,
+    float4 *__restrict__ pos_wl, float4 *__restrict__ dir_t, float4 *__restrict__ pol_w)
+{
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= nthreads) return;
+    
+    float3 p = positions[id];
+    float3 d = directions[id];
+    float3 pl = polarizations[id];
+    
+    pos_wl[id] = make_float4(p.x, p.y, p.z, wavelengths[id]);
+    dir_t[id] = make_float4(d.x, d.y, d.z, times[id]);
+    pol_w[id] = make_float4(pl.x, pl.y, pl.z, weights[id]);
+}
+
+__global__ void
+unpack_photons(int nthreads,
+    const float4 *__restrict__ pos_wl, const float4 *__restrict__ dir_t,
+    const float4 *__restrict__ pol_w,
+    float3 *__restrict__ positions, float3 *__restrict__ directions,
+    float3 *__restrict__ polarizations,
+    float *__restrict__ wavelengths, float *__restrict__ times,
+    float *__restrict__ weights)
+{
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= nthreads) return;
+    
+    float4 pw = pos_wl[id];
+    float4 dt = dir_t[id];
+    float4 plw = pol_w[id];
+    
+    positions[id] = make_float3(pw.x, pw.y, pw.z);
+    wavelengths[id] = pw.w;
+    directions[id] = make_float3(dt.x, dt.y, dt.z);
+    times[id] = dt.w;
+    polarizations[id] = make_float3(plw.x, plw.y, plw.z);
+    weights[id] = plw.w;
+}
+
+// packed float4 version for better memory coalescing (A100 optimization)
+// pos_wl = (pos.x, pos.y, pos.z, wavelength)
+// dir_t  = (dir.x, dir.y, dir.z, time)
+// pol_w  = (pol.x, pol.y, pol.z, weight)
+__global__ void
+propagate_packed(int first_photon, int nthreads, const unsigned int *__restrict__ input_queue,
+	  unsigned int *__restrict__ output_queue, curandState *rng_states,
+	  float4 *__restrict__ pos_wl, float4 *__restrict__ dir_t, float4 *__restrict__ pol_w,
+	  unsigned int *__restrict__ histories,
+	  int *__restrict__ last_hit_triangles, unsigned int *__restrict__ evidx,
+	  int max_steps, int use_weights, int scatter_first,
+	  Geometry *g)
+{
+    __shared__ Geometry sg;
+
+    if (threadIdx.x == 0)
+	sg = *g;
+
+    __syncthreads();
+
+    int id = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if (id >= nthreads)
+	return;
+
+    g = &sg;
+
+    curandState rng = rng_states[id];
+
+    int photon_id = input_queue[first_photon + id];
+
+    // load packed data with coalesced 128-bit reads
+    float4 pw = pos_wl[photon_id];
+    float4 dt = dir_t[photon_id];
+    float4 plw = pol_w[photon_id];
+
+    Photon p;
+    p.position = unpack_pos(pw);
+    p.wavelength = unpack_wl(pw);
+    p.direction = unpack_dir(dt);
+    p.direction /= norm(p.direction);
+    p.time = unpack_t(dt);
+    p.polarization = unpack_pol(plw);
+    p.polarization /= norm(p.polarization);
+    p.weight = unpack_w(plw);
+    p.last_hit_triangle = last_hit_triangles[photon_id];
+    p.history = histories[photon_id];
+    p.evidx = evidx[photon_id];
+
+    if (p.history & (NO_HIT | BULK_ABSORB | SURFACE_DETECT | SURFACE_ABSORB | NAN_ABORT))
+	return;
+
+    State s;
+
+    int steps = 0;
+    while (steps < max_steps) {
+	steps++;
+
+	int command;
+
+	// check for NaN and fail
+	if (isnan(p.direction.x*p.direction.y*p.direction.z*p.position.x*p.position.y*p.position.z)) {
+	    p.history |= NO_HIT | NAN_ABORT;
+	    break;
+	}
+
+	fill_state(s, p, g);
+
+	if (p.last_hit_triangle == -1)
+	    break;
+
+	command = propagate_to_boundary(p, s, rng, use_weights, scatter_first);
+	scatter_first = 0; // Only use the scatter_first value once
+
+	if (command == BREAK)
+	    break;
+
+	if (command == CONTINUE)
+	    continue;
+
+	if (s.surface_index != -1) {
+	  command = propagate_at_surface(p, s, rng, g, use_weights);
+
+	    if (command == BREAK)
+		break;
+
+	    if (command == CONTINUE)
+		continue;
+	}
+
+	propagate_at_boundary(p, s, rng);
+
+    } // while (steps < max_steps)
+
+    rng_states[id] = rng;
+    
+    // write packed data with coalesced 128-bit writes
+    pos_wl[photon_id] = pack_pos_wl(p.position, p.wavelength);
+    dir_t[photon_id] = pack_dir_t(p.direction, p.time);
+    pol_w[photon_id] = pack_pol_w(p.polarization, p.weight);
+    histories[photon_id] = p.history;
+    last_hit_triangles[photon_id] = p.last_hit_triangle;
+    evidx[photon_id] = p.evidx;
+
+    // Not done, put photon in output queue using warp-aggregated atomics
+    unsigned int still_alive = ((p.history & (NO_HIT | BULK_ABSORB | SURFACE_DETECT | SURFACE_ABSORB | NAN_ABORT)) == 0) ? 1u : 0u;
+    unsigned int mask = __ballot_sync(0xffffffff, still_alive);
+    int lane = threadIdx.x & 31;
+    int warp_count = __popc(mask);
+    int warp_prefix = __popc(mask & ((1u << lane) - 1u));
+    unsigned int base = 0;
+    if (lane == 0 && warp_count > 0) {
+        base = atomicAdd(output_queue, (unsigned int)warp_count);
+    }
+    base = __shfl_sync(0xffffffff, base, 0);
+    if (still_alive) {
+        int out_idx = base + warp_prefix;
+        output_queue[out_idx] = photon_id;
+    }
+} // propagate_packed
+
 } // extern "C"

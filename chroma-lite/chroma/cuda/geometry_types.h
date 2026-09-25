@@ -55,6 +55,12 @@ struct WirePlane
     int    material_outer_index; // medium outside wire
     int    material_inner_index; // wire bulk medium
     unsigned int color;          // optional display color
+    // precomputed normalized orthonormal frame (for FP32 optimization)
+    float3 u_norm;   // normalized u
+    float3 v_norm;   // normalized v (orthogonal to u_norm)
+    float3 n_norm;   // plane normal = u_norm x v_norm
+    int    k_min;    // minimum wire index in plane
+    int    k_max;    // maximum wire index in plane
 };
 
 struct Surface

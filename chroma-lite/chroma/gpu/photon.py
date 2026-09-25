@@ -11,7 +11,7 @@ from chroma.gpu.tools import get_cu_module, cuda_options, GPUFuncs, \
 
 
 class GPUPhotons(object):
-    def __init__(self, photons, ncopies=1, copy_flags=True, copy_triangles=True, copy_weights=True):
+    def __init__(self, photons, ncopies=1, copy_flags=True, copy_triangles=True, copy_weights=True, use_packed=False):
         """Load ``photons`` onto the GPU, replicating as requested.
 
            Args:
@@ -25,7 +25,12 @@ class GPUPhotons(object):
 
                    The amount of GPU storage will be proportionally
                    larger if ncopies > 1, so be careful.
+               - use_packed: bool, *optional*
+                   If True, use float4 packed format for better memory
+                   coalescing on A100 GPUs. Packs position+wavelength,
+                   direction+time, and polarization+weight into float4s.
         """
+        self.use_packed = use_packed
         def _resolve_nphotons(ph):
             try:
                 return len(ph)
@@ -115,7 +120,40 @@ class GPUPhotons(object):
         self.true_nphotons = getattr(photons, 'true_nphotons', nphotons)
         self.ncopies = ncopies
 
+        # Allocate packed float4 arrays if using packed format
+        if self.use_packed:
+            self._init_packed_arrays(nphotons, ncopies)
+
+    def _init_packed_arrays(self, nphotons, ncopies):
+        """Initialize packed float4 arrays using GPU-to-GPU copy (no CPU roundtrip)."""
+        total = nphotons * ncopies
+        self.pos_wl = ga.empty(shape=total, dtype=ga.vec.float4)
+        self.dir_t = ga.empty(shape=total, dtype=ga.vec.float4)
+        self.pol_w = ga.empty(shape=total, dtype=ga.vec.float4)
+        # use GPU kernel to pack data directly (avoid CPU roundtrip)
+        self.gpu_funcs.pack_photons(
+            np.int32(total),
+            self.pos, self.dir, self.pol, self.wavelengths, self.t, self.weights,
+            self.pos_wl, self.dir_t, self.pol_w,
+            block=(256, 1, 1), grid=((total + 255) // 256, 1)
+        )
+
+    def _sync_from_packed(self):
+        """Sync packed float4 format back to unpacked arrays using GPU kernel."""
+        if not self.use_packed:
+            return
+        nphotons = self.pos.size
+        # use GPU kernel to unpack data directly (avoid CPU roundtrip)
+        self.gpu_funcs.unpack_photons(
+            np.int32(nphotons),
+            self.pos_wl, self.dir_t, self.pol_w,
+            self.pos, self.dir, self.pol, self.wavelengths, self.t, self.weights,
+            block=(256, 1, 1), grid=((nphotons + 255) // 256, 1)
+        )
+
     def get(self):
+        # if self.use_packed:
+        #     self._sync_from_packed()
         pos = self.pos.get().view(np.float32).reshape((len(self.pos),3))
         dir = self.dir.get().view(np.float32).reshape((len(self.dir),3))
         pol = self.pol.get().view(np.float32).reshape((len(self.pol),3))
@@ -143,6 +181,9 @@ class GPUPhotons(object):
         '''GPUPhoton objects containing only photons that
         have a particular bit set in their history word and were detected by
         a channel.'''
+        # sync packed data to unpacked arrays if needed (for time, position, etc.)
+        if self.use_packed:
+            self._sync_from_packed()
         cuda.Context.get_current().synchronize()
         index_counter_gpu = ga.zeros(shape=1, dtype=np.uint32)
         cuda.Context.get_current().synchronize()
@@ -291,6 +332,72 @@ class GPUPhotons(object):
         
         if track:
             return step_photon_ids,step_photons
+
+    @profile_if_possible
+    def propagate_packed(self, gpu_geometry, rng_states, nthreads_per_block=256,
+                  max_blocks=1024, max_steps=10, use_weights=False,
+                  scatter_first=0):
+        """Propagate photons using packed float4 format for better memory coalescing.
+        
+        Uses float4 packed arrays:
+        - pos_wl: (x, y, z, wavelength)
+        - dir_t: (dx, dy, dz, time)
+        - pol_w: (px, py, pz, weight)
+        
+        This provides better memory coalescing on A100 GPUs due to 128-bit aligned loads.
+        
+        ..warning::
+            `rng_states` must have at least `nthreads_per_block`*`max_blocks`
+            number of curandStates.
+        """
+        if not self.use_packed:
+            raise RuntimeError("propagate_packed requires use_packed=True in GPUPhotons constructor")
+        
+        nphotons = self.pos.size
+        step = 0
+        input_queue = np.empty(shape=nphotons+1, dtype=np.uint32)
+        input_queue[0] = 0
+        for copy in range(self.ncopies):
+            input_queue[1+copy::self.ncopies] = np.arange(self.true_nphotons, dtype=np.uint32) + copy * self.true_nphotons
+        input_queue_gpu = ga.to_gpu(input_queue)
+        output_queue = np.zeros(shape=nphotons+1, dtype=np.uint32)
+        output_queue[0] = 1
+        output_queue_gpu = ga.to_gpu(output_queue)
+
+        while step < max_steps:
+            if nphotons < nthreads_per_block * 16 * 8 or use_weights:
+                nsteps = max_steps - step
+            else:
+                nsteps = 1
+
+            for first_photon, photons_this_round, blocks in \
+                    chunk_iterator(nphotons, nthreads_per_block, max_blocks):
+                self.gpu_funcs.propagate_packed(
+                    np.int32(first_photon), np.int32(photons_this_round),
+                    input_queue_gpu[1:], output_queue_gpu, rng_states,
+                    self.pos_wl, self.dir_t, self.pol_w,
+                    self.flags, self.last_hit_triangles, self.evidx,
+                    np.int32(nsteps), np.int32(use_weights), np.int32(scatter_first),
+                    gpu_geometry.gpudata,
+                    block=(nthreads_per_block,1,1), grid=(blocks, 1))
+            
+            step += nsteps
+            scatter_first = 0
+
+            if step < max_steps:
+                temp = input_queue_gpu
+                input_queue_gpu = output_queue_gpu
+                output_queue_gpu = temp
+                output_queue_gpu[:1].set(np.ones(shape=1, dtype=np.uint32))
+                nphotons = input_queue_gpu[:1].get()[0] - 1
+                if nphotons == 0:
+                    break
+
+        if ga.max(self.flags).get() & (1 << 31):
+            print("WARNING: ABORTED PHOTONS", file=sys.stderr)
+        cuda.Context.get_current().synchronize()
+        # note: don't sync_from_packed here - only needed for get(), which does lazy sync
+        # get_flat_hits only needs flags and last_hit_triangles (not packed)
 
     @profile_if_possible
     def copy_queue(self, queue_gpu, nphotons, nthreads_per_block=256, max_blocks=1024,

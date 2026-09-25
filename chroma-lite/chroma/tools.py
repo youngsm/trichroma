@@ -132,7 +132,7 @@ def offset(points, x, tol=1e-9):
 
         try:
             j = np.linalg.solve(m, c - a)[0]
-        except np.linalg.linalg.LinAlgError as e:
+        except np.linalg.LinAlgError as e:
             offset_points.append(b)
             continue
 

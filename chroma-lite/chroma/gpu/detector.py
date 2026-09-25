@@ -18,7 +18,6 @@ class GPUDetector(GPUGeometry):
             ga.to_gpu(detector.solid_id_to_channel_index.astype(np.int32))
         self.nchannels = detector.num_channels()
 
-
         self.time_cdf_x_gpu = ga.to_gpu(detector.time_cdf[0].astype(np.float32))
         self.time_cdf_y_gpu = ga.to_gpu(detector.time_cdf[1].astype(np.float32))
 
@@ -37,4 +36,4 @@ class GPUDetector(GPUGeometry):
                                              np.int32(len(detector.time_cdf[0])),
                                              np.int32(len(detector.charge_cdf[0])),
                                              np.float32(detector.charge_cdf[0][-1] / 2**16)])
-                                             
+
