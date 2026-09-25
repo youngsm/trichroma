@@ -13,9 +13,9 @@ import triton.language as tl
 from chroma.triton.engine.api import DaqChannels, DevicePhotons, TERMINAL
 from chroma.triton.engine import physics as P
 from chroma.triton.engine.scene import compile_scene
-from chroma.triton.engine.traverse import nearest_hit_kernel
+from chroma.triton.engine.traverse import nearest_hit_kernel, wire_kernel
 
-BLOCK = 64
+BLOCK = 32  # one ray/photon per thread: launch with num_warps=1
 DAQ_COUNTER = tl.constexpr(0x7FFFFF00)  # Philox draw counters reserved for the DAQ
 SIGN = tl.constexpr(-2147483648)
 
@@ -148,6 +148,7 @@ class ProductionEngine(object):
         self._workspace = None
         self._dummy_f32 = torch.zeros(1, dtype=torch.float32, device=dev)
         self._dummy_i64 = torch.zeros(1, dtype=torch.int64, device=dev)
+        self._dummy_i32 = torch.zeros(1, dtype=torch.int32, device=dev)
         self.grid = None
         import os
         if os.environ.get("CHROMA_TRITON_GRID", "1") != "0":
@@ -173,6 +174,8 @@ class ProductionEngine(object):
                 hit_tri=torch.empty(capacity, dtype=torch.int32, device=dev),
                 hit_n=torch.empty((capacity, 3), dtype=torch.float32, device=dev),
                 hit_codes=torch.empty((capacity, 3), dtype=torch.int32, device=dev),
+                wire_slots=torch.empty(capacity, dtype=torch.int32, device=dev),
+                wire_count=torch.zeros(1, dtype=torch.int32, device=dev),
             )
             self._workspace = ws
         return ws
@@ -210,7 +213,8 @@ class ProductionEngine(object):
                 rows, count, origins, directions, last,
                 self.nodes, self.instances, self.tri_data, self.tri_local,
                 self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
-                out_t, out_tri, out_n, out_codes, n, LEAF=self.leaf_size, BLOCK=BLOCK)
+                out_t, out_tri, out_n, out_codes, n, self._dummy_i32, self._dummy_i32,
+                LEAF=self.leaf_size, WIRE_MODE=0, BLOCK=BLOCK, num_warps=1)
         return out_t, out_tri, out_n, out_codes
 
     # ---------------------------------------------------------- transport
@@ -228,12 +232,21 @@ class ProductionEngine(object):
                         max_steps, use_weights):
         ws = self._workspace
         grid = (triton.cdiv(count, BLOCK),)
+        split = self.n_wires > 0
+        if split:
+            ws["wire_count"].zero_()
         nearest_hit_kernel[grid](
             rows, cnt, photons.pos, photons.dir, photons.last_hit_triangles,
             self.nodes, self.instances, self.tri_data, self.tri_local,
             self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
             ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"], n,
-            LEAF=self.leaf_size, BLOCK=BLOCK)
+            ws["wire_slots"], ws["wire_count"],
+            LEAF=self.leaf_size, WIRE_MODE=1 if split else 0, BLOCK=BLOCK, num_warps=1)
+        if split:
+            # Analytic wires only for the compacted rays that can reach a slab.
+            wire_kernel[grid](ws["wire_slots"], ws["wire_count"], n, rows, photons.pos, photons.dir,
+                              ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"],
+                              self.wires, self.n_wires, BLOCK=BLOCK, num_warps=1)
         P.step_kernel[grid](
             rows, cnt, n, *self._step_args(photons, steps, cursor, norm, renorm),
             ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"],
@@ -243,7 +256,7 @@ class ProductionEngine(object):
             out_rows, out_count,
             self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp,
-            USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=True, BLOCK=BLOCK)
+            USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=True, BLOCK=BLOCK, num_warps=1)
 
     def propagate(self, photons, *, max_steps, use_weights=False, track=False, history=16, epochs_per_poll=4):
         n = len(photons)
@@ -284,7 +297,7 @@ class ProductionEngine(object):
                         ws["bulk"][nxt], ws["bulk_count"][nxt], ws["boundary"], ws["boundary_count"],
                         self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
                         NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights),
-                        TAPE=False, FIXES=True, HISTORY=history, BLOCK=BLOCK)
+                        TAPE=False, FIXES=True, HISTORY=history, BLOCK=BLOCK, num_warps=1)
                     cur = nxt
                 bulk_count = int(ws["bulk_count"][cur].item())
             boundary_count = int(ws["boundary_count"].item())
