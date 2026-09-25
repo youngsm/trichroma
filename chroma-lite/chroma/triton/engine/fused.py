@@ -60,6 +60,7 @@ def fused_kernel(
     NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr, USE_WEIGHTS: tl.constexpr,
     FIXES: tl.constexpr, LEGACY_WIRES: tl.constexpr, LEAF: tl.constexpr, FACE_TRIS: tl.constexpr,
     STEPS: tl.constexpr, BLOCK: tl.constexpr, PARK: tl.constexpr = 8,
+    ROULETTE: tl.constexpr = False, w_rr=0.0,
 ):
     """Propagate the photons listed in ``work_ptr[:work_count]`` (rows) until
     they are terminal or reach ``max_steps``. Persistent: launch a few programs
@@ -206,7 +207,7 @@ def fused_kernel(
             rindex, absorption, scattering,
             comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
             s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
-            seed, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES)
+            seed, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES, ROULETTE, w_rr)
 
         # ---- finished photons are written back; their lanes take new work
         fin = alive & (((flags & terminal) != 0) | (step >= max_steps))

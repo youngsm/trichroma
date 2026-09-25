@@ -176,6 +176,11 @@ class ProductionEngine(object):
         self.fixes = os.environ.get("CHROMA_TRITON_FIXES", "1") not in ("", "0")
         wires = os.environ.get("CHROMA_TRITON_LEGACY_WIRES", "")
         self.legacy_wires = (not self.fixes) if wires == "" else wires != "0"
+        # CHROMA_TRITON_ROULETTE=<w> (opt-in, weighted mode only): Russian
+        # roulette below weight w. Unbiased for every tally, but not Chroma's
+        # weighted-mode semantics (hit weights are w or more instead of down to
+        # 1e-4); off by default.
+        self.roulette = float(os.environ.get("CHROMA_TRITON_ROULETTE", "0") or 0)
         # Rounds with at most this many live photons are replayed from a CUDA graph.
         self.tail_capacity = 32768
         self.tail_graphs = True
@@ -327,7 +332,8 @@ class ProductionEngine(object):
             out_rows, out_count,
             self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp,
-            USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=self.fixes, BLOCK=BLOCK, num_warps=1)
+            USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=self.fixes, BLOCK=BLOCK,
+            ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette, num_warps=1)
 
     def _bulk_epoch(self, photons, steps, cursor, norm, renorm, cur, nxt, grid_count, max_steps, use_weights,
                     history):
@@ -346,7 +352,8 @@ class ProductionEngine(object):
             ws["bulk"][nxt], ws["bulk_count"][nxt], ws["boundary"], ws["boundary_count"],
             self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights),
-            TAPE=False, FIXES=self.fixes, HISTORY=history, BLOCK=BLOCK, num_warps=1)
+            TAPE=False, FIXES=self.fixes, HISTORY=history, BLOCK=BLOCK,
+            ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette, num_warps=1)
 
     def propagate(self, photons, *, max_steps, use_weights=False, track=False, history=16, epochs_per_poll=4):
         if self.exact is not None:
@@ -418,6 +425,7 @@ class ProductionEngine(object):
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights), FIXES=self.fixes,
             LEGACY_WIRES=self.legacy_wires, LEAF=self.leaf_size, FACE_TRIS=self.face_tris,
             STEPS=self.traversal_steps, BLOCK=BLOCK, PARK=self.fused_park,
+            ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette,
             **({"maxnreg": self.fused_maxnreg} if self.fused_maxnreg else {}), num_warps=1)
         return None
 
