@@ -28,6 +28,7 @@ shared specification for everyone working on the drop-in.
 |---|---|---|
 | `CHROMA_BACKEND` | `cuda` (default), `triton` | Implementation behind `chroma.sim.Simulation` |
 | `CHROMA_TRITON_TAPE` | unset/`off`, `canonical`, `record:<dir>`, `replay:<dir>` | Bitwise legacy mode (see below) |
+| `CHROMA_TRITON_TAPE_SORT` | `1` | Record with sorted survivor queues (the `canonical` schedule) |
 | `CHROMA_TRITON_DEVICE` | CUDA ordinal | Overrides `cuda_device` for the Triton backend |
 | `TRITON_CACHE_DIR` | path | Put Triton's JIT cache on `/lscratch`; `$HOME` has little quota |
 
@@ -94,29 +95,40 @@ Compiled once per `Simulation` from the unflattened detector when available.
 
 ## Bitwise legacy mode
 
-`CHROMA_TRITON_TAPE=canonical` runs a separate executor that reproduces W's
-`GPUPhotons.propagate` host loop exactly: step-count rule, chunking by
-`nthreads_per_block*max_blocks`, persistent XORWOW states initialized with
-`curand_init(seed, subsequence=slot, 0)`, entry normalization, FP32 fast-math
-arithmetic, FP32 wires, 16-bit device history, the NaN-producing Fresnel and
-specular paths, DAQ with the same draws. Geometry arrays are produced exactly
-as `GPUGeometry` uploads them, using the original BVH.
+Bitwise equality is demonstrated on the *recorded schedule* of a real CUDA run
+(reference: `docs/triton_legacy_tape.md`).
 
-Original Chroma is not repeatable above one launch per batch, because
-surviving photons are appended to the next queue by warp-level atomics in
-arbitrary warp order. The executor therefore needs a schedule:
-
-* `canonical`: warps append in ascending order, a legal execution of the
-  unmodified kernels. Setting the same variable for the CUDA backend installs a
-  host-side hook that sorts each output queue before the next launch, so both
-  backends run the same legal schedule and can be compared directly.
-* `record:<dir>` (CUDA backend): records the actual queue order of every
-  launch plus seeds, launch parameters and output hashes. No kernel changes.
-* `replay:<dir>` (Triton backend): replays a recorded schedule and checks the
-  recorded output hashes.
-
-`python -m chroma.triton.legacy.verify` runs both backends on a fixture and
-reports the first differing word, if any.
+* **Record** (`CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:<dir>`): the
+  unmodified CUDA backend runs through `chroma.sim.Simulation`; a hook in
+  `chroma/sim_cuda.py` snapshots the XORWOW slot states around every kernel
+  chunk and regenerates each photon's `curand_uniform` draws from the Weyl
+  counter (checked against the full exit state). The tape holds the inputs as
+  copied to the GPU, every photon's ordered propagation draws (CSR:
+  `draws` float bits + `offsets[N+1]`), the launch schedule
+  (`launch_starts`, `launch_nsteps`, chunks, actual queues), DAQ draws, the
+  uploaded scene words (including the word after every table), Simulation
+  parameters, source hashes and all outputs. Recording does not change the
+  outputs (checked on every fixture).
+* **Schedule.** W appends survivors to the next launch's queue with
+  warp-level atomics, so multi-launch runs are not repeatable; the tape keeps
+  the order that happened. `CHROMA_TRITON_TAPE=canonical` sorts every queue
+  (a legal execution of the unmodified kernels) for repeatable CUDA runs.
+* **Exact arithmetic** (`chroma/triton/engine/exact.py`): Triton functions
+  that reproduce W's machine arithmetic bit for bit (explicit `.rn` and
+  `fma.rn` wherever the original SASS contracted, fast-math intrinsics,
+  libdevice transcriptions, FP32 wires, the thin-film block as extracted PTX)
+  and take pre-drawn uniforms.
+* **Replay** (`CHROMA_BACKEND=triton CHROMA_TRITON_TAPE=replay:<dir>`):
+  consumes the per-photon draws. Until the production engine has an exact
+  mode, `chroma.triton.legacy.engine.LegacyEngine` plugs the minimal
+  reference loop (`chroma.triton.legacy.reference`, built from `exact.py`)
+  into the compatibility layer; `python -m chroma.triton.legacy.verify`
+  records, replays and compares `photons_end`, hits, channels and tracks
+  word by word.
+* **Fail closed** where W's behaviour is undefined or unrecorded (DAQ CDFs
+  whose `cdf_y` is one entry short, indices >= 128, BVH stack > 1000,
+  out-of-table dichroic/angular lookups, `scatter_first`, device profiling,
+  mismatching parameters/inputs/detector).
 
 ## Validation
 
