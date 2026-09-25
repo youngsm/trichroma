@@ -5,10 +5,15 @@ Subcommands
 ``run``      Run one fixture in *this* process (backend and tape mode from the
              environment) and save every Event output to an ``.npz``.
 ``compare``  Compare two ``run`` outputs byte for byte (hits in photon order).
-``tape``     Replay a recorded tape through the reference harness and compare
-             with the recorded outputs (no second process needed).
-``all``      Orchestrate: record with the CUDA backend, replay with the Triton
-             backend (``CHROMA_TRITON_TAPE=replay:<dir>``), compare.
+``replay``   Public API: run a fixture through ``chroma.sim.Simulation`` with
+             ``CHROMA_BACKEND=triton CHROMA_TRITON_TAPE=replay:<dir>`` (the
+             production engine in exact mode) and compare every output with
+             the outputs the tape recorded.
+``tape``     Replay a recorded tape through the reference loop (the same exact
+             kernels scheduled launch by launch on the host; no detector
+             needed) and compare with the recorded outputs.
+``all``      Orchestrate: record with the CUDA backend, replay through the
+             reference loop and through the Triton ``Simulation``, compare.
 
 Example::
 
@@ -66,12 +71,16 @@ def _event_arrays(events, has_channels):
     return out
 
 
-def run_fixture(fixture, run_name, output, scale=1.0, detector=None):
-    """Run one fixture run through chroma.sim.Simulation; save outputs to ``output``."""
+def run_fixture_arrays(fixture, run_name, scale=1.0, detector=None, simulation_class=None):
+    """Run one fixture run through ``chroma.sim.Simulation`` (or ``simulation_class``).
+
+    Returns (arrays, info): every Event output in the ``run`` layout and timings.
+    """
     from chroma.backend import backend_name, tape_mode
-    from chroma.sim import Simulation
     from chroma.triton.legacy import fixtures
 
+    if simulation_class is None:
+        from chroma.sim import Simulation as simulation_class
     run = [r for r in fixtures.RUNS[fixture] if r["name"] == run_name][0]
     t0 = time.time()
     if detector is None:
@@ -79,18 +88,120 @@ def run_fixture(fixture, run_name, output, scale=1.0, detector=None):
     t_build = time.time() - t0
     events = fixtures.make_events(fixture, run, scale)
     t0 = time.time()
-    sim = Simulation(detector, **run["sim"])
+    sim = simulation_class(detector, **run["sim"])
     t_init = time.time() - t0
     t0 = time.time()
     produced = list(sim.simulate(events, **run["simulate"]))
     t_sim = time.time() - t0
     arrays = _event_arrays(produced, hasattr(detector, "num_channels"))
     info = dict(fixture=fixture, run=run_name, scale=scale, backend=backend_name(),
+                simulation=simulation_class.__module__ + "." + simulation_class.__name__,
                 tape=str(tape_mode()), nphotons=int(sum(len(e) for e in events)), nevents=len(events),
                 seconds=dict(build=t_build, init=t_init, simulate=t_sim))
+    return arrays, info
+
+
+def run_fixture(fixture, run_name, output, scale=1.0, detector=None, simulation_class=None):
+    """Run one fixture run through chroma.sim.Simulation; save outputs to ``output``."""
+    arrays, info = run_fixture_arrays(fixture, run_name, scale, detector, simulation_class)
     arrays["info"] = np.frombuffer(json.dumps(info).encode(), np.uint8)
     np.savez(output, **arrays)
     return info
+
+
+def tape_outputs(tape):
+    """The outputs a tape recorded, in the ``run`` layout (see :func:`_event_arrays`).
+
+    ``photon_tracks`` are rebuilt from the recorded ``(step_photon_ids,
+    step_photons)`` lists exactly as ``Simulation._simulate_batch`` builds them.
+    """
+    if not isinstance(tape, tapefmt.Tape):
+        tape = tapefmt.Tape(tape)
+    ends, hits, chans, tracks = [], [], [], []
+    have = dict(end=True, hits=True, chans=True, tracks=True)
+    for batch in tape:
+        bounds = np.asarray(batch.event_bounds, np.int64)
+        nev = len(bounds) - 1
+        have["end"] &= "end_pos" in batch
+        have["hits"] &= "hits_pos" in batch or ("hits_expected_pos" in batch and nev == 0)
+        have["chans"] &= "channels_t" in batch and len(batch["channels_event"]) == nev
+        have["tracks"] &= "track_step_offsets" in batch
+        if have["end"]:
+            f = batch.fields("end")
+            ends.extend({k: v[bounds[e]:bounds[e + 1]] for k, v in f.items()} for e in range(nev))
+        if have["hits"] and "hits_pos" in batch:
+            ev = np.asarray(batch["hits_event"])
+            names = tapefmt.PHOTON_FIELD_NAMES + ("channel",)
+            hits.extend({k: np.asarray(batch["hits_" + k])[ev == e] for k in names} for e in range(nev))
+        if have["chans"]:
+            order = np.argsort(np.asarray(batch["channels_event"]), kind="stable")
+            chans.extend({k: np.asarray(batch["channels_" + k])[i] for k in ("t", "q", "flags", "hit")}
+                         for i in order)
+        if have["tracks"]:
+            offs = np.asarray(batch["track_step_offsets"], np.int64)
+            ids = np.asarray(batch["track_ids"], np.int64)
+            fields = batch.fields("track")
+            for e in range(nev):
+                lo, hi = bounds[e], bounds[e + 1]
+                rows, pids, steps = [], [], []
+                for step in range(len(offs) - 1):
+                    sid = ids[offs[step]:offs[step + 1]]
+                    idx = np.flatnonzero((sid >= lo) & (sid < hi))
+                    if not len(idx):
+                        break
+                    rows.append(offs[step] + idx)
+                    pids.append(sid[idx] - lo)
+                    steps.append(np.full(len(idx), step))
+                rows = np.concatenate(rows) if rows else np.zeros(0, np.int64)
+                pids = np.concatenate(pids) if pids else np.zeros(0, np.int64)
+                steps = np.concatenate(steps) if steps else np.zeros(0, np.int64)
+                order = np.lexsort((steps, pids))
+                tracks.append((np.bincount(pids, minlength=hi - lo), {k: np.asarray(v)[rows[order]]
+                                                                        for k, v in fields.items()}))
+    out = {}
+    if have["end"] and ends:
+        out["end_offsets"] = np.concatenate([[0], np.cumsum([len(e["t"]) for e in ends])]).astype(np.int64)
+        for name in tapefmt.PHOTON_FIELD_NAMES:
+            out["end_" + name] = np.concatenate([e[name] for e in ends])
+    if have["hits"] and hits:
+        out["hits_offsets"] = np.concatenate([[0], np.cumsum([len(h["t"]) for h in hits])]).astype(np.int64)
+        for name in tapefmt.PHOTON_FIELD_NAMES + ("channel",):
+            out["hits_" + name] = np.concatenate([h[name] for h in hits])
+    if have["chans"] and chans:
+        out["channels_t"] = np.stack([np.asarray(c["t"], np.float32) for c in chans])
+        out["channels_q"] = np.stack([np.asarray(c["q"], np.float32) for c in chans])
+        out["channels_flags"] = np.stack([np.asarray(c["flags"], np.uint32) for c in chans])
+        out["channels_hit"] = np.stack([np.asarray(c["hit"], np.uint8) for c in chans])
+    if have["tracks"] and tracks:
+        out["track_lengths"] = np.concatenate([lengths for lengths, _ in tracks]).astype(np.int64)
+        for name in tapefmt.PHOTON_FIELD_NAMES:
+            parts = [np.asarray(f[name]).reshape(len(f[name]), -1) for _, f in tracks if len(f[name])]
+            out["track_" + name] = np.concatenate(parts) if parts else np.zeros(0)
+    return out
+
+
+def replay_fixture(fixture, run_name, tape_dir, scale=1.0, detector=None, simulation_class=None):
+    """Public-API replay: run the fixture through ``chroma.sim.Simulation`` with
+    ``CHROMA_TRITON_TAPE=replay:<tape_dir>`` (ProductionEngine in exact mode)
+    and compare every output with the tape's recorded outputs.
+
+    Returns (ok, report, info).
+    """
+    previous = os.environ.get("CHROMA_TRITON_TAPE")
+    os.environ["CHROMA_TRITON_TAPE"] = "replay:" + os.path.abspath(tape_dir)
+    try:
+        if simulation_class is None:
+            from chroma.sim import Simulation as simulation_class
+        if not simulation_class.__module__.startswith("chroma.triton."):
+            raise SystemExit("verify replay runs the Triton backend: set CHROMA_BACKEND=triton")
+        arrays, info = run_fixture_arrays(fixture, run_name, scale, detector, simulation_class)
+    finally:
+        if previous is None:
+            os.environ.pop("CHROMA_TRITON_TAPE", None)
+        else:
+            os.environ["CHROMA_TRITON_TAPE"] = previous
+    ok, report = compare_outputs(tape_outputs(tape_dir), arrays)
+    return ok, report, info
 
 
 # ------------------------------------------------------------------ comparison
@@ -193,7 +304,14 @@ def main(argv=None):
     p = sub.add_parser("compare", help="compare two run outputs")
     p.add_argument("expected")
     p.add_argument("actual")
-    p = sub.add_parser("tape", help="replay a tape through the reference harness")
+    p = sub.add_parser("replay", help="public API: run a fixture through the Triton Simulation replaying a "
+                                      "tape (ProductionEngine exact mode); compare with the tape's outputs")
+    p.add_argument("--fixture", required=True)
+    p.add_argument("--run", required=True)
+    p.add_argument("--tape", required=True)
+    p.add_argument("--scale", type=float, default=1.0)
+    p.add_argument("--report")
+    p = sub.add_parser("tape", help="replay a tape through the reference loop (no detector needed)")
     p.add_argument("--tape", required=True)
     p.add_argument("--report")
     p = sub.add_parser("all", help="record (CUDA) + replay (Triton) + compare")
@@ -219,6 +337,16 @@ def main(argv=None):
     if args.command == "compare":
         ok, report = compare_outputs(_load(args.expected), _load(args.actual))
         print(json.dumps(report, indent=1, default=str))
+        print("BITWISE EQUAL" if ok else "DIFFERENT")
+        return 0 if ok else 1
+    if args.command == "replay":
+        ok, report, info = replay_fixture(args.fixture, args.run, args.tape, scale=args.scale)
+        report = dict(info=info, outputs=report, equal=ok)
+        text = json.dumps(report, indent=1, default=str)
+        if args.report:
+            with open(args.report, "w") as f:
+                f.write(text)
+        print(text)
         print("BITWISE EQUAL" if ok else "DIFFERENT")
         return 0 if ok else 1
     if args.command == "tape":

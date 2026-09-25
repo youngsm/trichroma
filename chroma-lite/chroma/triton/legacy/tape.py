@@ -394,7 +394,9 @@ class TapeReplay(object):
     def __init__(self, directory, simulation=None, verify_hashes=True):
         self.tape = Tape(directory, verify_hashes=verify_hashes)
         if simulation is None:
-            simulation = _claim_simulation(self.tape.directory)
+            # One recorded Simulation: every replay uses it. Several: they are
+            # claimed in construction order within the process.
+            simulation = 0 if len(self.tape.simulations) == 1 else _claim_simulation(self.tape.directory)
         if simulation >= len(self.tape.simulations):
             raise TapeError("tape %s has %d recorded simulations; replay needs #%d"
                             % (directory, len(self.tape.simulations), simulation))

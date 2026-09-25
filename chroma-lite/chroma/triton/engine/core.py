@@ -86,9 +86,20 @@ def _daq_kernel(t_ptr, flags_ptr, last_ptr, w_ptr, ids_ptr, start, count,
 class ProductionEngine(object):
     """General Triton transport engine for any Chroma Geometry/Detector."""
 
-    def __init__(self, detector, *, seed, device, leaf_size=4):
+    #: exact (bitwise legacy) mode: chroma.triton.engine.exact_mode.ExactMode, or None
+    exact = None
+
+    def __init__(self, detector, *, seed, device, leaf_size=4, tape=None, simulation=None):
         self.device = torch.device(device)
         self.seed = int(seed) & 0xFFFFFFFF
+        if tape is not None and tape.enabled:
+            # CHROMA_TRITON_TAPE=replay:<dir>: the same round scheduler with W's arithmetic,
+            # BVH and recorded draws (engine/exact_mode.py); ``simulation`` holds the
+            # Simulation parameters the tape must match.
+            from chroma.triton.engine.exact_mode import ExactMode
+
+            self.exact = ExactMode(self, detector, tape, seed=seed, **(simulation or {}))
+            return
         self.scene = scene = compile_scene(detector, leaf_size=leaf_size)
         self.leaf_size = leaf_size
         dev = self.device
@@ -329,6 +340,8 @@ class ProductionEngine(object):
             TAPE=False, FIXES=self.fixes, HISTORY=history, BLOCK=BLOCK, num_warps=1)
 
     def propagate(self, photons, *, max_steps, use_weights=False, track=False, history=16, epochs_per_poll=4):
+        if self.exact is not None:
+            return self.exact.propagate(photons, max_steps=max_steps, use_weights=use_weights, track=track)
         n = len(photons)
         if n == 0:
             return [] if track else None
@@ -435,6 +448,8 @@ class ProductionEngine(object):
     # ---------------------------------------------------------------- DAQ
 
     def acquire(self, photons, start, count):
+        if self.exact is not None:
+            return self.exact.acquire(photons, start, count)
         nch = self.nchannels
         dev = self.device
         time_bits = torch.full((nch,), int(np.float32(1e9).view(np.int32)) ^ -2147483648, dtype=torch.int32, device=dev)

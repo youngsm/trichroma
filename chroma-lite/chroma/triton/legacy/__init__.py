@@ -6,12 +6,13 @@
   Imports PyCUDA; never imported by the Triton backend.
 * :mod:`chroma.triton.legacy.scene` -- the exact words ``GPUGeometry`` and
   ``GPUDetector`` upload, reproduced with NumPy (no PyCUDA).
-* :mod:`chroma.triton.legacy.reference` -- a minimal replay harness that
-  drives :mod:`chroma.triton.engine.exact` from a tape (a test tool, not an
-  engine).
-* :mod:`chroma.triton.legacy.engine` -- ``LegacyEngine``: the reference loop
-  behind the compatibility layer for ``CHROMA_TRITON_TAPE=replay:<dir>``
-  (validation only, until the production engine has an exact mode).
+* :mod:`chroma.triton.legacy.reference` -- the reference loop: the engine's
+  exact kernels driven launch by launch from the host (an independent check
+  of the scheduling and the timing baseline; needs no detector).
+* :mod:`chroma.triton.legacy.engine` -- ``LegacyEngine``: historical alias of
+  ``ProductionEngine(..., tape=...)``. The replay itself is the exact mode of
+  the production engine (:mod:`chroma.triton.engine.exact_mode`), which the
+  compatibility layer builds for ``CHROMA_TRITON_TAPE=replay:<dir>``.
 * :mod:`chroma.triton.legacy.fixtures` -- detectors and photon sources of the
   bitwise fixtures (LAr ones need ``chroma_lar``).
 * :mod:`chroma.triton.legacy.probes` -- CUDA probe kernels compiled from the
