@@ -26,7 +26,7 @@ import numpy as np
 from chroma import event
 from chroma import itertoolset
 from chroma.backend import tape_mode
-from chroma.triton.engine.api import SURFACE_DETECT, DevicePhotons
+from chroma.triton.engine.api import SURFACE_DETECT, DevicePhotons, to_device
 
 
 def pick_seed():
@@ -107,9 +107,58 @@ def _as_field(value, count, device, dtype, width=None):
     array = np.asarray(value)
     if dtype.is_floating_point:
         array = np.ascontiguousarray(array, dtype=np.float32).reshape(-1)
+    elif array.dtype in (np.uint32, np.int32):
+        array = np.ascontiguousarray(array).view(np.int32).reshape(-1)
     else:
         array = np.ascontiguousarray(array.astype(np.int64) & 0xFFFFFFFF, dtype=np.uint32).view(np.int32).reshape(-1)
-    return torch.from_numpy(np.ascontiguousarray(array[:elements]).reshape(shape)).to(device)
+    return to_device(array[:elements].reshape(shape), device)
+
+
+class _LazyHits(dict):
+    """``Event.hits`` built on first use: the per-channel split of the flat
+    hits costs about as much as the flat hits themselves for large events,
+    and many callers (e.g. LUT generation) only read ``flat_hits``."""
+
+    def __init__(self, flat):
+        super().__init__()
+        self._flat = flat
+
+    def _fill(self):
+        flat = self.__dict__.pop("_flat", None)
+        if flat is not None:
+            dict.update(self, _hits_by_channel(flat))
+
+
+def _lazy(name):
+    method = getattr(dict, name)
+
+    def wrapper(self, *args, **kwargs):
+        self._fill()
+        return method(self, *args, **kwargs)
+
+    wrapper.__name__ = name
+    return wrapper
+
+
+for _name in ("__getitem__", "__iter__", "__len__", "__contains__", "__repr__", "__eq__", "__ne__", "__reversed__",
+              "keys", "values", "items", "get", "copy", "pop", "popitem", "setdefault", "update", "clear",
+              "__setitem__", "__delitem__", "__or__", "__ior__"):
+    if hasattr(dict, _name):
+        setattr(_LazyHits, _name, _lazy(_name))
+_LazyHits.__bool__ = lambda self: self.__len__() > 0
+
+
+def _hits_by_channel(hits):
+    """``{channel: hits[hits.channel == channel]}`` for every channel in
+    ``np.unique`` order, photons in their original order (one stable sort
+    instead of one boolean mask per channel)."""
+    if len(hits) == 0:
+        return {}
+    order = np.argsort(hits.channel, kind="stable")
+    ordered = hits[order]
+    channels, starts = np.unique(ordered.channel, return_index=True)
+    stops = np.append(starts[1:], len(ordered))
+    return {int(c): ordered[a:b] for c, a, b in zip(channels, starts, stops)}
 
 
 class Simulation(object):
@@ -198,7 +247,7 @@ class Simulation(object):
         solid = torch.where(detected, self.engine.triangle_solid(tri.clamp(min=0)), 0)
         channel = torch.where(detected, self.engine.solid_id_to_channel_index[solid.long()], -1)
         rows = torch.nonzero(detected & (channel >= 0)).flatten()
-        hits = photons.select(rows).to_numpy()
+        hits = photons.select(rows).to_numpy(skip=("ids",))
         return event.Photons(hits["pos"], hits["dir"], hits["pol"], hits["wavelengths"], hits["t"],
                              hits["last_hit_triangles"], hits["flags"], hits["weights"],
                              hits["evidx"], channel[rows].cpu().numpy().astype(np.int32))
@@ -216,12 +265,17 @@ class Simulation(object):
                                          track=self.photon_tracking)
 
         if keep_photons_end:
-            end = photons.to_numpy()
+            end = photons.to_numpy(skip=("ids",))
             batch_photons_end = event.Photons(end["pos"], end["dir"], end["pol"], end["wavelengths"],
                                               end["t"], end["last_hit_triangles"], end["flags"],
                                               end["weights"], end["evidx"])
         if self.has_channels and (keep_hits or keep_flat_hits):
             batch_hits = self._flat_hits(photons)
+            # Hits are in photon order and events occupy consecutive rows, so
+            # evidx is non-decreasing: each event's hits are one slice.
+            hit_bounds = None
+            if np.all(batch_hits.evidx[1:] >= batch_hits.evidx[:-1]):
+                hit_bounds = np.searchsorted(batch_hits.evidx, np.arange(len(batch_events) + 1), side="left")
 
         for i, (batch_ev, (start_photon, end_photon)) in enumerate(zip(batch_events, zip(batch_bounds[:-1], batch_bounds[1:]))):
             if not keep_photons_beg:
@@ -249,9 +303,12 @@ class Simulation(object):
                 batch_ev.photons_end = batch_photons_end[start_photon:end_photon]
 
             if self.has_channels and (keep_hits or keep_flat_hits):
-                ev_hits = batch_hits[batch_hits.evidx == i]
+                if hit_bounds is not None:
+                    ev_hits = batch_hits[hit_bounds[i]:hit_bounds[i + 1]]
+                else:
+                    ev_hits = batch_hits[batch_hits.evidx == i]
                 if keep_hits:
-                    batch_ev.hits = {int(chan): ev_hits[ev_hits.channel == chan] for chan in np.unique(ev_hits.channel)}
+                    batch_ev.hits = _LazyHits(ev_hits)
                 if keep_flat_hits:
                     batch_ev.flat_hits = ev_hits
 

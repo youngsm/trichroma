@@ -89,15 +89,107 @@ class DevicePhotons:
     def clone(self):
         return DevicePhotons(**{f.name: getattr(self, f.name).clone() for f in fields(self)})
 
-    def to_numpy(self):
+    def to_numpy(self, skip=()):
         """Host arrays with Chroma's dtypes (flags/evidx as uint32)."""
         out = {}
         for f in fields(self):
-            value = getattr(self, f.name).cpu().numpy()
+            if f.name in skip:
+                continue
+            value = to_host(getattr(self, f.name))
             if f.name in ("flags", "evidx"):
                 value = value.view(np.uint32)
             out[f.name] = value
         return out
+
+
+# ------------------------------------------------------------ host transfers
+#
+# Pageable copies run at ~1.5 GB/s (the driver bounces them through a small
+# pinned buffer on one thread). Large copies are pipelined through two
+# reusable pinned staging buffers instead: the DMA of one chunk overlaps the
+# host memcpy of the other.
+
+_CHUNK = 32 << 20
+_STAGING = {}
+
+
+def _staging(device):
+    import torch
+
+    key = (device.type, device.index)
+    bufs = _STAGING.get(key)
+    if bufs is None:
+        bufs = [torch.empty(_CHUNK, dtype=torch.uint8, pin_memory=True) for _ in range(2)]
+        _STAGING[key] = bufs
+    return bufs
+
+
+def _numpy_dtype(dtype):
+    import torch
+
+    return {torch.float32: np.float32, torch.int32: np.int32, torch.int64: np.int64, torch.uint8: np.uint8,
+            torch.float64: np.float64, torch.int16: np.int16, torch.bool: np.bool_}[dtype]
+
+
+def to_host(tensor):
+    """A new numpy array with the contents of a CUDA tensor."""
+    import torch
+
+    t = tensor.detach()
+    if not t.is_cuda or t.numel() * t.element_size() <= 2 * _CHUNK:
+        return t.cpu().numpy()
+    t = t.contiguous()
+    out = np.empty(tuple(t.shape), _numpy_dtype(t.dtype))
+    src = t.reshape(-1).view(torch.uint8)
+    dst = out.reshape(-1).view(np.uint8)
+    bufs = _staging(t.device)
+    stream = torch.cuda.current_stream(t.device)
+    inflight = [None, None]
+    for i, start in enumerate(range(0, dst.size, _CHUNK)):
+        k = i & 1
+        if inflight[k] is not None:
+            event, lo, hi = inflight[k]
+            event.synchronize()
+            dst[lo:hi] = bufs[k][:hi - lo].numpy()
+        stop = min(start + _CHUNK, dst.size)
+        bufs[k][:stop - start].copy_(src[start:stop], non_blocking=True)
+        event = torch.cuda.Event()
+        event.record(stream)
+        inflight[k] = (event, start, stop)
+    for item in sorted((x for x in inflight if x is not None), key=lambda x: x[1]):
+        event, lo, hi = item
+        event.synchronize()
+        dst[lo:hi] = bufs[inflight.index(item)][:hi - lo].numpy()
+    return out
+
+
+def to_device(array, device):
+    """A new CUDA tensor with the contents of a C-contiguous numpy array."""
+    import torch
+
+    array = np.ascontiguousarray(array)
+    device = torch.device(device)
+    if array.nbytes <= 2 * _CHUNK:
+        return torch.from_numpy(array).to(device)
+    out = torch.empty(array.shape, dtype=torch.from_numpy(array[:0]).dtype, device=device)
+    src = array.reshape(-1).view(np.uint8)
+    dst = out.reshape(-1).view(torch.uint8)
+    bufs = _staging(device)
+    stream = torch.cuda.current_stream(device)
+    events = [None, None]
+    for i, start in enumerate(range(0, src.size, _CHUNK)):
+        k = i & 1
+        if events[k] is not None:
+            events[k].synchronize()  # the staging buffer's previous DMA is done
+        stop = min(start + _CHUNK, src.size)
+        bufs[k][:stop - start].numpy()[:] = src[start:stop]
+        dst[start:stop].copy_(bufs[k][:stop - start], non_blocking=True)
+        events[k] = torch.cuda.Event()
+        events[k].record(stream)
+    for event in events:
+        if event is not None:
+            event.synchronize()
+    return out
 
 
 @dataclass

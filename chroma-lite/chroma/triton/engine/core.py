@@ -93,6 +93,7 @@ class ProductionEngine(object):
         self.leaf_size = leaf_size
         dev = self.device
         self.nodes = _to_device(scene.nodes, dev)
+        self.tlas_nodes = int(scene.tlas_node_count)  # nodes per octant copy of the top-level tree
         self.instances = _to_device(scene.instances, dev)
         self.tri_data = _to_device(scene.tri_data, dev)
         self.tri_local = _to_device(scene.tri_local, dev)
@@ -154,7 +155,7 @@ class ProductionEngine(object):
             self.nchannels = int(detector.num_channels())
         self._workspace = None
         self.two_phase = True
-        self.traversal_steps = 4
+        self.traversal_steps = 1
         # CHROMA_TRITON_FIXES=0 keeps the installed Chroma's behaviour where the
         # production engine fixes it (specular polarization, Fresnel NaNs,
         # 16-bit history, FP32 wire intersection) while keeping the Philox
@@ -166,6 +167,12 @@ class ProductionEngine(object):
         # Rounds with at most this many live photons are replayed from a CUDA graph.
         self.tail_capacity = 32768
         self.tail_graphs = True
+        # Fused transport (photon state in registers; see engine/fused.py).
+        self.fused = os.environ.get("CHROMA_TRITON_FUSED", "1") not in ("", "0")
+        self.fused_warps_per_sm = 24
+        self.fused_park = 8
+        self.fused_maxnreg = 80
+        self.sm_count = torch.cuda.get_device_properties(self.device).multi_processor_count
         self._dummy_f32 = torch.zeros(1, dtype=torch.float32, device=dev)
         self._dummy_i64 = torch.zeros(1, dtype=torch.int64, device=dev)
         self._dummy_i32 = torch.zeros(1, dtype=torch.int32, device=dev)
@@ -197,6 +204,7 @@ class ProductionEngine(object):
                 wire_count=torch.zeros(1, dtype=torch.int32, device=dev),
                 blas_slots=torch.empty(capacity, dtype=torch.int32, device=dev),
                 blas_count=torch.zeros(1, dtype=torch.int32, device=dev),
+                head=torch.zeros(1, dtype=torch.int32, device=dev),
             )
             self._workspace = ws
         return ws
@@ -236,7 +244,7 @@ class ProductionEngine(object):
                 self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
                 self.boxes, self.n_boxes, self.box_tris,
                 out_t, out_tri, out_n, out_codes, n, self._dummy_i32, self._dummy_i32,
-                LEAF=self.leaf_size, WIRE_MODE=0, BLOCK=BLOCK, FACE_TRIS=self.face_tris,
+                tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=0, BLOCK=BLOCK, FACE_TRIS=self.face_tris,
                 LEGACY_WIRES=self.legacy_wires, num_warps=1)
         return out_t, out_tri, out_n, out_codes
 
@@ -273,16 +281,16 @@ class ProductionEngine(object):
         if self.two_phase:
             nearest_hit_kernel[grid](
                 rows, cnt, pos, dirs, last, *common,
-                LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
+                tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
                 blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=1, num_warps=1)
             nearest_hit_kernel[grid](
                 rows, ws["blas_count"], pos, dirs, last, *common,
-                LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
+                tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
                 blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=2, num_warps=1)
         else:
             nearest_hit_kernel[grid](
                 rows, cnt, pos, dirs, last, *common,
-                LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
+                tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
                 num_warps=1)
         if self.n_wires:
             # Analytic wires only for the compacted rays that can reach a slab.
@@ -342,9 +350,12 @@ class ProductionEngine(object):
         live = torch.nonzero((photons.flags & TERMINAL) == 0).flatten().to(torch.int32)
         ws = self._buffers(n)
         count = live.numel()
+        self.last_steps = steps  # per-photon step counts of the last call (diagnostics)
         if track or getattr(self, "grid", None) is None:
             return self._propagate_stepwise(photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track)
         args = (photons, steps, cursor, norm, renorm)
+        if self.fused:
+            return self._propagate_fused(args, live, max_steps, use_weights)
         cur = 0
         ws["bulk"][cur][:count] = live
         ws["bulk_count"][cur].fill_(count)
@@ -367,6 +378,33 @@ class ProductionEngine(object):
             if 0 < bulk_count <= self.tail_capacity and self.tail_graphs:
                 self._finish_tail(args, cur, max_steps, use_weights, history)
                 break
+        return None
+
+    def _propagate_fused(self, args, live, max_steps, use_weights):
+        """All photons in one persistent fused launch (see engine/fused.py)."""
+        from chroma.triton.engine.fused import fused_kernel
+
+        photons, steps, cursor, norm, renorm = args
+        ws = self._workspace
+        count = live.numel()
+        ws["bulk"][0][:count] = live
+        ws["bulk_count"][0].fill_(count)
+        ws["head"].zero_()
+        programs = max(1, min(self.sm_count * self.fused_warps_per_sm, triton.cdiv(count, BLOCK)))
+        fused_kernel[(programs,)](
+            ws["bulk"][0], ws["bulk_count"][0], ws["head"],
+            photons.pos, photons.dir, photons.pol, photons.wavelengths, photons.t, photons.last_hit_triangles,
+            photons.flags, photons.weights, photons.ids, steps, norm, renorm, int(renorm.numel()),
+            self.nodes, self.tlas_nodes, self.instances, self.tri_data, self.tri_local, self.code_m1, self.code_m2,
+            self.code_s, self.boxes, self.n_boxes, self.box_tris, self.wires, self.n_wires,
+            *self._material_args(),
+            self.s_present, self.s_model, self.s_detect, self.s_absorb, self.s_reemit,
+            self.s_diffuse, self.s_specular, self.s_cdf,
+            self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+            NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights), FIXES=self.fixes,
+            LEGACY_WIRES=self.legacy_wires, LEAF=self.leaf_size, FACE_TRIS=self.face_tris,
+            STEPS=self.traversal_steps, BLOCK=BLOCK, PARK=self.fused_park,
+            **({"maxnreg": self.fused_maxnreg} if self.fused_maxnreg else {}), num_warps=1)
         return None
 
     def _finish_tail(self, args, cur, max_steps, use_weights, history, epochs=2, rounds_per_graph=4, replays=8):

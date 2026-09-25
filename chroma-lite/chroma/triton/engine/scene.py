@@ -20,26 +20,33 @@ import numpy as np
 from chroma.geometry import standard_wavelengths
 from chroma.triton.optics import compile_optical_tables
 
-from .bvh_build import build_threaded_bvh
+from .bvh_build import build_sah_tree, build_threaded_bvh, thread_octants
 
 # Packed node record: lower xyz, upper xyz, escape (int32 bits), leaf (int32
 # bits: first*16+count for leaves, -1 for inner nodes).
 NODE_WIDTH = 8
 # Instance record (float32, ints stored as bit patterns):
 # 0-8 world->local matrix M (row-major), 9-11 translation d (local =
-# M @ (world - d)), 12 det sign of the placement, 13 BLAS root node, 14 global
-# triangle offset, 15 code offset, 16 solid id, 17 BLAS triangle-slot offset.
+# M @ (world - d)), 12 det sign of the placement, 13 BLAS root node (octant-0
+# copy), 14 global triangle offset, 15 code offset, 16 solid id, 17 BLAS
+# triangle-slot offset, 18 BLAS nodes per octant copy.
 INSTANCE_WIDTH = 20
+# Every tree is stored as eight threaded copies, one per ray-direction octant
+# (bit a set when direction component a is negative), near child first: the
+# copy for octant o starts at root + o * (nodes per copy).
+OCTANTS = 8
 # Wire-plane record (float32, ints as bit patterns): origin 0-2, u_norm 3-5,
 # v_norm 6-8, n_norm 9-11, pitch 12, radius 13, umin 14, umax 15, v0 16,
 # k_min 17, k_max 18, surface 19, material_inner 20, material_outer 21.
 WIRE_WIDTH = 24
 TRI_WIDTH = 9  # v0 xyz, e1 xyz, e2 xyz (local frame)
 # Analytic box record (float32; ints as bits): lower xyz 0-2, upper xyz 3-5,
-# then for faces (-x,+x,-y,+y,-z,+z): first box-triangle slot and count 6-17.
+# then for faces (-x,+x,-y,+y,-z,+z): first box-triangle slot and count 6-17,
+# the solid's global triangle id range [first, end) 18-19.
 BOX_WIDTH = 20
 # Box triangle record (float32; ints as bits): world v0/e1/e2 0-8, global
-# triangle id 9, material1 10, material2 11, surface 12.
+# triangle id 9, material1 10, material2 11, surface 12; and, in the row at
+# (box's first slot + k), the face of the box triangle with local id k 13.
 BOX_TRI_WIDTH = 16
 MAX_GLOBAL_BOXES = 16
 
@@ -170,6 +177,33 @@ def detect_box(world_tri, tol=1e-4):
     return lo, hi, [np.asarray(f, np.int64) for f in faces]
 
 
+def _pack_octants(tree, node_base, slot_base):
+    """NODE_WIDTH records of ``tree``'s eight octant copies (float32 bounds
+    rounded outward), escapes absolute from ``node_base``, leaves pointing at
+    triangle slots from ``slot_base``."""
+    m = len(tree.left)
+    lower = np.asarray(tree.lower, np.float64)
+    upper = np.asarray(tree.upper, np.float64)
+    lo32 = lower.astype(np.float32)
+    hi32 = upper.astype(np.float32)
+    lo32 = np.where(lo32.astype(np.float64) > lower, np.nextafter(lo32, np.float32(-np.inf)), lo32)
+    hi32 = np.where(hi32.astype(np.float64) < upper, np.nextafter(hi32, np.float32(np.inf)), hi32)
+    is_leaf = tree.left < 0
+    count = tree.end - tree.begin
+    if np.any(count[is_leaf] > 15):
+        raise ValueError("leaves hold at most 15 primitives")
+    leaf = np.where(is_leaf, (tree.begin + slot_base) * 16 + count, -1)
+    packed = np.zeros((OCTANTS * m, NODE_WIDTH), np.float32)
+    for octant, (row, escape) in enumerate(thread_octants(tree)):
+        base = octant * m
+        dest = base + row
+        packed[dest, 0:3] = lo32
+        packed[dest, 3:6] = hi32
+        packed[dest, 6] = _f32_bits(np.where(escape >= 0, escape + base + node_base, -1))
+        packed[dest, 7] = _f32_bits(leaf)
+    return packed
+
+
 def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     """Compile ``geometry`` (flattened in place if needed, like Chroma does)."""
     if not hasattr(geometry, "mesh"):
@@ -205,8 +239,10 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
             ext = hi_b - lo_b
             candidates.append((2 * (ext[0] * ext[1] + ext[1] * ext[2] + ext[0] * ext[2]), i, lo_b, hi_b, faces))
     candidates.sort(key=lambda c: -c[0])
+    # Keep the largest boxes; test the smallest first: nested boxes (an inner
+    # detector inside a cavity) then prune the outer ones.
     boxes, box_tris, box_solids = [], [], []
-    for _, i, lo_b, hi_b, faces in candidates[:MAX_GLOBAL_BOXES]:
+    for _, i, lo_b, hi_b, faces in sorted(candidates[:MAX_GLOBAL_BOXES], key=lambda c: c[0]):
         rec = np.zeros(BOX_WIDTH, np.float32)
         rec[0:3] = lo_b.astype(np.float32)
         rec[3:6] = hi_b.astype(np.float32)
@@ -223,6 +259,11 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
                 row[9:13] = _f32_bits([g, m1_all[g], m2_all[g], surf_all[g]])
                 box_tris.append(row)
         rec[6:18] = _f32_bits(ints)
+        rec[18:20] = _f32_bits([tri_offset[i], tri_offset[i + 1]])
+        first_slot = ints[0]
+        for f in range(6):
+            for t in faces[f]:
+                box_tris[first_slot + t][13] = _f32_bits([f])[0]
         boxes.append(rec)
         box_solids.append(i)
     box_set = set(box_solids)
@@ -266,39 +307,34 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     code_surface = np.concatenate([c[2] for c in variant_codes]).astype(np.int32)
 
     # --- BLAS construction --------------------------------------------------
-    blas_nodes, blas_tri, blas_local, blas_root, blas_slot0 = [], [], [], [], []
+    blas_nodes, blas_tri, blas_local, blas_root, blas_slot0, blas_stride = [], [], [], [], [], []
     node_cursor = 0
     slot_cursor = 0
     for mesh in blas_meshes:
         v = np.asarray(mesh.vertices, np.float64)
         t = np.asarray(mesh.triangles, np.int64)
         corners = v[t]  # [T,3,3]
-        bvh = build_threaded_bvh(corners.min(axis=1), corners.max(axis=1), leaf_size=leaf_size)
-        packed = np.zeros((bvh.node_count, NODE_WIDTH), np.float32)
-        packed[:, 0:3] = bvh.lower
-        packed[:, 3:6] = bvh.upper
-        escape = np.where(bvh.escape >= 0, bvh.escape + node_cursor, -1)
-        leaf = np.where(bvh.leaf_first >= 0, (bvh.leaf_first + slot_cursor) * 16 + bvh.leaf_count, -1)
-        packed[:, 6] = _f32_bits(escape)
-        packed[:, 7] = _f32_bits(leaf)
+        tree = build_sah_tree(corners.min(axis=1), corners.max(axis=1), leaf_size=leaf_size)
+        packed = _pack_octants(tree, node_cursor, slot_cursor)
         blas_nodes.append(packed)
-        tri = corners[bvh.order].astype(np.float32)
-        slots = np.empty((len(bvh.order), TRI_WIDTH), np.float32)
+        tri = corners[tree.order].astype(np.float32)
+        slots = np.empty((len(tree.order), TRI_WIDTH), np.float32)
         slots[:, 0:3] = tri[:, 0]
         slots[:, 3:6] = tri[:, 1] - tri[:, 0]
         slots[:, 6:9] = tri[:, 2] - tri[:, 0]
         blas_tri.append(slots)
-        blas_local.append(bvh.order.astype(np.int32))
+        blas_local.append(tree.order.astype(np.int32))
         blas_root.append(node_cursor)
         blas_slot0.append(slot_cursor)
-        node_cursor += bvh.node_count
-        slot_cursor += len(bvh.order)
+        blas_stride.append(len(tree.left))
+        node_cursor += len(packed)
+        slot_cursor += len(tree.order)
 
     # --- instances and TLAS ---------------------------------------------------
     inst_lower = np.empty((len(solids), 3))
     inst_upper = np.empty((len(solids), 3))
     records = np.zeros((len(solids), INSTANCE_WIDTH), np.float32)
-    ints = np.zeros((len(solids), 5), np.int64)
+    ints = np.zeros((len(solids), 6), np.int64)
     blas_bounds = []
     for mesh in blas_meshes:
         v = np.asarray(mesh.vertices, np.float64)
@@ -322,7 +358,7 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
         records[i, 9:12] = d.astype(np.float32)
         records[i, 12] = np.float32(1.0 if det > 0 else -1.0)
         ints[i] = (blas_root[solid_blas[i]], tri_offset[i],
-                   variant_offset[solid_variant[i]], i, blas_slot0[solid_blas[i]])
+                   variant_offset[solid_variant[i]], i, blas_slot0[solid_blas[i]], blas_stride[solid_blas[i]])
     world_lower = inst_lower.min(axis=0)
     world_upper = inst_upper.max(axis=0)
     keep = np.array([i for i in range(len(solids)) if i not in box_set], np.int64)
@@ -330,14 +366,11 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
         keep = np.array([box_solids[0]], np.int64)  # keep one instance so the TLAS is never empty
     inst_lower, inst_upper = inst_lower[keep], inst_upper[keep]
     records, ints = records[keep], ints[keep]
-    tlas = build_threaded_bvh(inst_lower, inst_upper, leaf_size=1)
-    tlas_packed = np.zeros((tlas.node_count, NODE_WIDTH), np.float32)
-    tlas_packed[:, 0:3] = tlas.lower
-    tlas_packed[:, 3:6] = tlas.upper
-    tlas_packed[:, 6] = _f32_bits(tlas.escape)
-    tlas_packed[:, 7] = _f32_bits(np.where(tlas.leaf_first >= 0, tlas.leaf_first * 16 + tlas.leaf_count, -1))
-    # BLAS node indices shift by the TLAS size.
-    shift = tlas.node_count
+    tlas = build_sah_tree(inst_lower, inst_upper, leaf_size=1)
+    tlas_packed = _pack_octants(tlas, 0, 0)
+    tlas_count = len(tlas.left)
+    # BLAS node indices shift by the TLAS copies.
+    shift = len(tlas_packed)
     for packed in blas_nodes:
         esc = packed[:, 6].view(np.int32)
         packed[:, 6] = _f32_bits(np.where(esc >= 0, esc + shift, -1))
@@ -345,7 +378,7 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     order = tlas.order
     records = records[order]
     ints = ints[order]
-    records[:, 13:18] = _f32_bits(ints.astype(np.int32))
+    records[:, 13:19] = _f32_bits(ints.astype(np.int32))
     nodes = np.concatenate([tlas_packed] + blas_nodes)
 
     wires = _wire_records(geometry, materials, surfaces)
@@ -359,7 +392,7 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
 
     return CompiledScene(
         nodes=nodes,
-        tlas_node_count=int(tlas.node_count),
+        tlas_node_count=int(tlas_count),
         instances=records,
         tri_data=np.concatenate(blas_tri),
         tri_local=np.concatenate(blas_local),

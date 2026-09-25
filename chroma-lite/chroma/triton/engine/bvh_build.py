@@ -202,3 +202,147 @@ def validate_threaded_bvh(bvh, box_lower, box_upper):
         node = node + 1 if bvh.leaf_first[node] < 0 else bvh.escape[node]
     assert visited == n, (visited, n)
     return True
+
+
+# ------------------------------------------------------------------------------
+# Binned-SAH trees threaded in eight direction-octant orders.
+#
+# A stackless (escape-link) traversal visits children in storage order. With
+# one order for every ray, a ray often descends the far child first, finds a
+# far hit and must still visit the near side. Storing one threaded copy per
+# ray-direction octant, each ordered near child first along the axis that
+# separates the children, restores front-to-back traversal: the first hits are
+# the nearest and prune the rest.
+
+
+@dataclass(frozen=True)
+class BinaryBVH:
+    """Binary BVH: node bounds, children (-1 for leaves), leaf ranges in ``order``."""
+
+    lower: np.ndarray  # float64 [M,3]
+    upper: np.ndarray
+    left: np.ndarray  # int64 [M]
+    right: np.ndarray
+    begin: np.ndarray  # int64 [M] leaf range [begin, end) in order
+    end: np.ndarray
+    order: np.ndarray  # int64 [N] primitive of every leaf slot
+
+
+def _half_area(lo, hi):
+    d = np.maximum(hi - lo, 0.0)
+    return d[..., 0] * d[..., 1] + d[..., 1] * d[..., 2] + d[..., 0] * d[..., 2]
+
+
+def build_sah_tree(box_lower, box_upper, *, leaf_size=4, bins=16):
+    """Top-down binned surface-area-heuristic BVH over primitive boxes [N,3]."""
+    lo = np.asarray(box_lower, np.float64)
+    hi = np.asarray(box_upper, np.float64)
+    n = len(lo)
+    if n == 0:
+        raise ValueError("cannot build a BVH over zero primitives")
+    cen = 0.5 * (lo + hi)
+    order = np.arange(n, dtype=np.int64)
+    lower, upper, left, right, begin, end = [], [], [], [], [], []
+
+    def new_node(b, e):
+        lower.append(None)
+        upper.append(None)
+        left.append(-1)
+        right.append(-1)
+        begin.append(b)
+        end.append(e)
+        return len(begin) - 1
+
+    stack = [new_node(0, n)]
+    while stack:
+        node = stack.pop()
+        b, e = begin[node], end[node]
+        prims = order[b:e]
+        plo, phi = lo[prims], hi[prims]
+        lower[node] = plo.min(axis=0)
+        upper[node] = phi.max(axis=0)
+        count = e - b
+        if count <= leaf_size:
+            continue
+        c = cen[prims]
+        cmin, cmax = c.min(axis=0), c.max(axis=0)
+        extent = cmax - cmin
+        best_cost, best_axis, best_bin, best_k = np.inf, -1, -1, None
+        for axis in range(3):
+            if extent[axis] <= 0.0:
+                continue
+            k = np.minimum(((c[:, axis] - cmin[axis]) * (bins / extent[axis])).astype(np.int64), bins - 1)
+            counts = np.bincount(k, minlength=bins)
+            blo = np.full((bins, 3), np.inf)
+            bhi = np.full((bins, 3), -np.inf)
+            np.minimum.at(blo, k, plo)
+            np.maximum.at(bhi, k, phi)
+            lcnt = np.cumsum(counts)[:-1]
+            rcnt = np.cumsum(counts[::-1])[::-1][1:]
+            llo = np.minimum.accumulate(blo, axis=0)[:-1]
+            lhi = np.maximum.accumulate(bhi, axis=0)[:-1]
+            rlo = np.minimum.accumulate(blo[::-1], axis=0)[::-1][1:]
+            rhi = np.maximum.accumulate(bhi[::-1], axis=0)[::-1][1:]
+            with np.errstate(invalid="ignore"):
+                cost = np.where((lcnt > 0) & (rcnt > 0),
+                                _half_area(llo, lhi) * lcnt + _half_area(rlo, rhi) * rcnt, np.inf)
+            i = int(np.argmin(cost))
+            if cost[i] < best_cost:
+                best_cost, best_axis, best_bin, best_k = cost[i], axis, i, k
+        if best_axis < 0:
+            mid = b + count // 2  # coincident centroids: split the list
+        else:
+            to_left = best_k <= best_bin
+            order[b:e] = np.concatenate([prims[to_left], prims[~to_left]])
+            mid = b + int(to_left.sum())
+        l_node = new_node(b, mid)
+        r_node = new_node(mid, e)
+        left[node], right[node] = l_node, r_node
+        stack.append(r_node)
+        stack.append(l_node)
+    return BinaryBVH(np.array(lower), np.array(upper), np.array(left, np.int64), np.array(right, np.int64),
+                     np.array(begin, np.int64), np.array(end, np.int64), order)
+
+
+def thread_octants(tree):
+    """Eight threaded layouts of ``tree`` (one per ray-direction octant, bit a
+    set when direction component a is negative), each in preorder with the
+    near child first along the axis separating the children's centers.
+
+    Returns a list of (row, escape) pairs: ``row[node]`` is the node's index in
+    that layout and ``escape[node]`` the layout index after its subtree (-1 at
+    the end).
+    """
+    m = len(tree.left)
+    size = np.ones(m, np.int64)
+    for node in range(m - 1, -1, -1):  # children are created after parents
+        if tree.left[node] >= 0:
+            size[node] = 1 + size[tree.left[node]] + size[tree.right[node]]
+    center = 0.5 * (tree.lower + tree.upper)
+    inner = np.flatnonzero(tree.left >= 0)
+    sep = center[tree.right[inner]] - center[tree.left[inner]]
+    axis = np.full(m, -1, np.int64)
+    axis[inner] = np.argmax(np.abs(sep), axis=1)
+    right_is_upper = np.zeros(m, bool)
+    right_is_upper[inner] = sep[np.arange(len(inner)), axis[inner]] >= 0.0
+    layouts = []
+    for octant in range(8):
+        row = np.empty(m, np.int64)
+        index = 0
+        stack = [0]
+        while stack:
+            node = stack.pop()
+            row[node] = index
+            index += 1
+            l_node = tree.left[node]
+            if l_node >= 0:
+                negative = (octant >> axis[node]) & 1
+                # Positive direction: the lower child first; negative: the upper.
+                left_first = right_is_upper[node] != bool(negative)
+                first, second = (l_node, tree.right[node]) if left_first else (tree.right[node], l_node)
+                stack.append(second)
+                stack.append(first)
+        escape = row + size
+        escape[escape >= m] = -1
+        layouts.append((row, escape))
+    return layouts
