@@ -35,6 +35,13 @@ INSTANCE_WIDTH = 20
 # k_min 17, k_max 18, surface 19, material_inner 20, material_outer 21.
 WIRE_WIDTH = 24
 TRI_WIDTH = 9  # v0 xyz, e1 xyz, e2 xyz (local frame)
+# Analytic box record (float32; ints as bits): lower xyz 0-2, upper xyz 3-5,
+# then for faces (-x,+x,-y,+y,-z,+z): first box-triangle slot and count 6-17.
+BOX_WIDTH = 20
+# Box triangle record (float32; ints as bits): world v0/e1/e2 0-8, global
+# triangle id 9, material1 10, material2 11, surface 12.
+BOX_TRI_WIDTH = 16
+MAX_GLOBAL_BOXES = 16
 
 
 def _f32_bits(values):
@@ -74,6 +81,9 @@ class CompiledScene:
     world_upper: np.ndarray
     blas_count: int
     variant_count: int
+    boxes: np.ndarray  # float32 [B, BOX_WIDTH], analytic boxes tested before the TLAS
+    box_tris: np.ndarray  # float32 [S, BOX_TRI_WIDTH]
+    box_solids: tuple  # solid ids represented by ``boxes``
 
 
 def _wire_records(geometry, materials, surfaces):
@@ -121,6 +131,45 @@ def _wire_records(geometry, materials, surfaces):
     return np.stack(records) if records else np.zeros((0, WIRE_WIDTH), np.float32)
 
 
+
+def detect_box(world_tri, tol=1e-4):
+    """Return per-face triangle lists if ``world_tri`` [T,3,3] tiles an axis-aligned box.
+
+    Every triangle must lie in one face plane of the mesh bounding box (within
+    ``tol`` mm) and each face's triangle area must equal the face area.
+    Returns (lower, upper, faces) with faces a list of 6 index arrays, or None.
+    """
+    lo = world_tri.reshape(-1, 3).min(axis=0)
+    hi = world_tri.reshape(-1, 3).max(axis=0)
+    if np.any(hi - lo <= tol):
+        return None
+    faces = [[] for _ in range(6)]
+    for t, tri in enumerate(world_tri):
+        placed = False
+        for axis in range(3):
+            for side, plane in ((0, lo[axis]), (1, hi[axis])):
+                if np.all(np.abs(tri[:, axis] - plane) <= tol):
+                    faces[2 * axis + side].append(t)
+                    placed = True
+                    break
+            if placed:
+                break
+        if not placed:
+            return None
+    for f in range(6):
+        axis = f // 2
+        others = [a for a in range(3) if a != axis]
+        if not faces[f]:
+            return None
+        tris = world_tri[faces[f]][:, :, others]
+        area = 0.5 * np.abs((tris[:, 1, 0] - tris[:, 0, 0]) * (tris[:, 2, 1] - tris[:, 0, 1])
+                            - (tris[:, 2, 0] - tris[:, 0, 0]) * (tris[:, 1, 1] - tris[:, 0, 1])).sum()
+        face_area = (hi[others[0]] - lo[others[0]]) * (hi[others[1]] - lo[others[1]])
+        if abs(area - face_area) > 1e-6 * face_area + tol:
+            return None
+    return lo, hi, [np.asarray(f, np.int64) for f in faces]
+
+
 def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     """Compile ``geometry`` (flattened in place if needed, like Chroma does)."""
     if not hasattr(geometry, "mesh"):
@@ -141,6 +190,42 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     m1_all = np.asarray(geometry.material1_index, np.int32)
     m2_all = np.asarray(geometry.material2_index, np.int32)
     surf_all = np.asarray(geometry.surface_index, np.int32)
+
+    # --- analytic boxes: the largest box-shaped solids ------------------
+    world_vertices = np.asarray(geometry.mesh.vertices, np.float64)
+    world_triangles = np.asarray(geometry.mesh.triangles, np.int64)
+    candidates = []
+    for i, solid in enumerate(solids):
+        if counts[i] > 64:
+            continue
+        rows = slice(tri_offset[i], tri_offset[i + 1])
+        found = detect_box(world_vertices[world_triangles[rows]])
+        if found is not None:
+            lo_b, hi_b, faces = found
+            ext = hi_b - lo_b
+            candidates.append((2 * (ext[0] * ext[1] + ext[1] * ext[2] + ext[0] * ext[2]), i, lo_b, hi_b, faces))
+    candidates.sort(key=lambda c: -c[0])
+    boxes, box_tris, box_solids = [], [], []
+    for _, i, lo_b, hi_b, faces in candidates[:MAX_GLOBAL_BOXES]:
+        rec = np.zeros(BOX_WIDTH, np.float32)
+        rec[0:3] = lo_b.astype(np.float32)
+        rec[3:6] = hi_b.astype(np.float32)
+        ints = []
+        for f in range(6):
+            ints += [len(box_tris), len(faces[f])]
+            for t in faces[f]:
+                g = tri_offset[i] + t
+                v = world_vertices[world_triangles[g]].astype(np.float32)
+                row = np.zeros(BOX_TRI_WIDTH, np.float32)
+                row[0:3] = v[0]
+                row[3:6] = v[1] - v[0]
+                row[6:9] = v[2] - v[0]
+                row[9:13] = _f32_bits([g, m1_all[g], m2_all[g], surf_all[g]])
+                box_tris.append(row)
+        rec[6:18] = _f32_bits(ints)
+        boxes.append(rec)
+        box_solids.append(i)
+    box_set = set(box_solids)
 
     # --- unique meshes (BLAS) and code variants -------------------------
     blas_of_mesh = {}  # id(mesh) -> blas index
@@ -238,6 +323,13 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
         records[i, 12] = np.float32(1.0 if det > 0 else -1.0)
         ints[i] = (blas_root[solid_blas[i]], tri_offset[i],
                    variant_offset[solid_variant[i]], i, blas_slot0[solid_blas[i]])
+    world_lower = inst_lower.min(axis=0)
+    world_upper = inst_upper.max(axis=0)
+    keep = np.array([i for i in range(len(solids)) if i not in box_set], np.int64)
+    if len(keep) == 0:
+        keep = np.array([box_solids[0]], np.int64)  # keep one instance so the TLAS is never empty
+    inst_lower, inst_upper = inst_lower[keep], inst_upper[keep]
+    records, ints = records[keep], ints[keep]
     tlas = build_threaded_bvh(inst_lower, inst_upper, leaf_size=1)
     tlas_packed = np.zeros((tlas.node_count, NODE_WIDTH), np.float32)
     tlas_packed[:, 0:3] = tlas.lower
@@ -265,8 +357,6 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     else:
         channel = np.full(len(solids), -1, np.int32)
 
-    world_lower = inst_lower.min(axis=0)
-    world_upper = inst_upper.max(axis=0)
     return CompiledScene(
         nodes=nodes,
         tlas_node_count=int(tlas.node_count),
@@ -287,4 +377,7 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
         world_upper=world_upper,
         blas_count=len(blas_meshes),
         variant_count=len(variant_codes),
+        boxes=np.stack(boxes) if boxes else np.zeros((0, BOX_WIDTH), np.float32),
+        box_tris=np.stack(box_tris) if box_tris else np.zeros((0, BOX_TRI_WIDTH), np.float32),
+        box_solids=tuple(box_solids),
     )

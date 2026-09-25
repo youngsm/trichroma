@@ -6,6 +6,7 @@ and per-kernel CUDA time from torch.profiler.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import time
@@ -72,9 +73,12 @@ def main():
         torch.cuda.synchronize()
         dt = time.perf_counter() - start
         flags = ph.flags.cpu().numpy().view(np.uint32)
+        digest = hashlib.sha256()
+        for field in (ph.pos, ph.dir, ph.pol, ph.t, ph.wavelengths, ph.flags, ph.last_hit_triangles, ph.weights):
+            digest.update(field.cpu().numpy().tobytes())
         row = {"repeat": r, "seconds": dt, "photons_per_second": args.photons / dt,
                "detected": int(np.count_nonzero(flags & 4)), "unfinished": int(np.count_nonzero((flags & 15) == 0)),
-               "mean_steps": None}
+               "sha256": digest.hexdigest()[:16]}
         print(json.dumps(row), flush=True)
         if r:
             rows.append(row)

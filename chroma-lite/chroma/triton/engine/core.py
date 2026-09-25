@@ -5,6 +5,8 @@ for every queued photon; survivors are appended to the next queue on the
 device. The host reads one counter per round.
 """
 
+import os
+
 import numpy as np
 import torch
 import triton
@@ -99,6 +101,11 @@ class ProductionEngine(object):
         self.code_s = _to_device(scene.code_surface, dev)
         self.wires = _to_device(scene.wires if len(scene.wires) else np.zeros((1, 24), np.float32), dev)
         self.n_wires = int(len(scene.wires))
+        self.boxes = _to_device(scene.boxes if len(scene.boxes) else np.zeros((1, 20), np.float32), dev)
+        self.box_tris = _to_device(scene.box_tris if len(scene.box_tris) else np.zeros((1, 16), np.float32), dev)
+        self.n_boxes = int(len(scene.boxes))
+        face_counts = scene.boxes[:, 7:18:2].view(np.int32) if len(scene.boxes) else np.zeros(1, np.int32)
+        self.face_tris = int(min(16, max(1, int(face_counts.max()))))
         o = scene.optics
         m, s = o.materials, o.surfaces
         self.wl_start = float(o.wavelength_grid.start)
@@ -146,11 +153,23 @@ class ProductionEngine(object):
             self.charge_unit = float(np.float32(detector.charge_cdf[0][-1] / 2**16))
             self.nchannels = int(detector.num_channels())
         self._workspace = None
+        self.two_phase = True
+        self.traversal_steps = 4
+        # CHROMA_TRITON_FIXES=0 keeps the installed Chroma's behaviour where the
+        # production engine fixes it (specular polarization, Fresnel NaNs,
+        # 16-bit history, FP32 wire intersection) while keeping the Philox
+        # RNG: a statistical like-for-like comparison with CUDA Chroma.
+        # CHROMA_TRITON_LEGACY_WIRES=0/1 overrides the wire algorithm alone.
+        self.fixes = os.environ.get("CHROMA_TRITON_FIXES", "1") not in ("", "0")
+        wires = os.environ.get("CHROMA_TRITON_LEGACY_WIRES", "")
+        self.legacy_wires = (not self.fixes) if wires == "" else wires != "0"
+        # Rounds with at most this many live photons are replayed from a CUDA graph.
+        self.tail_capacity = 32768
+        self.tail_graphs = True
         self._dummy_f32 = torch.zeros(1, dtype=torch.float32, device=dev)
         self._dummy_i64 = torch.zeros(1, dtype=torch.int64, device=dev)
         self._dummy_i32 = torch.zeros(1, dtype=torch.int32, device=dev)
         self.grid = None
-        import os
         if os.environ.get("CHROMA_TRITON_GRID", "1") != "0":
             self.enable_grid(detector)
 
@@ -176,6 +195,8 @@ class ProductionEngine(object):
                 hit_codes=torch.empty((capacity, 3), dtype=torch.int32, device=dev),
                 wire_slots=torch.empty(capacity, dtype=torch.int32, device=dev),
                 wire_count=torch.zeros(1, dtype=torch.int32, device=dev),
+                blas_slots=torch.empty(capacity, dtype=torch.int32, device=dev),
+                blas_count=torch.zeros(1, dtype=torch.int32, device=dev),
             )
             self._workspace = ws
         return ws
@@ -213,8 +234,10 @@ class ProductionEngine(object):
                 rows, count, origins, directions, last,
                 self.nodes, self.instances, self.tri_data, self.tri_local,
                 self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
+                self.boxes, self.n_boxes, self.box_tris,
                 out_t, out_tri, out_n, out_codes, n, self._dummy_i32, self._dummy_i32,
-                LEAF=self.leaf_size, WIRE_MODE=0, BLOCK=BLOCK, num_warps=1)
+                LEAF=self.leaf_size, WIRE_MODE=0, BLOCK=BLOCK, FACE_TRIS=self.face_tris,
+                LEGACY_WIRES=self.legacy_wires, num_warps=1)
         return out_t, out_tri, out_n, out_codes
 
     # ---------------------------------------------------------- transport
@@ -228,25 +251,53 @@ class ProductionEngine(object):
         return (self.rindex, self.absorption, self.scattering,
                 self.comp_offsets, self.comp_prob, self.comp_wcdf, self.comp_tcdf, self.comp_abs)
 
+    def nearest_hits(self, rows, cnt, count, n, pos, dirs, last, out_t, out_tri, out_n, out_codes):
+        """Nearest boundary of the queued rows (device count ``cnt``, host upper bound ``count``).
+
+        Pass 1 runs on every ray: analytic boxes and the top-level tree, queuing
+        the rays that reach an instance (and, conservatively, those that may
+        reach a wire plane). Pass 2 descends into instance meshes for the
+        compacted rays only, so that cheap rays do not wait in a warp for the
+        few that traverse detailed meshes. Then analytic wires are merged for
+        their candidates. The result equals one complete query (up to the
+        rounding of a ray that hits an edge shared by two triangles).
+        """
+        ws = self._workspace
+        grid = (triton.cdiv(count, BLOCK),)
+        ws["wire_count"].zero_()
+        ws["blas_count"].zero_()
+        common = (self.nodes, self.instances, self.tri_data, self.tri_local,
+                  self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
+                  self.boxes, self.n_boxes, self.box_tris, out_t, out_tri, out_n, out_codes, n,
+                  ws["wire_slots"], ws["wire_count"])
+        if self.two_phase:
+            nearest_hit_kernel[grid](
+                rows, cnt, pos, dirs, last, *common,
+                LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
+                blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=1, num_warps=1)
+            nearest_hit_kernel[grid](
+                rows, ws["blas_count"], pos, dirs, last, *common,
+                LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
+                blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=2, num_warps=1)
+        else:
+            nearest_hit_kernel[grid](
+                rows, cnt, pos, dirs, last, *common,
+                LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
+                num_warps=1)
+        if self.n_wires:
+            # Analytic wires only for the compacted rays that can reach a slab.
+            wire_kernel[grid](ws["wire_slots"], ws["wire_count"], n, rows, pos, dirs,
+                              out_t, out_tri, out_n, out_codes, self.wires, self.n_wires, BLOCK=BLOCK,
+                              LEGACY_WIRES=self.legacy_wires, num_warps=1)
+
     def _boundary_round(self, rows, cnt, count, n, photons, steps, cursor, norm, renorm, out_rows, out_count,
                         max_steps, use_weights):
         ws = self._workspace
         grid = (triton.cdiv(count, BLOCK),)
-        split = self.n_wires > 0
-        if split:
-            ws["wire_count"].zero_()
-        nearest_hit_kernel[grid](
-            rows, cnt, photons.pos, photons.dir, photons.last_hit_triangles,
-            self.nodes, self.instances, self.tri_data, self.tri_local,
-            self.code_m1, self.code_m2, self.code_s, self.wires, self.n_wires,
-            ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"], n,
-            ws["wire_slots"], ws["wire_count"],
-            LEAF=self.leaf_size, WIRE_MODE=1 if split else 0, BLOCK=BLOCK, num_warps=1)
-        if split:
-            # Analytic wires only for the compacted rays that can reach a slab.
-            wire_kernel[grid](ws["wire_slots"], ws["wire_count"], n, rows, photons.pos, photons.dir,
-                              ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"],
-                              self.wires, self.n_wires, BLOCK=BLOCK, num_warps=1)
+        P.renorm_kernel[grid](rows, cnt, n, photons.dir, photons.pol, steps, norm, renorm, int(renorm.numel()),
+                              BLOCK=BLOCK, num_warps=1)
+        self.nearest_hits(rows, cnt, count, n, photons.pos, photons.dir, photons.last_hit_triangles,
+                          ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"])
         P.step_kernel[grid](
             rows, cnt, n, *self._step_args(photons, steps, cursor, norm, renorm),
             ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"],
@@ -256,7 +307,26 @@ class ProductionEngine(object):
             out_rows, out_count,
             self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp,
-            USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=True, BLOCK=BLOCK, num_warps=1)
+            USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=self.fixes, BLOCK=BLOCK, num_warps=1)
+
+    def _bulk_epoch(self, photons, steps, cursor, norm, renorm, cur, nxt, grid_count, max_steps, use_weights,
+                    history):
+        """One bulk launch: queue ``cur`` -> queue ``nxt`` (collisions) or the boundary queue."""
+        ws = self._workspace
+        g = self.grid
+        ws["bulk_count"][nxt].zero_()
+        P.bulk_kernel[(triton.cdiv(grid_count, BLOCK),)](
+            ws["bulk"][cur], ws["bulk_count"][cur], len(photons),
+            *self._step_args(photons, steps, cursor, norm, renorm),
+            self.grid_material, self.grid_boxes,
+            float(g.lower[0]), float(g.lower[1]), float(g.lower[2]),
+            float(g.cell[0]), float(g.cell[1]), float(g.cell[2]),
+            g.shape[0], g.shape[1], g.shape[2],
+            *self._material_args(),
+            ws["bulk"][nxt], ws["bulk_count"][nxt], ws["boundary"], ws["boundary_count"],
+            self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+            NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights),
+            TAPE=False, FIXES=self.fixes, HISTORY=history, BLOCK=BLOCK, num_warps=1)
 
     def propagate(self, photons, *, max_steps, use_weights=False, track=False, history=16, epochs_per_poll=4):
         n = len(photons)
@@ -274,7 +344,7 @@ class ProductionEngine(object):
         count = live.numel()
         if track or getattr(self, "grid", None) is None:
             return self._propagate_stepwise(photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track)
-        g = self.grid
+        args = (photons, steps, cursor, norm, renorm)
         cur = 0
         ws["bulk"][cur][:count] = live
         ws["bulk_count"][cur].fill_(count)
@@ -284,30 +354,58 @@ class ProductionEngine(object):
             # Bulk epochs: several launches between host polls.
             while bulk_count > 0:
                 for _ in range(epochs_per_poll):
-                    nxt = 1 - cur
-                    ws["bulk_count"][nxt].zero_()
-                    P.bulk_kernel[(triton.cdiv(bulk_count, BLOCK),)](
-                        ws["bulk"][cur], ws["bulk_count"][cur], n,
-                        *self._step_args(photons, steps, cursor, norm, renorm),
-                        self.grid_material, self.grid_boxes,
-                        float(g.lower[0]), float(g.lower[1]), float(g.lower[2]),
-                        float(g.cell[0]), float(g.cell[1]), float(g.cell[2]),
-                        g.shape[0], g.shape[1], g.shape[2],
-                        *self._material_args(),
-                        ws["bulk"][nxt], ws["bulk_count"][nxt], ws["boundary"], ws["boundary_count"],
-                        self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
-                        NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights),
-                        TAPE=False, FIXES=True, HISTORY=history, BLOCK=BLOCK, num_warps=1)
-                    cur = nxt
+                    self._bulk_epoch(*args, cur, 1 - cur, bulk_count, max_steps, use_weights, history)
+                    cur = 1 - cur
                 bulk_count = int(ws["bulk_count"][cur].item())
             boundary_count = int(ws["boundary_count"].item())
             if boundary_count == 0:
                 break
             ws["bulk_count"][cur].zero_()
-            self._boundary_round(ws["boundary"], ws["boundary_count"], boundary_count, n, photons, steps, cursor,
-                                 norm, renorm, ws["bulk"][cur], ws["bulk_count"][cur], max_steps, use_weights)
+            self._boundary_round(ws["boundary"], ws["boundary_count"], boundary_count, n, *args,
+                                 ws["bulk"][cur], ws["bulk_count"][cur], max_steps, use_weights)
             bulk_count = int(ws["bulk_count"][cur].item())
+            if 0 < bulk_count <= self.tail_capacity and self.tail_graphs:
+                self._finish_tail(args, cur, max_steps, use_weights, history)
+                break
         return None
+
+    def _finish_tail(self, args, cur, max_steps, use_weights, history, epochs=2, rounds_per_graph=4, replays=8):
+        """Finish the last photons with CUDA-graph replays of whole rounds.
+
+        Once few photons remain, a round costs far more in host launch
+        overhead than on the GPU. Every kernel reads its queue length from
+        device memory, so a fixed-size round (``epochs`` bulk launches, which
+        return the bulk queue to buffer ``cur``, then a boundary round that
+        appends to it) is captured once and replayed; photons left in the bulk
+        queue after the epochs simply continue in the next round. The host
+        checks for completion every ``rounds_per_graph * replays`` rounds.
+        """
+        ws = self._workspace
+        n = len(args[0])
+        capacity = self.tail_capacity
+
+        def one_round():
+            ws["boundary_count"].zero_()
+            c = cur
+            for _ in range(epochs):
+                self._bulk_epoch(*args, c, 1 - c, capacity, max_steps, use_weights, history)
+                c = 1 - c
+            self._boundary_round(ws["boundary"], ws["boundary_count"], capacity, n, *args,
+                                 ws["bulk"][cur], ws["bulk_count"][cur], max_steps, use_weights)
+
+        assert epochs % 2 == 0
+        graph = torch.cuda.CUDAGraph()
+        stream = torch.cuda.Stream(device=self.device)
+        stream.wait_stream(torch.cuda.current_stream(self.device))
+        with torch.cuda.graph(graph, stream=stream):
+            for _ in range(rounds_per_graph):
+                one_round()
+        torch.cuda.current_stream(self.device).wait_stream(stream)
+        while True:
+            for _ in range(replays):
+                graph.replay()
+            if int(ws["bulk_count"][cur].item()) == 0:
+                break
 
     def _propagate_stepwise(self, photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track):
         """One full step per round (no bulk shortcut); used for tracking."""

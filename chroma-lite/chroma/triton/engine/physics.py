@@ -22,7 +22,7 @@ import triton.language as tl
 from triton.language.random import philox
 from triton.language.extra import libdevice
 
-from chroma.triton.physics_kernels import fresnel_step
+from chroma.triton.physics_kernels import fresnel_step, fresnel_step_chroma
 
 SPEED_OF_LIGHT = tl.constexpr(299.792458)  # mm/ns (chroma/cuda/physical_constants.h)
 WEIGHT_LOWER_THRESHOLD = tl.constexpr(0.0001)
@@ -213,11 +213,45 @@ def launch_normalize(valid, step, norm_step, dx, dy, dz, px, py, pz, renorm_ptr,
     for r in range(n_renorm):
         due = due | (step == tl.load(renorm_ptr + r))
     due = valid & due & (norm_step != step)
-    ndx, ndy, ndz = normalize(dx, dy, dz)
-    npx, npy, npz = normalize(px, py, pz)
-    dx, dy, dz = tl.where(due, ndx, dx), tl.where(due, ndy, dy), tl.where(due, ndz, dz)
-    px, py, pz = tl.where(due, npx, px), tl.where(due, npy, py), tl.where(due, npz, pz)
-    return dx, dy, dz, px, py, pz, tl.where(due, step, norm_step)
+    if tl.sum(due.to(tl.int32), axis=0) > 0:
+        ndx, ndy, ndz = normalize(dx, dy, dz)
+        npx, npy, npz = normalize(px, py, pz)
+        dx, dy, dz = tl.where(due, ndx, dx), tl.where(due, ndy, dy), tl.where(due, ndz, dz)
+        px, py, pz = tl.where(due, npx, px), tl.where(due, npy, py), tl.where(due, npz, pz)
+        norm_step = tl.where(due, step, norm_step)
+    return dx, dy, dz, px, py, pz, norm_step
+
+@triton.jit
+def renorm_kernel(rows_ptr, count_ptr, capacity, dir_ptr, pol_ptr, steps_ptr, norm_ptr, renorm_ptr, n_renorm,
+                  BLOCK: tl.constexpr):
+    """Launch-entry normalization for the queued photons, before their boundary
+    query: Chroma normalizes direction and polarization when a launch starts,
+    so ``fill_state`` already sees the normalized direction."""
+    lane = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
+    count = tl.load(count_ptr)
+    if tl.program_id(0) * BLOCK >= count:
+        return
+    valid = lane < tl.minimum(count, capacity)
+    row = tl.load(rows_ptr + lane, mask=valid, other=0)
+    step = tl.load(steps_ptr + row, mask=valid, other=0)
+    norm_step = tl.load(norm_ptr + row, mask=valid, other=-1)
+    dx = tl.load(dir_ptr + row * 3 + 0, mask=valid, other=1.)
+    dy = tl.load(dir_ptr + row * 3 + 1, mask=valid, other=0.)
+    dz = tl.load(dir_ptr + row * 3 + 2, mask=valid, other=0.)
+    px = tl.load(pol_ptr + row * 3 + 0, mask=valid, other=0.)
+    py = tl.load(pol_ptr + row * 3 + 1, mask=valid, other=1.)
+    pz = tl.load(pol_ptr + row * 3 + 2, mask=valid, other=0.)
+    ndx, ndy, ndz, npx, npy, npz, new_norm = launch_normalize(valid, step, norm_step, dx, dy, dz, px, py, pz,
+                                                              renorm_ptr, n_renorm)
+    due = valid & (new_norm != norm_step)
+    tl.store(dir_ptr + row * 3 + 0, ndx, mask=due)
+    tl.store(dir_ptr + row * 3 + 1, ndy, mask=due)
+    tl.store(dir_ptr + row * 3 + 2, ndz, mask=due)
+    tl.store(pol_ptr + row * 3 + 0, npx, mask=due)
+    tl.store(pol_ptr + row * 3 + 1, npy, mask=due)
+    tl.store(pol_ptr + row * 3 + 2, npz, mask=due)
+    tl.store(norm_ptr + row, new_norm, mask=due)
+
 
 # ----------------------------------------------------------------- the step
 
@@ -321,10 +355,11 @@ def step_kernel(
         weight = tl.where(weighted & boundary, weight * tl.exp(-dist / alen), weight)
     travel = tl.where(absorbed, da, tl.where(scattered, ds, dist))
     moved = hit
+    # Explicit fma: the bulk kernel must round the move exactly like this.
     t = tl.where(moved, t + travel / (SPEED_OF_LIGHT / n1), t)
-    x = tl.where(moved, x + travel * dx, x)
-    y = tl.where(moved, y + travel * dy, y)
-    z = tl.where(moved, z + travel * dz, z)
+    x = tl.where(moved, tl.fma(travel, dx, x), x)
+    y = tl.where(moved, tl.fma(travel, dy, y), y)
+    z = tl.where(moved, tl.fma(travel, dz, z), z)
 
     wl, t, dx, dy, dz, px, py, pz, flags, last, cursor = bulk_process(
         absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last,
@@ -426,8 +461,13 @@ def step_kernel(
     passed = boundary & (~surf | (default & ~d_absorb & ~d_detect & ~d_diffuse & ~d_specular) | w_transmit)
     u0, cursor = draw(cursor, passed, ids, seed, tape_ptr, tape_off, TAPE)
     u1, cursor = draw(cursor, passed, ids, seed, tape_ptr, tape_off, TAPE)
-    fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step(
-        dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u0, u1)
+    if FIXES:
+        fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step(
+            dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u0, u1)
+    else:
+        # Literal photon.h propagate_at_boundary (NaN at exactly normal incidence).
+        fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step_chroma(
+            dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u0, u1)
     dx, dy, dz = tl.where(passed, fdx, dx), tl.where(passed, fdy, dy), tl.where(passed, fdz, dz)
     px, py, pz = tl.where(passed, fpx, px), tl.where(passed, fpy, py), tl.where(passed, fpz, pz)
     flags = tl.where(passed & reflected, flags | REFLECT_SPECULAR, flags)
@@ -538,16 +578,21 @@ def bulk_kernel(
     active = boxed & ((flags & terminal) == 0) & (step < max_steps)
     handoff = valid & ~boxed & ((flags & terminal) == 0) & (step < max_steps)
     inc = tl.maximum(mat, 0)
-    for _h in range(HISTORY):
+    # The material is fixed inside the box; its properties change only with
+    # the wavelength (re-emission).
+    n1 = interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, active)
+    alen = interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, active)
+    slen = interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, active)
+    go = active
+    h = 0
+    while tl.sum(go.to(tl.int32), axis=0) > 0:
+        active = go
         dx, dy, dz, px, py, pz, norm_step = launch_normalize(active, step, norm_step, dx, dy, dz, px, py, pz,
                                                              renorm_ptr, n_renorm)
         product = dx * dy * dz * x * y * z
         odd = active & (product != product)
         handoff = handoff | odd
         active = active & ~odd
-        n1 = interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, active)
-        alen = interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, active)
-        slen = interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, active)
         # Peek at the step's two distance draws without committing them.
         u_abs, c1 = draw(cursor, active, ids, seed, tape_ptr, tape_off, TAPE)
         u_sca, c2 = draw(c1, active, ids, seed, tape_ptr, tape_off, TAPE)
@@ -573,15 +618,23 @@ def bulk_kernel(
             weight = tl.where(weighted & scattered, weight * tl.exp(-ds / alen), weight)
         travel = tl.where(absorbed, da, ds)
         t = tl.where(commit, t + travel / (SPEED_OF_LIGHT / n1), t)
-        x = tl.where(commit, x + travel * dx, x)
-        y = tl.where(commit, y + travel * dy, y)
-        z = tl.where(commit, z + travel * dz, z)
+        x = tl.where(commit, tl.fma(travel, dx, x), x)
+        y = tl.where(commit, tl.fma(travel, dy, y), y)
+        z = tl.where(commit, tl.fma(travel, dz, z), z)
+        wl_before = wl
         wl, t, dx, dy, dz, px, py, pz, flags, last, cursor = bulk_process(
             absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last,
             cursor, ids, seed, tape_ptr, tape_off,
             comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
             wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, TAPE)
         active = commit & ((flags & terminal) == 0) & (step < max_steps)
+        changed = active & (wl != wl_before)
+        if tl.sum(changed.to(tl.int32), axis=0) > 0:
+            n1 = tl.where(changed, interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, changed), n1)
+            alen = tl.where(changed, interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, changed), alen)
+            slen = tl.where(changed, interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, changed), slen)
+        h += 1
+        go = active & (h < HISTORY)
 
     tl.store(pos_ptr + row * 3 + 0, x, mask=valid)
     tl.store(pos_ptr + row * 3 + 1, y, mask=valid)
