@@ -429,6 +429,9 @@ class _Batch(object):
         queue = args[2]
         rng_states = args[4]
         nsteps = int(args[14] if name == "propagate" else args[11])
+        if int(args[16] if name == "propagate" else args[13]) != 0:
+            raise NotImplementedError("CHROMA_TRITON_TAPE: scatter_first != 0 (forced/prevented first scatter) "
+                                      "is not part of the replayable contract")
         session = self.session
         if first == 0:
             if self.launches:

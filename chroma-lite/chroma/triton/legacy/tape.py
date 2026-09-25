@@ -163,7 +163,7 @@ class TapeWriter(object):
         entry = dict(entry, index=index)
         if scene is not None:
             name = "sim%04d_scene.npz" % index
-            np.savez(os.path.join(self.directory, name), **scene)
+            np.savez_compressed(os.path.join(self.directory, name), **scene)
             entry["scene_file"] = name
             entry["scene_sha256"] = {k: digest(v) for k, v in scene.items()}
         self.manifest["simulations"].append(entry)
@@ -194,6 +194,20 @@ def _json_default(value):
 
 
 # --------------------------------------------------------------------- reader
+
+
+def compact(directory):
+    """Rewrite every array file of a tape with zlib compression (archiving;
+    the manifest hashes cover array contents, not files)."""
+    for name in sorted(os.listdir(directory)):
+        if not name.endswith(".npz"):
+            continue
+        path = os.path.join(directory, name)
+        with np.load(path) as data:
+            arrays = {k: data[k] for k in data.files}
+        tmp = path + ".tmp.npz"
+        np.savez_compressed(tmp, **arrays)
+        os.replace(tmp, path)
 
 
 class TapeBatch(object):

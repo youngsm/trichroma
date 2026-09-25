@@ -398,25 +398,18 @@ if True:  # kernels (module level: Triton resolves names from module globals)
         # dichroic model
         m_dic = at_surface & (model == 3)
         if tl.max(m_dic.to(tl.int32), 0) > 0:
-            theta = X.get_theta_neg(nx, ny, nz, dx, dy, dz)
             dfirst = tl.load(d_first + surf, mask=m_dic, other=0)
             dcount = tl.load(d_count + surf, mask=m_dic, other=2)
-            idx, iidx, top = X.interp_idx(theta, d_angles + dfirst, dcount, m_dic)
-            err = err | (m_dic & top)
-            ok = m_dic & ~top
-            r0 = X.interp_property(d_reflect + (dfirst + iidx).to(tl.int64) * stride, wl, sw_start, sw_step, nw, ok)
-            r1 = X.interp_property(d_reflect + (dfirst + iidx + 1).to(tl.int64) * stride, wl, sw_start, sw_step, nw, ok)
-            t0 = X.interp_property(d_transmit + (dfirst + iidx).to(tl.int64) * stride, wl, sw_start, sw_step, nw, ok)
-            t1 = X.interp_property(d_transmit + (dfirst + iidx + 1).to(tl.int64) * stride, wl, sw_start, sw_step, nw, ok)
-            frac = X.fsub(idx, X.cvt_f32_u32(iidx))
-            rp = X.ffma(frac, X.fsub(r1, r0), r0)
-            tp = X.ffma(frac, X.fsub(t1, t0), t0)
             us, cur, err = _take(draws, base, cur, length, m_dic, err)
-            refl = m_dic & X.flt(us, rp)
-            trans = m_dic & ~refl & X.flt(us, X.fadd(tp, rp))
+            drow = dfirst.to(tl.int64) * stride
+            action, bad = X.surface_dichroic(nx, ny, nz, dx, dy, dz, d_angles + dfirst, dcount, d_reflect + drow,
+                                             d_transmit + drow, stride, wl, sw_start, sw_step, nw, us, m_dic)
+            err = err | bad
+            refl = m_dic & (action == X.ACT_SPECULAR)
+            trans = m_dic & (action == X.ACT_TRANSMIT)
             specular = specular | refl
             hist = tl.where(trans, hist | X.SURFACE_TRANSMIT, hist)
-            hist = tl.where(m_dic & ~refl & ~trans, hist | X.SURFACE_ABSORB, hist)
+            hist = tl.where(m_dic & (action == X.ACT_ABSORB), hist | X.SURFACE_ABSORB, hist)
             fresnel_needed = fresnel_needed | trans
         # angular model
         m_ang = at_surface & (model == 4)
@@ -434,8 +427,43 @@ if True:  # kernels (module level: Triton resolves names from module globals)
             fresnel_needed = fresnel_needed | (m_ang & (action == X.ACT_TRANSMIT))
             specular = specular | (m_ang & (action == X.ACT_SPECULAR))
             diffuse = diffuse | (m_ang & (action == X.ACT_DIFFUSE))
-        # complex model is not in the reference harness yet
-        err = err | (at_surface & (model == 1)) | (at_surface & (model > 4))
+        # complex (thin film) model
+        m_cpx = at_surface & (model == 1)
+        refract = tl.zeros((BLOCK,), tl.int1)
+        if tl.max(m_cpx.to(tl.int32), 0) > 0:
+            det = X.interp_property(s_detect + srow, wl, sw_start, sw_step, nw, m_cpx)
+            rdif = X.interp_property(s_diffuse + srow, wl, sw_start, sw_step, nw, m_cpx)
+            eta = X.interp_property(s_eta + srow, wl, sw_start, sw_step, nw, m_cpx)
+            kk = X.interp_property(s_k + srow, wl, sw_start, sw_step, nw, m_cpx)
+            thick = tl.load(s_thickness + surf, mask=m_cpx, other=0.0)
+            trans = tl.load(s_transmissive + surf, mask=m_cpx, other=0)
+            refl, absb, ax_, ay_, az_ = X.complex_probabilities(dx, dy, dz, nx, ny, nz, qx, qy, qz, n1, n2, eta, kk,
+                                                                wl, thick, trans)
+            forced, det2, refl2, absb2, w2 = X.surface_complex(det, refl, absb, weight, use_weights)
+            weight = tl.where(m_cpx, w2, weight)
+            hist = tl.where(m_cpx & forced, hist | X.SURFACE_DETECT, hist)
+            drawing = m_cpx & ~forced
+            us, cur, err = _take(draws, base, cur, length, drawing, err)
+            stage = X.complex_stage(us, absb2, refl2, trans)
+            c_abs = drawing & (stage == 0)
+            c_ref = drawing & (stage == 1)
+            u2, cur, err = _take(draws, base, cur, length, c_abs | c_ref, err)
+            c_det = c_abs & X.flt(u2, det2)
+            hist = tl.where(c_det, hist | X.SURFACE_DETECT, hist)
+            hist = tl.where(c_abs & ~c_det, hist | X.SURFACE_ABSORB, hist)
+            c_dif = c_ref & X.flt(u2, rdif)
+            diffuse = diffuse | c_dif
+            specular = specular | (c_ref & ~c_dif)
+            refract = drawing & (stage == 2)
+            rdx, rdy, rdz, rqx, rqy, rqz = X.complex_refract(dx, dy, dz, nx, ny, nz, n1, n2, ax_, ay_, az_)
+            dx = tl.where(refract, rdx, dx)
+            dy = tl.where(refract, rdy, dy)
+            dz = tl.where(refract, rdz, dz)
+            qx = tl.where(refract, rqx, qx)
+            qy = tl.where(refract, rqy, qy)
+            qz = tl.where(refract, rqz, qz)
+            hist = tl.where(refract, hist | X.SURFACE_TRANSMIT, hist)
+        err = err | (at_surface & (model > 4))
         # diffuse reflector (rejection loop) and its polarization
         pending = diffuse
         cdx = dx
@@ -528,8 +556,26 @@ def kernels():
 # ------------------------------------------------------------------ replay
 
 
-def propagate(scene, fields, batch, device="cuda"):
-    """Replay the recorded propagation of one batch. Returns (fields, report)."""
+def _snapshot(n, rows, tensors, fields_in):
+    pos, dirs, pols, wls, times, lht, flags, weights = tensors
+    idx = rows.long()
+    state = dict(pos=pos.view(n, 3)[idx].cpu().numpy(), dir=dirs.view(n, 3)[idx].cpu().numpy(),
+                 pol=pols.view(n, 3)[idx].cpu().numpy(), wavelengths=wls[idx].cpu().numpy(),
+                 t=times[idx].cpu().numpy(), last_hit_triangles=lht[idx].cpu().numpy(),
+                 flags=flags[idx].cpu().numpy().view(np.uint32), weights=weights[idx].cpu().numpy(),
+                 evidx=np.asarray(fields_in["evidx"], np.uint32)[rows.cpu().numpy()])
+    return rows.cpu().numpy().astype(np.int64), state
+
+
+def propagate(scene, fields, batch, device="cuda", snapshots=None, trace=None):
+    """Replay the recorded propagation of one batch. Returns (fields, report).
+
+    With ``snapshots`` (a list), appends GPUPhotons.propagate(track=True)
+    style records: all photons before propagation, then after every step the
+    photons that were in that launch's queue (all photons for the first one).
+    With ``trace`` (a dict photon -> list), appends (step, cursor, words) of
+    those photons after every step (debugging).
+    """
     torch = _torch()
     normalize_kernel, geometry_kernel, physics_kernel = kernels()
     n = batch.nphotons
@@ -563,14 +609,22 @@ def propagate(scene, fields, batch, device="cuda"):
     stack = torch.empty(cap * scene.stack, dtype=torch.int32, device=device)
     steps_done = 0
     s = scene
-    for start, count in zip(starts, nsteps):
+    tensors = (pos, dirs, pols, wls, times, lht, flags, weights)
+    all_rows = torch.arange(n, dtype=torch.int32, device=device)
+    if snapshots is not None:
+        snapshots.append(_snapshot(n, all_rows, (as_t(np.asarray(fields["pos"], np.float32).reshape(-1)),
+                                                 as_t(np.asarray(fields["dir"], np.float32).reshape(-1)),
+                                                 as_t(np.asarray(fields["pol"], np.float32).reshape(-1)),
+                                                 wls.clone(), times.clone(), lht.clone(),
+                                                 as_t(flags_np.view(np.int32)), weights.clone()), fields))
+    for launch_index, (start, count) in enumerate(zip(starts, nsteps)):
         if start != steps_done:
             raise tapefmt.TapeError("launch schedule is not contiguous")
         rows = torch.nonzero(live).flatten().to(torch.int32)
         if len(rows) == 0:
             break
         grid = ((len(rows) + BLOCK - 1) // BLOCK,)
-        normalize_kernel[grid](rows, len(rows), dirs, pols, BLOCK=BLOCK)
+        normalize_kernel[grid](rows, len(rows), dirs, pols, BLOCK=BLOCK, num_warps=BLOCK // 32)
         for _ in range(count):
             if len(rows) == 0:
                 break
@@ -578,7 +632,7 @@ def propagate(scene, fields, batch, device="cuda"):
             geometry_kernel[grid](rows, len(rows), pos, dirs, lht, s.nodes, s.vertices, s.triangles,
                                   s.material_codes, s.planes, s.nplanes, stack, g_tri, g_dist, g_surface,
                                   g_m1, g_m2, g_normal, g_flag, s.world[0], s.world[1], s.world[2], s.scale,
-                                  STACK=s.stack, BLOCK=BLOCK)
+                                  STACK=s.stack, BLOCK=BLOCK, num_warps=BLOCK // 32)
             physics_kernel[grid](rows, len(rows), pos, dirs, pols, wls, times, lht, flags, weights,
                                  g_tri, g_dist, g_surface, g_m1, g_m2, g_normal, g_flag,
                                  draws, offsets, cursor, errors,
@@ -593,8 +647,18 @@ def propagate(scene, fields, batch, device="cuda"):
                                  s.dichroic_transmit,
                                  s.angular_first, s.angular_count, s.angular_angles, s.angular_transmit,
                                  s.angular_reflect_specular, s.angular_reflect_diffuse,
-                                 use_weights, BLOCK=BLOCK)
+                                 use_weights, BLOCK=BLOCK, num_warps=BLOCK // 32)
             steps_done += 1
+            if trace:
+                ids = torch.tensor(sorted(trace), dtype=torch.long, device=device)
+                snap = _snapshot(n, ids.to(torch.int32), tensors, fields)[1]
+                cur = cursor[ids].cpu().numpy()
+                words = tapefmt.photon_words(snap)
+                for j, pid in enumerate(sorted(trace)):
+                    trace[pid].append((steps_done, int(cur[j]), words[j].copy()))
+            if snapshots is not None:
+                snapshots.append(_snapshot(n, all_rows if (launch_index == 0 and steps_done == 1) else rows,
+                                           tensors, fields))
             alive = (flags.index_select(0, rows.long()) & 0x800F) == 0
             rows = rows[alive]
         live = torch.zeros(n, dtype=torch.bool, device=device)
@@ -613,6 +677,8 @@ def propagate(scene, fields, batch, device="cuda"):
                   harness_errors=int(np.count_nonzero(errors.cpu().numpy())))
     if report["draw_count_mismatch"]:
         report["first_draw_count_mismatch"] = int(np.flatnonzero(used != expected)[0])
+    if report["harness_errors"]:
+        report["first_harness_errors"] = np.flatnonzero(errors.cpu().numpy())[:20].tolist()
     return out, report
 
 
@@ -697,6 +763,30 @@ def _compare_words(a, b):
                 differing_photons=int(len(diff)))
 
 
+def _compare_tracks(batch, snapshots):
+    """photon_tracks: every recorded step against the replay (ids compared as sets;
+    the recorded order is the launch queue order)."""
+    offsets = batch["track_step_offsets"]
+    ids = batch["track_ids"]
+    fields = batch.fields("track")
+    if len(offsets) - 1 != len(snapshots):
+        return False, "recorded %d track steps, replay produced %d" % (len(offsets) - 1, len(snapshots))
+    for step, (rows, state) in enumerate(snapshots):
+        a, b = int(offsets[step]), int(offsets[step + 1])
+        rec_ids = np.asarray(ids[a:b], np.int64)
+        order = np.argsort(rec_ids, kind="stable")
+        if not np.array_equal(rec_ids[order], np.sort(np.asarray(rows, np.int64))):
+            return False, "step %d: different photons" % step
+        rec = {k: np.asarray(v[a:b])[order] for k, v in fields.items()}
+        mine_order = np.argsort(np.asarray(rows, np.int64), kind="stable")
+        mine = {k: np.asarray(v)[mine_order] for k, v in state.items()}
+        d = _compare_words(rec, mine)
+        if d is not None:
+            d["step"] = step
+            return False, d
+    return True, None
+
+
 def replay_tape(directory, device="cuda"):
     """Replay every batch of a tape; compare with its recorded outputs."""
     tape = tapefmt.Tape(directory)
@@ -708,8 +798,12 @@ def replay_tape(directory, device="cuda"):
             scenes[batch.simulation] = DeviceScene(tape.scene(batch.simulation), device)
         scene = scenes[batch.simulation]
         info = tape.simulations[batch.simulation]
-        final, rep = propagate(scene, batch.inputs(), batch, device)
+        tracked = "track_step_offsets" in batch
+        snapshots = [] if tracked else None
+        final, rep = propagate(scene, batch.inputs(), batch, device, snapshots=snapshots)
         rep["seconds"] = time.time() - t0
+        if tracked:
+            rep["tracks_equal"], rep["tracks_first_difference"] = _compare_tracks(batch, snapshots)
         rep["final_equal"] = None
         expected_final = batch.final()
         if expected_final is not None:
@@ -755,7 +849,8 @@ def replay_tape(directory, device="cuda"):
             rep["channels_equal"] = bool(ok)
             rep["daq_draw_count_mismatch"] = int(dmism)
         rep["equal"] = bool(all(rep.get(k, True) in (True, None) for k in
-                                ("final_equal", "photons_end_equal", "hits_equal", "channels_equal"))
+                                ("final_equal", "photons_end_equal", "hits_equal", "channels_equal",
+                                 "tracks_equal"))
                             and rep["draw_count_mismatch"] == 0 and rep["harness_errors"] == 0)
         report["batches"].append(rep)
         report["equal"] = report["equal"] and rep["equal"]

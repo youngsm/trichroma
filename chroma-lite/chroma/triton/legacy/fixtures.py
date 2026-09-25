@@ -142,6 +142,59 @@ def synthetic_photons(count, seed, wavelengths=(150.0, 600.0)):
     return Photons(pos, direction, pol, wl, t=rng.uniform(0.0, 20.0, count))
 
 
+def adversarial_photons(count, seed):
+    """Edge cases for the synthetic detector, repeated to ``count`` photons.
+
+    Axis-aligned and signed-zero directions (infinite 1/d in the box test),
+    exact normal incidence on dielectric and surface faces (Fresnel axis
+    falls back to the polarization), polarization parallel to the
+    direction, wavelengths exactly on/below/above the table grid (including
+    the top point 995 nm whose interpolation reads one word past each
+    table), NaN and zero vectors (NaN abort), initially terminal photons and
+    flags above bit 15 (truncated to 16 bits for propagated photons), mixed
+    with random photons.
+    """
+    rng = np.random.default_rng(seed)
+    base = synthetic_photons(count, seed + 1)
+    pos, direction, pol = base.pos.copy(), base.dir.copy(), base.pol.copy()
+    wl, t = base.wavelengths.copy(), base.t.copy()
+    flags = np.zeros(count, np.uint32)
+    kinds = np.arange(count) % 16
+    axes = np.eye(3, dtype=np.float32)
+    for k in range(6):
+        sel = kinds == k
+        d = axes[k % 3] * (1.0 if k < 3 else -1.0)
+        direction[sel] = d
+        pos[sel] = 0.0
+        pol[sel] = axes[(k + 1) % 3]
+    sel = kinds == 6  # normal incidence on the glass block from inside the medium
+    pos[sel] = [0.0, 0.0, -20.0]
+    direction[sel] = [0.0, 0.0, -1.0]
+    pol[sel] = [1.0, 0.0, 0.0]
+    sel = kinds == 7  # polarization parallel to the direction
+    pol[sel] = direction[sel]
+    sel = kinds == 8  # signed zeros
+    direction[sel] = [-0.0, 1.0, -0.0]
+    pos[sel] = [0.0, -0.0, 0.0]
+    grid = np.array([60.0, 995.0, 994.9999, 995.0001, 59.9999, 400.0, 402.5, 120.0, 800.0], np.float32)
+    sel = kinds == 9
+    wl[sel] = grid[np.arange(np.count_nonzero(sel)) % len(grid)]
+    sel = kinds == 10  # NaN position / zero direction
+    pos[sel] = np.where((np.arange(np.count_nonzero(sel)) % 2)[:, None] == 0, np.nan, pos[sel])
+    direction[sel] = np.where((np.arange(np.count_nonzero(sel)) % 2)[:, None] == 1, 0.0, direction[sel])
+    sel = kinds == 11  # initially terminal / high flag bits
+    flags[sel] = np.array([4, 0x10000 | 0x800, 0x8000, 0x10400], np.uint32)[np.arange(np.count_nonzero(sel)) % 4]
+    sel = kinds == 12  # near-grazing on the glass faces
+    ang = rng.uniform(-1e-3, 1e-3, np.count_nonzero(sel))
+    direction[sel] = np.column_stack((np.ones_like(ang), np.zeros_like(ang), ang))
+    pos[sel] = [0.0, 0.0, -50.0]
+    sel = kinds == 13  # towards the wire plane at the plane's normal
+    direction[sel] = [0.6, 0.0, -0.8]
+    pos[sel] = [-6.0, 0.0, 68.0]
+    photons = Photons(pos, direction, pol, wl, t=t, flags=flags)
+    return photons
+
+
 def lar_detector(name):
     """reflect3wires / reflect3wires_vuv / pixel_vuv through chroma-lar's loader."""
     from chroma_lar.geometry.config_loader import build_detector_from_config
@@ -202,6 +255,13 @@ RUNS = {
         dict(name="small_threads", sim=dict(seed=3, nthreads_per_block=64, max_blocks=16), simulate=dict(
             keep_photons_end=True, run_daq=True, max_steps=300, photons_per_batch=30000),
              events=[3000] * 10, seed=15),
+        dict(name="adversarial", sim=dict(seed=17), source="adversarial", simulate=dict(
+            keep_photons_end=True, run_daq=True, max_steps=300, photons_per_batch=100000),
+             events=[16000, 16000], seed=16),
+        # small enough to ship as test data (test/data/legacy_tape_tiny)
+        dict(name="tiny", sim=dict(seed=23, photon_tracking=True), simulate=dict(
+            keep_photons_end=True, run_daq=True, max_steps=30, use_weights=True, photons_per_batch=1000),
+             events=[24, 24, 24], seed=17),
     ],
     "reflect3wires": [
         dict(name="visible", sim=dict(seed=1981), simulate=dict(
@@ -231,7 +291,9 @@ def make_events(fixture, run, scale=1.0):
     """List of chroma.event.Photons (one per event) for a run description."""
     sizes = [max(1, int(round(s * scale))) for s in run["events"]]
     total = int(sum(sizes))
-    if fixture == "synthetic":
+    if fixture == "synthetic" and run.get("source") == "adversarial":
+        photons = adversarial_photons(total, run["seed"])
+    elif fixture == "synthetic":
         photons = synthetic_photons(total, run["seed"])
     else:
         photons = lar_photons(fixture, total, run["seed"])

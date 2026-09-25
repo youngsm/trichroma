@@ -510,8 +510,23 @@ def atan2f_(y, x):
 
 @triton.jit
 def normalize3(x, y, z):
-    """``v /= norm(v)`` (entry normalization, reemission, Rayleigh, ...)."""
+    """``v /= norm(v)`` (entry normalization, reemission, Rayleigh, ...).
+
+    NVVM (not ptxas) chooses which product of ``dot(v, v)`` stays a plain
+    multiply. Every normalization site of the original ``propagate`` kernel
+    (and its noinline helpers) keeps ``y*y``: fma(z, z, fma(x, x, y*y)). A
+    small kernel compiled in isolation may instead keep ``x*x`` (seen for the
+    Rayleigh and diffuse polarizations); :func:`normalize3_xfirst` is that
+    form, used only by the unit tests against isolated probes.
+    """
     n = fsqrt(ffma(z, z, ffma(x, x, fmul(y, y))))
+    return fdiv(x, n), fdiv(y, n), fdiv(z, n)
+
+
+@triton.jit
+def normalize3_xfirst(x, y, z):
+    """``v /= norm(v)`` with dot(v, v) = fma(z, z, fma(y, y, x*x)) (see normalize3)."""
+    n = fsqrt(ffma(z, z, ffma(y, y, fmul(x, x))))
     return fdiv(x, n), fdiv(y, n), fdiv(z, n)
 
 
@@ -1090,8 +1105,8 @@ def attenuate(weight, distance, absorption_length):
 
 
 @triton.jit
-def rayleigh_scatter(dx, dy, dz, px, py, pz, u_theta, u_phi):
-    """photon.h rayleigh_scatter: draws (cos-theta, phi); returns (dir, pol) normalized."""
+def rayleigh_scatter_raw(dx, dy, dz, px, py, pz, u_theta, u_phi):
+    """rayleigh_scatter before its two ``/= norm()``: (dir, pol) unnormalized."""
     one = _const(u_theta, 0x3F800000)
     x = fsub(one, fadd(u_theta, u_theta))
     ang = fdiv(fadd(acosf_(x), _const(x, 0xC0C90FDB)), _const(x, 0x40400000))
@@ -1123,6 +1138,13 @@ def rayleigh_scatter(dx, dy, dz, px, py, pz, u_theta, u_phi):
     npx = tl.where(special, spx, fnms(cos_theta, ndx, px))
     npy = tl.where(special, spy, fnms(cos_theta, ndy, py))
     npz = tl.where(special, spz, fnms(cos_theta, ndz, pz))
+    return ndx, ndy, ndz, npx, npy, npz
+
+
+@triton.jit
+def rayleigh_scatter(dx, dy, dz, px, py, pz, u_theta, u_phi):
+    """photon.h rayleigh_scatter: draws (cos-theta, phi); returns (dir, pol) normalized."""
+    ndx, ndy, ndz, npx, npy, npz = rayleigh_scatter_raw(dx, dy, dz, px, py, pz, u_theta, u_phi)
     ndx, ndy, ndz = normalize3(ndx, ndy, ndz)
     npx, npy, npz = normalize3(npx, npy, npz)
     return ndx, ndy, ndz, npx, npy, npz
@@ -1331,6 +1353,33 @@ def surface_angular(nx, ny, nz, dx, dy, dz, angles, transmit, reflect_specular, 
     return action, weight, mask & top
 
 
+@triton.jit
+def surface_dichroic(nx, ny, nz, dx, dy, dz, angles, nangles, reflect, transmit, stride,
+                     wavelength, start, step, n, u, mask):
+    """Dichroic model (photon.h 881-910, noinline): draw ``u`` -> (action, out_of_table).
+
+    ``angles`` points at this surface's ``nangles`` incidence angles; row
+    ``r`` of ``reflect``/``transmit`` (rows ``stride`` floats apart, uniform
+    wavelength grid ``start``/``step``/``n``) is the table for angle ``r``.
+    Actions: ACT_SPECULAR, ACT_TRANSMIT (SURFACE_TRANSMIT, PASS) or
+    ACT_ABSORB. ``use_weights`` is ignored like in the original.
+    ``out_of_table`` marks angle index n-1 (the original reads row n).
+    """
+    theta = get_theta_neg(nx, ny, nz, dx, dy, dz)
+    idx, iidx, top = interp_idx(theta, angles, nangles, mask)
+    ok = mask & ~top
+    row = iidx.to(tl.int64) * stride
+    r0 = interp_property(reflect + row, wavelength, start, step, n, ok)
+    r1 = interp_property(reflect + row + stride, wavelength, start, step, n, ok)
+    t0 = interp_property(transmit + row, wavelength, start, step, n, ok)
+    t1 = interp_property(transmit + row + stride, wavelength, start, step, n, ok)
+    frac = fsub(idx, cvt_f32_u32(iidx))
+    rp = ffma(frac, fsub(r1, r0), r0)
+    tp = ffma(frac, fsub(t1, t0), t0)
+    action = tl.where(flt(u, rp), ACT_SPECULAR, tl.where(flt(u, fadd(tp, rp)), ACT_TRANSMIT, ACT_ABSORB))
+    return action, mask & top
+
+
 # ======================================================================
 # 9. DAQ (daq.cu run_daq, convert_*)
 # ======================================================================
@@ -1364,3 +1413,79 @@ def daq_charge_int(charge, charge_unit):
 def daq_charge_float(q_int, charge_unit):
     """convert_charge_int_to_float: charge_unit * (float)(unsigned) q_int."""
     return fmul(charge_unit, cvt_f32_u32(q_int))
+
+
+# ======================================================================
+# 10. Thin-film (SURFACE_COMPLEX) model
+# ======================================================================
+
+import hashlib as _hashlib
+
+from chroma.triton.engine._complex_ptx import ASM as _COMPLEX_ASM_TEXT, CONSTRAINTS as _COMPLEX_CONS_TEXT
+
+_COMPLEX_ASM = tl.constexpr(_COMPLEX_ASM_TEXT)
+_COMPLEX_CONS = tl.constexpr(_COMPLEX_CONS_TEXT)
+#: Triton's kernel cache keys on the *source* of jit functions, not on the
+#: values of the global constexprs they use. The digest below is part of
+#: complex_probabilities' source, so a regenerated block cannot silently reuse
+#: kernels compiled from the old one; the import-time check keeps it honest.
+_COMPLEX_ASM_SHA256 = "32e9f2dbe801ea9cbda2e52f8e03709eb2d8cc2cbec44f20c035a5b1d8969646"
+if _hashlib.sha256(_COMPLEX_ASM_TEXT.encode()).hexdigest() != _COMPLEX_ASM_SHA256:
+    raise ImportError("chroma.triton.engine._complex_ptx changed: update _COMPLEX_ASM_SHA256 and the digest "
+                      "in complex_probabilities' docstring together")
+
+
+@triton.jit
+def complex_probabilities(dx, dy, dz, nx, ny, nz, px, py, pz, n1, n2, eta, k, wavelength, thickness,
+                          transmissive):
+    """propagate_complex lines 686-783 -> (reflect, absorb, axis_x, axis_y, axis_z).
+
+    ``axis`` is the normalized incident-plane normal (the polarization at
+    normal incidence) that the refraction branch uses.
+    asm sha256 32e9f2dbe801ea9cbda2e52f8e03709eb2d8cc2cbec44f20c035a5b1d8969646
+    """
+    return tl.inline_asm_elementwise(
+        _COMPLEX_ASM, _COMPLEX_CONS,
+        [dy, ny, dx, nx, dz, nz, thickness, wavelength, n2, n1, k, eta, px, py, pz, px, py, pz, transmissive],
+        dtype=(tl.float32, tl.float32, tl.float32, tl.float32, tl.float32), is_pure=True, pack=1)
+
+
+@triton.jit
+def surface_complex(detect, reflect, absorb, weight, use_weights):
+    """use_weights prologue of propagate_complex (before any draw).
+
+    Returns (forced_detect, detect, reflect, absorb, weight). A forced
+    detection (use_weights and detect > 0) consumes no draw.
+    """
+    apply, survive, weight = _reweight(absorb, weight, use_weights)
+    detect = tl.where(apply, fdiv(detect, survive), detect)
+    reflect = tl.where(apply, fdiv(reflect, survive), reflect)
+    absorb = tl.where(apply, 0.0, absorb)
+    forced = (use_weights != 0) & fgt(detect, 0.0)
+    weight = tl.where(forced, fmul(detect, weight), weight)
+    return forced, detect, reflect, absorb, weight
+
+
+@triton.jit
+def complex_stage(u, absorb, reflect, transmissive):
+    """After drawing ``u``: 0 absorb (then draw ``u_detect < detect``),
+    1 reflect (then draw ``u_reflect < reflect_diffuse`` -> diffuse),
+    2 refract (no draw)."""
+    return tl.where(flt(u, absorb), 0,
+                    tl.where(flt(u, fadd(reflect, absorb)) | (transmissive == 0), 1, 2))
+
+
+@triton.jit
+def complex_refract(dx, dy, dz, nx, ny, nz, n1, n2, ax, ay, az):
+    """Refraction branch: rotate(normal, PI - refracted_angle, axis); pol = cross(axis, dir)."""
+    theta_i = get_theta_neg(nx, ny, nz, dx, dy, dz)
+    theta_r = asinf_(fdiv(fmul(fsin(theta_i), n1), n2))
+    phi = fsub(_const(theta_r, 0x40490FDB), theta_r)
+    ox, oy, oz = rotate(nx, ny, nz, fcos(phi), fsin(phi), ax, ay, az)
+    qx, qy, qz = cross3(ax, ay, az, ox, oy, oz)
+    qx, qy, qz = normalize3(qx, qy, qz)
+    return ox, oy, oz, qx, qy, qz
+
+
+if _COMPLEX_ASM_SHA256 not in (complex_probabilities.fn.__doc__ or ""):
+    raise ImportError("complex_probabilities' docstring must carry the asm digest (Triton cache key)")
