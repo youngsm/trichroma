@@ -104,10 +104,9 @@ class DevicePhotons:
 
 # ------------------------------------------------------------ host transfers
 #
-# Pageable copies run at ~1.5 GB/s (the driver bounces them through a small
-# pinned buffer on one thread). Large copies are pipelined through two
-# reusable pinned staging buffers instead: the DMA of one chunk overlaps the
-# host memcpy of the other.
+# Host-to-device copies of large arrays are pipelined through two reusable
+# pinned staging buffers (the DMA of one chunk overlaps the host memcpy of the
+# other).
 
 _CHUNK = 32 << 20
 _STAGING = {}
@@ -132,35 +131,21 @@ def _numpy_dtype(dtype):
 
 
 def to_host(tensor):
-    """A new numpy array with the contents of a CUDA tensor."""
+    """A numpy array with the contents of a CUDA tensor.
+
+    The copy lands in page-locked memory from PyTorch's pinned-memory cache
+    (the array keeps its block alive): a pageable destination is faulted in
+    page by page and runs at ~1 GB/s, the pinned copy at bus speed.
+    """
     import torch
 
     t = tensor.detach()
-    if not t.is_cuda or t.numel() * t.element_size() <= 2 * _CHUNK:
-        return t.cpu().numpy()
-    t = t.contiguous()
-    out = np.empty(tuple(t.shape), _numpy_dtype(t.dtype))
-    src = t.reshape(-1).view(torch.uint8)
-    dst = out.reshape(-1).view(np.uint8)
-    bufs = _staging(t.device)
-    stream = torch.cuda.current_stream(t.device)
-    inflight = [None, None]
-    for i, start in enumerate(range(0, dst.size, _CHUNK)):
-        k = i & 1
-        if inflight[k] is not None:
-            event, lo, hi = inflight[k]
-            event.synchronize()
-            dst[lo:hi] = bufs[k][:hi - lo].numpy()
-        stop = min(start + _CHUNK, dst.size)
-        bufs[k][:stop - start].copy_(src[start:stop], non_blocking=True)
-        event = torch.cuda.Event()
-        event.record(stream)
-        inflight[k] = (event, start, stop)
-    for item in sorted((x for x in inflight if x is not None), key=lambda x: x[1]):
-        event, lo, hi = item
-        event.synchronize()
-        dst[lo:hi] = bufs[inflight.index(item)][:hi - lo].numpy()
-    return out
+    if not t.is_cuda:
+        return t.numpy()
+    host = torch.empty(t.shape, dtype=t.dtype, pin_memory=True)
+    host.copy_(t, non_blocking=True)
+    torch.cuda.current_stream(t.device).synchronize()
+    return host.numpy()
 
 
 def to_device(array, device):
