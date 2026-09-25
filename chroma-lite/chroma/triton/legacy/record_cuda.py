@@ -59,6 +59,17 @@ __global__ void tape_counts(int n, const curandStateXORWOW *before,
     counts[id] = (after[id].d - before[id].d) * inverse;
 }
 
+__global__ void peek_words(int n, const unsigned long long *pointers,
+                           const unsigned int *index, unsigned int *out)
+{
+    // Read the word the propagate kernel reads at fp[wavelength_n] (one past
+    // a table) when a wavelength lands on the grid's top point.
+    int id = blockIdx.x*blockDim.x + threadIdx.x;
+    if (id >= n) return;
+    const unsigned int *table = (const unsigned int *) pointers[id];
+    out[id] = table[index[id]];
+}
+
 __global__ void tape_draws(int n, const curandStateXORWOW *before,
                            const curandStateXORWOW *after,
                            const unsigned int *counts,
@@ -90,6 +101,18 @@ def _kernels():
     if _module is None:
         _module = pycuda.compiler.SourceModule(_KERNEL_SOURCE, no_extern_c=True, options=list(cuda_options))
     return _module
+
+
+def _peek(pointers, index):
+    """Words at ``pointers[i][index[i]]`` read by a kernel (past-the-end reads)."""
+    pointers = np.asarray(pointers, np.uint64)
+    if len(pointers) == 0:
+        return np.zeros(0, np.uint32)
+    out = ga.empty(len(pointers), np.uint32)
+    _kernels().get_function("peek_words")(np.int32(len(pointers)), ga.to_gpu(pointers),
+                                          ga.to_gpu(np.asarray(index, np.uint32)), out,
+                                          block=(64, 1, 1), grid=((len(pointers) + 63) // 64, 1))
+    return out.get()
 
 
 def _read(pointer, count, dtype):
@@ -163,6 +186,7 @@ def export_device_scene(gpu_geometry):
     mptrs = _read(ptr[6], nmat, np.uint64)
     headers, tables, comp_offsets = [], {k: [] for k in range(3)}, [0]
     comps = {k: [] for k in range(3, 7)}
+    pad_ptrs = {k: [] for k in range(7)}
     for p in mptrs:
         words = _read(p, 7 * 2 + 7, np.uint32)
         pointers = words[:14].view(np.uint64)
@@ -171,16 +195,22 @@ def export_device_scene(gpu_geometry):
         ncomp, nw, ntimes = int(header[0]), int(header[1]), int(header[4])
         for k in range(3):
             tables[k].append(_read(pointers[k], nw, np.float32))
+            pad_ptrs[k].append((int(pointers[k]), nw))
         for k in range(3, 7):
             if ncomp:
                 cps = _read(pointers[k], ncomp, np.uint64)
                 width = ntimes if k == 5 else nw
                 comps[k].extend(_read(c, width, np.float32) for c in cps)
+                pad_ptrs[k].extend((int(c), width) for c in cps)
         comp_offsets.append(comp_offsets[-1] + ncomp)
     nw = int(headers[0][1]) if headers else len(standard_wavelengths)
     ntimes = int(headers[0][4]) if headers else 0
     for k, name in enumerate(("refractive_index", "absorption_length", "scattering_length")):
         out["material_" + name] = np.asarray(tables[k], np.float32).reshape(nmat, nw)
+        out["pad_material_" + name] = _peek([q for q, _ in pad_ptrs[k]], [w for _, w in pad_ptrs[k]])
+    for k, name in zip(range(3, 7), ("comp_reemission_prob", "comp_reemission_wvl_cdf",
+                                    "comp_reemission_time_cdf", "comp_absorption_length")):
+        out["pad_" + name] = _peek([q for q, _ in pad_ptrs[k]], [w for _, w in pad_ptrs[k]])
     out["material_header"] = np.asarray(headers, np.uint32).reshape(nmat, 7)
     out["material_comp_offsets"] = np.asarray(comp_offsets, np.int64)
     for k, name in zip(range(3, 7), ("comp_reemission_prob", "comp_reemission_wvl_cdf",
@@ -191,8 +221,10 @@ def export_device_scene(gpu_geometry):
     sptrs = _read(ptr[7], nsurf, np.uint64)
     fields = ("detect", "absorb", "reemit", "reflect_diffuse", "reflect_specular", "eta", "k", "reemission_cdf")
     st = {f: [] for f in fields}
+    spad = {f: [] for f in fields}
     sheader, present = [], []
     doff, dang, dref, dtr = [0], [], [], []
+    dpad_r, dpad_t = [], []
     aoff = [0]
     ang = {k: [] for k in ("angles", "transmit", "reflect_specular", "reflect_diffuse")}
     for p in sptrs:
@@ -212,6 +244,7 @@ def export_device_scene(gpu_geometry):
         snw = int(header[1])
         for i, f in enumerate(fields):
             st[f].append(_read(pointers[i], snw, np.float32))
+            spad[f].append((int(pointers[i]), snw))
         if int(pointers[8]):
             dwords = _read(pointers[8], 7, np.uint32)
             dp = dwords[:6].view(np.uint64)
@@ -222,6 +255,8 @@ def export_device_scene(gpu_geometry):
             for i in range(nang):
                 dref.append(_read(rps[i], snw, np.float32))
                 dtr.append(_read(tps[i], snw, np.float32))
+                dpad_r.append((int(rps[i]), snw))
+                dpad_t.append((int(tps[i]), snw))
             doff.append(doff[-1] + nang)
         else:
             doff.append(doff[-1])
@@ -236,6 +271,13 @@ def export_device_scene(gpu_geometry):
             aoff.append(aoff[-1])
     for f in fields:
         out["surface_" + f] = np.asarray(st[f], np.float32).reshape(nsurf, nw)
+        present_ptrs = [x for x in spad[f]]
+        pads = _peek([q for q, _ in present_ptrs], [w for _, w in present_ptrs])
+        full = np.zeros(nsurf, np.uint32)
+        full[np.flatnonzero(np.asarray(present, bool))] = pads
+        out["pad_surface_" + f] = full
+    out["pad_dichroic_reflect"] = _peek([q for q, _ in dpad_r], [w for _, w in dpad_r])
+    out["pad_dichroic_transmit"] = _peek([q for q, _ in dpad_t], [w for _, w in dpad_t])
     out["surface_present"] = np.asarray(present, np.uint8)
     out["surface_header"] = np.asarray(sheader, np.uint32).reshape(nsurf, 6)
     out["dichroic_offsets"] = np.asarray(doff, np.int64)
