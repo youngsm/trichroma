@@ -946,8 +946,11 @@ def _analytic_box(boxes_ptr, box_tris_ptr, ib, valid, ox, oy, oz, dx, dy, dz, la
     candidate = ~miss & (face_t > 0.) & ~(use_far & (f_far == last_face)) & (face_t < best_t + tol)
     first = _bits(tl.load(boxes_ptr + rb + 6 + 2 * tl.maximum(face, 0), mask=candidate, other=0.))
     cnt = _bits(tl.load(boxes_ptr + rb + 7 + 2 * tl.maximum(face, 0), mask=candidate, other=0.))
+    cnt = tl.where(candidate, cnt, 0)
     found = tl.zeros(ox.shape, tl.int1)
-    for k in tl.static_range(FACE_TRIS):
+    # Only as many triangle tests as the longest candidate face needs (none
+    # when no lane's ray reaches this box before its current best hit).
+    for k in range(tl.max(cnt, axis=0)):
         m = candidate & (k < cnt)
         ok, t, gid, nx, ny, nz, slot = _box_triangle(box_tris_ptr, first + k, m, ox, oy, oz, dx, dy, dz, last, best_t)
         best_t = tl.where(ok, t, best_t)
