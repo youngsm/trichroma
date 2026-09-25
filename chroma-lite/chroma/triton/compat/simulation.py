@@ -6,8 +6,9 @@ same batching, ``evidx`` rewriting and event wrapping, and the same ``Event``
 fields and dtypes. Propagation, random numbers and the DAQ response belong
 to a :class:`chroma.triton.engine.api.TransportEngine`:
 
-* the production engine by default, and
-* the bitwise legacy engine when ``CHROMA_TRITON_TAPE`` is set.
+:class:`chroma.triton.engine.core.ProductionEngine`, in production mode by
+default and in its exact (bitwise legacy) mode when
+``CHROMA_TRITON_TAPE=replay:<dir>`` names a tape recorded by the CUDA backend.
 
 Documented differences from the CUDA backend in production mode:
 
@@ -16,6 +17,13 @@ Documented differences from the CUDA backend in production mode:
 * ``use_packed=True`` returns the true final photon states;
 * random numbers are counter-based, so results do not depend on the
   batch size, ``nthreads_per_block`` or ``max_blocks``.
+
+In exact mode ``use_packed=True`` reproduces the CUDA backend instead:
+``photons_end`` carries the *initial* position, direction, polarization,
+wavelength, time and weight words (``GPUPhotons.get()`` reads the unpacked
+arrays, which ``propagate_packed`` never updates), and the DAQ reads the
+initial times and weights unless hits were extracted first
+(``get_flat_hits()`` syncs the packed state back).
 """
 
 import os
@@ -142,18 +150,18 @@ class Simulation(object):
             # GPUDaq refuses a detector without channels.
             assert detector.num_channels() > 0, "Geometry has no detectors, DAQ can't be initialized."
 
+        from chroma.triton.engine.core import ProductionEngine
+
         self.tape = tape_mode()
         if self.tape.enabled:
             if self.tape.mode == "record":
                 raise ValueError("CHROMA_TRITON_TAPE=record applies to the CUDA backend; use replay:<dir>")
-            from chroma.triton.legacy.engine import LegacyEngine
-
-            self.engine = LegacyEngine(detector, seed=self.seed, device=self.device,
-                                       nthreads_per_block=nthreads_per_block,
-                                       max_blocks=max_blocks, tape=self.tape)
+            # Exact mode: the tape must come from a Simulation with these parameters.
+            self.engine = ProductionEngine(
+                detector, seed=self.seed, device=self.device, tape=self.tape,
+                simulation=dict(nthreads_per_block=nthreads_per_block, max_blocks=max_blocks,
+                                photon_tracking=photon_tracking, use_packed=use_packed))
         else:
-            from chroma.triton.engine.core import ProductionEngine
-
             self.engine = ProductionEngine(detector, seed=self.seed, device=self.device)
 
         # Batch-independent photon ids for counter-based random numbers.
@@ -212,16 +220,28 @@ class Simulation(object):
         photon_sources = [ev.photons_beg for ev in batch_events]
         batch_bounds = np.cumsum(np.concatenate([[0], [_photon_count(src) for src in photon_sources]]))
         photons = self._gather(photon_sources)
+        # Exact mode with use_packed: keep the initial words the CUDA backend returns.
+        packed_view = self.use_packed and getattr(self.engine, "exact", None) is not None
+        initial = photons.clone() if packed_view else None
         tracking = self.engine.propagate(photons, max_steps=max_steps, use_weights=use_weights,
                                          track=self.photon_tracking)
 
         if keep_photons_end:
             end = photons.to_numpy()
+            if packed_view:
+                start = initial.to_numpy()
+                for name in ("pos", "dir", "pol", "wavelengths", "t", "weights"):
+                    end[name] = start[name]
             batch_photons_end = event.Photons(end["pos"], end["dir"], end["pol"], end["wavelengths"],
                                               end["t"], end["last_hit_triangles"], end["flags"],
                                               end["weights"], end["evidx"])
         if self.has_channels and (keep_hits or keep_flat_hits):
             batch_hits = self._flat_hits(photons)
+        daq_photons = photons
+        if packed_view and not (self.has_channels and (keep_hits or keep_flat_hits)):
+            daq_photons = photons.select(slice(None))
+            daq_photons.t = initial.t
+            daq_photons.weights = initial.weights
 
         for i, (batch_ev, (start_photon, end_photon)) in enumerate(zip(batch_events, zip(batch_bounds[:-1], batch_bounds[1:]))):
             if not keep_photons_beg:
@@ -256,7 +276,7 @@ class Simulation(object):
                     batch_ev.flat_hits = ev_hits
 
             if self.has_channels and run_daq:
-                channels = self.engine.acquire(photons, int(start_photon), int(end_photon - start_photon))
+                channels = self.engine.acquire(daq_photons, int(start_photon), int(end_photon - start_photon))
                 batch_ev.channels = event.Channels(channels.t < 1e8, channels.t, channels.q, channels.flags)
 
             yield batch_ev
