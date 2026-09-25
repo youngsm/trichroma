@@ -715,7 +715,6 @@ class ExactMode(object):
                 "CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:<dir>, replay with replay:<dir>" % tape.mode)
         self.engine = engine
         self.device = engine.device
-        engine._workspace = None  # the engine's device queues (ProductionEngine._buffers)
         self.replay = tapefmt.TapeReplay(tape.directory)
         self.replay.check_simulation(seed=None if seed is None else int(seed),
                                      nthreads_per_block=None if nthreads_per_block is None else int(nthreads_per_block),
