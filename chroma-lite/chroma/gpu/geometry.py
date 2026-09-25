@@ -351,8 +351,10 @@ class GPUGeometry(object):
             plane_descs = []
         for desc in plane_descs:
             origin = ga.vec.make_float3(*np.asarray(desc['origin'], dtype=np.float32))
-            u = ga.vec.make_float3(*np.asarray(desc['u'], dtype=np.float32))
-            v = ga.vec.make_float3(*np.asarray(desc['v'], dtype=np.float32))
+            u_raw = np.asarray(desc['u'], dtype=np.float32)
+            v_raw = np.asarray(desc['v'], dtype=np.float32)
+            u = ga.vec.make_float3(*u_raw)
+            v = ga.vec.make_float3(*v_raw)
             pitch = np.float32(desc['pitch'])
             radius = np.float32(desc['radius'])
             umin = np.float32(desc['umin'])
@@ -374,10 +376,28 @@ class GPUGeometry(object):
                 material_outer_idx = int(material_lookup[material_outer])
                 material_inner_idx = int(material_lookup[material_inner])
 
+            # precompute normalized orthonormal frame for FP32 optimization
+            u_norm = u_raw / np.linalg.norm(u_raw)
+            v_orth = v_raw - np.dot(v_raw, u_norm) * u_norm
+            v_norm = v_orth / np.linalg.norm(v_orth)
+            n_norm = np.cross(u_norm, v_norm)
+            
+            # precompute wire index bounds
+            pitch_f = float(pitch)
+            v0_f = float(v0)
+            vmin_f = float(vmin)
+            vmax_f = float(vmax)
+            k_min = int(np.ceil((vmin_f - v0_f) / pitch_f)) if pitch_f > 0 else 0
+            k_max = int(np.floor((vmax_f - v0_f) / pitch_f)) if pitch_f > 0 else 0
+
             plane_gpu = make_gpu_struct(
                 wireplane_struct_size,
                 [origin, u, v, pitch, radius, umin, umax, vmin, vmax, v0,
-                 np.int32(surface_idx), np.int32(material_outer_idx), np.int32(material_inner_idx), color]
+                 np.int32(surface_idx), np.int32(material_outer_idx), np.int32(material_inner_idx), color,
+                 ga.vec.make_float3(*u_norm.astype(np.float32)),
+                 ga.vec.make_float3(*v_norm.astype(np.float32)),
+                 ga.vec.make_float3(*n_norm.astype(np.float32)),
+                 np.int32(k_min), np.int32(k_max)]
             )
             self.wireplane_ptrs.append(plane_gpu)
 
@@ -488,6 +508,20 @@ class GPUGeometry(object):
 
                 color = np.uint32(get('color', 0))
 
+                # precompute normalized orthonormal frame for FP32 optimization
+                u_norm = u / np.linalg.norm(u)
+                v_orth = v - np.dot(v, u_norm) * u_norm
+                v_norm = v_orth / np.linalg.norm(v_orth)
+                n_norm = np.cross(u_norm, v_norm)
+                
+                # precompute wire index bounds
+                pitch_f = float(pitch)
+                v0_f = float(v0)
+                vmin_f = float(vmin)
+                vmax_f = float(vmax)
+                k_min = int(np.ceil((vmin_f - v0_f) / pitch_f)) if pitch_f > 0 else 0
+                k_max = int(np.floor((vmax_f - v0_f) / pitch_f)) if pitch_f > 0 else 0
+
                 members.extend([
                     ga.vec.make_float3(*origin),
                     ga.vec.make_float3(*u),
@@ -499,7 +533,12 @@ class GPUGeometry(object):
                     surf_idx,
                     m_out_idx,
                     m_in_idx,
-                    color
+                    color,
+                    ga.vec.make_float3(*u_norm.astype(np.float32)),
+                    ga.vec.make_float3(*v_norm.astype(np.float32)),
+                    ga.vec.make_float3(*n_norm.astype(np.float32)),
+                    np.int32(k_min),
+                    np.int32(k_max)
                 ])
 
             wireplanes_ptr = make_gpu_struct(wireplane_struct_size*len(geometry.wireplanes), members)

@@ -111,14 +111,23 @@ class Mesh(object):
         checksum.update(self.triangles)
         return checksum.hexdigest()
 
+    def __repr__(self):
+        bounds_min, bounds_max = self.get_bounds()
+        extent = bounds_max - bounds_min
+        return (f"<Mesh: {len(self.triangles)} triangles, {len(self.vertices)} vertices, "
+                f"extent=({extent[0]:.2f}, {extent[1]:.2f}, {extent[2]:.2f})>")
+
 def silly_unique(arr):
     return np.asarray(list(set(arr)))
 
 class Solid(object):
     """Solid object attaches materials, surfaces, and colors to each triangle
     in a Mesh object."""
-    def __init__(self, mesh, material1=None, material2=None, surface=None, color=0x33ffffff):
+    def __init__(self, mesh, material1=None, material2=None, surface=None, color=0x33ffffff, name=None, displacement=None, rotation=None):
         self.mesh = mesh
+        self.name = name
+        self.displacement = np.asarray(displacement, dtype=np.float32) if displacement is not None else None
+        self.rotation = np.asarray(rotation, dtype=np.float32) if rotation is not None else None
         if np.iterable(material1):
             if len(material1) != len(mesh.triangles):
                 raise ValueError('shape mismatch')
@@ -153,7 +162,7 @@ class Solid(object):
         self.unique_surfaces = silly_unique(self.surface)
 
     def __add__(self, other):
-        return Solid(self.mesh + other.mesh, np.concatenate((self.material1, other.material1)), np.concatenate((self.material2, other.material2)), np.concatenate((self.surface, other.surface)), np.concatenate((self.color, other.color)))
+        return Solid(self.mesh + other.mesh, np.concatenate((self.material1, other.material1)), np.concatenate((self.material2, other.material2)), np.concatenate((self.surface, other.surface)), np.concatenate((self.color, other.color)), name=None)
 
     def weld(self, other, shared_triangle_surface=None, shared_triangle_color=None):
         '''Merge this solid with another at any identical triangles.
@@ -210,6 +219,23 @@ class Solid(object):
     def surface_indices(self, surface_lookup):
         return np.fromiter(map(surface_lookup.get, self.surface), dtype=np.int32, count=len(self.surface))
 
+    def __repr__(self):
+        mat_names = set(m.name if m else 'None' for m in self.unique_materials)
+        surf_names = set(s.name if s else 'None' for s in self.unique_surfaces)
+        name_str = f"'{self.name}', " if self.name else ""
+        parts = [f"<Solid {name_str}{len(self.mesh.triangles)} triangles, materials={mat_names}, surfaces={surf_names}"]
+        if self.displacement is not None:
+            d = self.displacement
+            parts.append(f" pos=({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f})")
+        if self.rotation is not None:
+            r = self.rotation
+            if np.allclose(r, np.eye(3)):
+                parts.append(" rot=identity")
+            else:
+                parts.append(f" rot=[[{r[0,0]:.2f},...]]")
+        parts.append(">")
+        return "".join(parts)
+
 class Material(object):
     """Material optical properties."""
     def __init__(self, name='none'):
@@ -230,6 +256,20 @@ class Material(object):
         self.comp_absorption_length = []
         self.density = 0.0 # g/cm^3
         self.composition = {} # by mass
+
+    def __repr__(self):
+        props = []
+        if self.refractive_index is not None:
+            n_vals = self.refractive_index[:, 1]
+            props.append(f"n={n_vals.min():.3f}-{n_vals.max():.3f}")
+        if self.absorption_length is not None:
+            abs_vals = self.absorption_length[:, 1]
+            props.append(f"abs_len={abs_vals.min():.1f}-{abs_vals.max():.1f}")
+        if self.scattering_length is not None:
+            scat_vals = self.scattering_length[:, 1]
+            props.append(f"scat_len={scat_vals.min():.1f}-{scat_vals.max():.1f}")
+        props_str = ', '.join(props) if props else 'unset'
+        return f"<Material '{self.name}': {props_str}>"
 
     def set(self, name, value, wavelengths=standard_wavelengths):
         if np.iterable(value):
@@ -252,12 +292,21 @@ class DichroicProps(object):
         self.dichroic_reflect = np.asarray(reflect) #[angle][point]
         self.dichroic_transmit = np.asarray(transmit) #[angle][point]
 
+    def __repr__(self):
+        return (f"<DichroicProps: {len(self.angles)} angles "
+                f"({np.degrees(self.angles.min()):.1f}-{np.degrees(self.angles.max()):.1f} deg)>")
+
 class AngularProps(object):
     def __init__(self, angles, transmit, reflect_specular=None, reflect_diffuse=None):
         self.angles = np.asarray(angles)  # [angle in radians]
         self.transmit = np.asarray(transmit)  # [transmission probability]
         self.reflect_specular = np.asarray(reflect_specular) if reflect_specular is not None else np.zeros_like(transmit)
         self.reflect_diffuse = np.asarray(reflect_diffuse) if reflect_diffuse is not None else np.zeros_like(transmit)
+
+    def __repr__(self):
+        return (f"<AngularProps: {len(self.angles)} angles "
+                f"({np.degrees(self.angles.min()):.1f}-{np.degrees(self.angles.max()):.1f} deg), "
+                f"T={self.transmit.min():.2f}-{self.transmit.max():.2f}>")
 
 class Surface(object):
     """Surface optical properties."""
@@ -291,8 +340,20 @@ class Surface(object):
             raise Exception('all probabilities must be >= 0.0')
 
         self.__dict__[name] = np.array(list(zip(wavelengths, value)), dtype=np.float32)
+
     def __repr__(self):
-        return '<Surface %s>' % self.name
+        props = []
+        for attr in ['detect', 'absorb', 'reflect_diffuse', 'reflect_specular', 'reemit']:
+            arr = getattr(self, attr, None)
+            if arr is not None and arr[:, 1].max() > 0:
+                val = arr[:, 1].mean()
+                props.append(f"{attr}={val:.2f}")
+        if self.dichroic_props:
+            props.append("dichroic")
+        if self.angular_props:
+            props.append("angular")
+        props_str = ', '.join(props) if props else 'passive'
+        return f"<Surface '{self.name}': {props_str}>"
         
 class Geometry(object):
     "Geometry object."
@@ -301,14 +362,18 @@ class Geometry(object):
         self.solids = []
         self.solid_rotations = []
         self.solid_displacements = []
+        self.solid_names = []
         self.bvh = None
 
-    def add_solid(self, solid, rotation=None, displacement=None):
+    def add_solid(self, solid, rotation=None, displacement=None, name=None):
         """
         Add the solid `solid` to the geometry. When building the final triangle
         mesh, `solid` will be placed by rotating it with the rotation matrix
         `rotation` and displacing it by the vector `displacement`.
+        `name`: optional label for this solid (e.g. "pmt0"); used for repr/debugging.
         """
+        name_to_store = name if name is not None else getattr(solid, 'name', None)
+        self.solid_names.append(name_to_store)
 
         if rotation is None:
             rotation = np.identity(3)
@@ -333,6 +398,19 @@ class Geometry(object):
         self.solids.append(solid)
 
         return len(self.solids)-1
+
+    def solid_repr(self, i):
+        """repr for solid index i including its placement (displacement + rotation) in this geometry."""
+        solid = self.solids[i]
+        d = self.solid_displacements[i]
+        r = self.solid_rotations[i]
+        base = solid.__repr__().rstrip(">")
+        pos_str = f" pos=({d[0]:.1f}, {d[1]:.1f}, {d[2]:.1f})"
+        if np.allclose(r, np.eye(3)):
+            rot_str = " rot=identity"
+        else:
+            rot_str = f" rot=[[{r[0,0]:.2f},{r[0,1]:.2f},{r[0,2]:.2f}; ...]"
+        return base + pos_str + rot_str + ">"
 
     def flatten(self):
         """
@@ -389,4 +467,20 @@ class Geometry(object):
             self.surface_index[self.surface_index == surface_lookup[None]] = -1
         except KeyError:
             pass
+
+    def __repr__(self):
+        n_solids = len(self.solids)
+        if hasattr(self, 'mesh'):
+            n_tri = len(self.mesh.triangles)
+            n_mat = len(self.unique_materials)
+            n_surf = len(self.unique_surfaces)
+            mat_str = f", {n_mat} materials, {n_surf} surfaces"
+        else:
+            n_tri = sum(len(s.mesh.triangles) for s in self.solids)
+            mat_str = " (not flattened)"
+        det_mat = self.detector_material.name if self.detector_material else 'None'
+        bvh_str = ", bvh=built" if self.bvh else ""
+        names = getattr(self, 'solid_names', None)
+        name_str = f", names={names}" if names and any(n is not None for n in names) else ""
+        return f"<Geometry: {n_solids} solids, {n_tri} triangles{mat_str}, detector_material='{det_mat}'{bvh_str}{name_str}>"
 
