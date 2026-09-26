@@ -17,10 +17,10 @@ The original Chroma-Lite and Chroma-LAr working trees were preserved.
   photoelectrons, noisy ADC waveforms and metadata. See the
   [comparison log](consolidation_validation/equivalence.log).
 - Runtime source hashes match the recorded
-  [25.50M photons/s sustained benchmark](../chroma-lar/benchmarks/optical_validation/maintainability/performance_30m.json).
+  [25.50M photons/s sustained benchmark](https://github.com/youngsm/trichroma/blob/78e4b1ab4b64bf5be9f78d848c8490170dae8d68/chroma-lar/benchmarks/optical_validation/maintainability/performance_30m.json).
   Consolidation changed file organization at the repository level and added
   root documentation and a test runner; it did not change the optical runtime.
-- The saved [GPU memcheck](../chroma-lar/benchmarks/optical_validation/maintainability/memcheck.log)
+- The saved [GPU memcheck](https://github.com/youngsm/trichroma/blob/78e4b1ab4b64bf5be9f78d848c8490170dae8d68/chroma-lar/benchmarks/optical_validation/maintainability/memcheck.log)
   reports zero errors across 17 tests for this runtime.
 
 The focused suite covers source sampling, spectral physics, TPB coating,
@@ -28,7 +28,7 @@ PMT response, waveform digitization, analytic and mesh geometry, queue/runtime
 behavior and the full detector pipeline. Full legacy Chroma feature parity and
 physical validation against measured detector data are outside these claims.
 The recorded native-CUDA comparison discrepancy and mesh-boundary limitations
-remain in the [full validation report](../chroma-lar/benchmarks/optical_validation/FAST_FULL_REPORT.md).
+remain in the [full validation report](https://github.com/youngsm/trichroma/blob/78e4b1ab4b64bf5be9f78d848c8490170dae8d68/chroma-lar/benchmarks/optical_validation/FAST_FULL_REPORT.md).
 
 Large generated photon populations and repeated BVH dumps are inventoried by
 size and hash in the consolidation manifest rather than embedded in Git.
