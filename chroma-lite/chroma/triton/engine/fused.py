@@ -46,7 +46,7 @@ def _store_state(mask, row, pos_ptr, dir_ptr, pol_ptr, wl_ptr, t_ptr, last_ptr, 
     tl.store(norm_ptr + row, norm_step, mask=mask)
 
 
-@triton.jit
+@triton.jit(do_not_specialize=["seed", "max_steps"])
 def fused_kernel(
     work_ptr, work_count_ptr, head_ptr,
     pos_ptr, dir_ptr, pol_ptr, wl_ptr, t_ptr, last_ptr, flags_ptr, w_ptr, ids_ptr,
@@ -65,6 +65,7 @@ def fused_kernel(
     """Propagate the photons listed in ``work_ptr[:work_count]`` (rows) until
     they are terminal or reach ``max_steps``. Persistent: launch a few programs
     per SM; ``head_ptr`` (zeroed) hands out the work."""
+    seed = seed.to(tl.uint32, bitcast=True)  # passed as its int32 bit pattern (ProductionEngine.seed_arg)
     lane = tl.arange(0, BLOCK)
     n_work = tl.load(work_count_ptr)
     if FIXES:

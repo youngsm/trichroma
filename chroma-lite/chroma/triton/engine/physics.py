@@ -494,7 +494,7 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
     return x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, weight
 
 
-@triton.jit
+@triton.jit(do_not_specialize=["capacity", "seed", "max_steps"])
 def step_kernel(
     rows_ptr, count_ptr, capacity,
     pos_ptr, dir_ptr, pol_ptr, wl_ptr, t_ptr, last_ptr, flags_ptr, w_ptr, ids_ptr,
@@ -509,6 +509,7 @@ def step_kernel(
     USE_WEIGHTS: tl.constexpr, TAPE: tl.constexpr, FIXES: tl.constexpr, BLOCK: tl.constexpr,
     ROULETTE: tl.constexpr = False, w_rr=0.0,
 ):
+    seed = seed.to(tl.uint32, bitcast=True)  # passed as its int32 bit pattern (ProductionEngine.seed_arg)
     lane = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     count = tl.load(count_ptr)
     if tl.program_id(0) * BLOCK >= count:
@@ -666,7 +667,7 @@ def bulk_attempt(active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, we
             commit, active)
 
 
-@triton.jit
+@triton.jit(do_not_specialize=["capacity", "seed", "max_steps"])
 def bulk_kernel(
     rows_ptr, count_ptr, capacity,
     pos_ptr, dir_ptr, pol_ptr, wl_ptr, t_ptr, last_ptr, flags_ptr, w_ptr, ids_ptr,
@@ -688,6 +689,7 @@ def bulk_kernel(
     full step. Otherwise the photon is handed to the boundary queue without
     consuming its draws.
     """
+    seed = seed.to(tl.uint32, bitcast=True)  # passed as its int32 bit pattern (ProductionEngine.seed_arg)
     lane = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     count = tl.load(count_ptr)
     if tl.program_id(0) * BLOCK >= count:
