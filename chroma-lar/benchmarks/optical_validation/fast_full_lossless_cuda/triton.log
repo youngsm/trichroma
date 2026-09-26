@@ -1,4 +1,0 @@
-WARNING: PyCUDA backend unavailable; Triton is configured separately.
-{"seed": 11, "input_sha256": "df1959f68d30ee29c906faa9a59a5d40ce8a3f87c7cd92c788d23f29844e54e1", "detected": 99293, "reemitted": 0, "bulk_absorbed": 0, "surface_absorbed": 707, "nonfinite": 0, "aborted": 0, "escaped": 0, "step_limit": 0}
-{"seed": 29, "input_sha256": "632c6f763122028e74e6cff81a811cb3d9d382d9e445205821300adff353b6e7", "detected": 99256, "reemitted": 0, "bulk_absorbed": 0, "surface_absorbed": 744, "nonfinite": 0, "aborted": 0, "escaped": 0, "step_limit": 0}
-{"seed": 83, "input_sha256": "c97be570aa255dea8d914a91e390f29c86324eedf83d911c5f10f456e5b79025", "detected": 99316, "reemitted": 0, "bulk_absorbed": 0, "surface_absorbed": 684, "nonfinite": 0, "aborted": 0, "escaped": 0, "step_limit": 0}

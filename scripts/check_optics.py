@@ -11,25 +11,15 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 TESTS = [
-    "chroma-lite/test/test_optical_response.py",
-    "chroma-lite/test/test_spectral_transport.py",
-    "chroma-lite/test/test_spectral_accuracy.py",
-    "chroma-lar/test/test_scintillation_source.py",
-    "chroma-lar/test/test_pmt_coating.py",
-    "chroma-lar/test/test_optical_pipeline.py",
-    "chroma-lite/test/test_triton_optics.py",
-    "chroma-lite/test/test_triton_scene.py",
-    "chroma-lite/test/test_triton_runtime.py",
-    "chroma-lite/test/test_triton_bvh.py",
-    "chroma-lite/test/test_triton_physics.py",
-    "chroma-lite/test/test_triton_transport.py",
-    "chroma-lar/test/test_triton_scene_compiler.py",
-    "chroma-lar/test/test_triton_scene_instances.py",
-    "chroma-lar/test/test_triton_scene_intersect.py",
-    "chroma-lar/test/test_triton_backend.py::test_small_end_to_end_run_has_valid_flat_hits",
-    "chroma-lar/test/test_fast_spectral.py",
-    "chroma-lar/test/test_triton_device_geometry.py",
-    "chroma-lar/test/test_spectral_settings.py",
+    "src/trichroma/test/test_optical_response.py",
+    "src/trichroma/test/test_spectral_transport.py",
+    "src/trichroma/test/test_spectral_accuracy.py",
+    "src/trichroma/test/test_triton_optics.py",
+    "src/trichroma/test/test_triton_scene.py",
+    "src/trichroma/test/test_triton_runtime.py",
+    "src/trichroma/test/test_triton_bvh.py",
+    "src/trichroma/test/test_triton_physics.py",
+    "src/trichroma/test/test_triton_transport.py",
 ]
 
 
@@ -44,7 +34,7 @@ def main():
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
-    environment["PYTHONPATH"] = os.pathsep.join(str(ROOT / p) for p in ("chroma-lite", "chroma-lar"))
+    environment["PYTHONPATH"] = str(ROOT / "src" / "trichroma")
     for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
         environment[name] = "1"
     command = [sys.executable, "-m", "pytest", "-q", *TESTS, f"--junitxml={output / 'tests.xml'}"]

@@ -1,5 +1,0 @@
-WARNING: PyCUDA backend unavailable; Triton is configured separately.
-{"seed": 11, "center_mm": [-1000.0, 0.0, 0.0], "photons": 100000, "counts": {"detected": 64373, "bulk_absorbed": 35627, "surface_absorbed": 0, "reflected": 98636}, "diagnostics": {"detected": 64373, "reemitted": 0, "escaped": 0, "step_limit": 0, "aborted": 0, "unfinished": 0, "nonfinite": 0}, "maximum_interactions": 355, "passed": false}
-{"seed": 29, "center_mm": [-1990.0, 500.0, 500.0], "photons": 100000, "counts": {"detected": 65031, "bulk_absorbed": 34969, "surface_absorbed": 0, "reflected": 96652}, "diagnostics": {"detected": 65031, "reemitted": 0, "escaped": 0, "step_limit": 0, "aborted": 0, "unfinished": 0, "nonfinite": 0}, "maximum_interactions": 322, "passed": false}
-{"seed": 83, "center_mm": [-10.0, -500.0, -500.0], "photons": 100000, "counts": {"detected": 64344, "bulk_absorbed": 35656, "surface_absorbed": 0, "reflected": 99350}, "diagnostics": {"detected": 64344, "reemitted": 0, "escaped": 0, "step_limit": 0, "aborted": 0, "unfinished": 0, "nonfinite": 0}, "maximum_interactions": 320, "passed": false}
-Lossless detector invariant failed

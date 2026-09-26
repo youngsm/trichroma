@@ -1,9 +1,0 @@
-{
-  "bvh_nodes": 47175746,
-  "bvh_sha256": "55fa3f34ff44308aff7f9b420a8d16596541d2492c14254983091827e45325a9",
-  "chroma": "/sdf/group/neutrino/youngsam/sim/chroma-lite/chroma/__init__.py",
-  "flatten_and_bvh_seconds": 45.393195705953985,
-  "mesh_sha256": "6e8377976bb2e7dc51a3c6451f2a78e64fbd885f3f4ae718150991b55dd7f568",
-  "triangles": 32791840,
-  "vertices": 16992130
-}
