@@ -149,7 +149,7 @@ def fused_kernel(
         query = alive & ~parked
         best_t, best_tri, bnx, bny, bnz, bm1, bm2, bsf, needs, stop = top_level_query(
             query, x, y, z, dx, dy, dz, last, nodes_ptr, tlas_nodes, boxes_ptr, n_boxes, box_tris_ptr, FACE_TRIS,
-            STEPS)
+            STEPS, FIXES)
         needs = query & needs
         go = query & ~needs
         p_t = tl.where(needs, best_t, p_t)

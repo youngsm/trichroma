@@ -11,6 +11,11 @@ cylinder. CUDA Chroma then takes the exit for a hit from inside, puts the
 photon in the steel and absorbs it; the production engine skips the wire a
 photon has just left outward (a ray leaving a convex cylinder cannot meet it
 again), so its outcomes must match the float64 simulation.
+
+CUDA Chroma's per-plane cull also drops a plane when the ray's next surface
+comes before the wires' axis plane plus one radius, so an oblique ray that
+ends on a wall the wires pass through can reach the wall inside a wire (and
+the photon is lost in the steel); the last tests aim rays at such points.
 """
 
 import numpy as np
@@ -90,14 +95,12 @@ def _reference(n, seed):
     return np.bincount(outcome, minlength=4)[:3]
 
 
-def _engine(n, seed):
-    """The same photons through trichroma.simulation: (counts, bulk absorbed)."""
+def _detector(z_walls="detect", wire_length=2 * HALF):
+    """The box, its walls and the wire plane (wires along z, ``wire_length`` long)."""
     from chroma.detector import Detector
-    from chroma.event import Photons
     from chroma.geometry import Material, Solid, Surface
     from chroma.loader import create_geometry_from_obj
     from chroma.make import box
-    from trichroma.simulation import Simulation
 
     def material(name, index, absorption):
         m = Material(name)
@@ -116,14 +119,15 @@ def _engine(n, seed):
     detect = surface("detect", detect=1.0)
     mirror = surface("mirror", reflect_specular=1.0)
     polished = surface("polished", absorb=P_ABSORB, reflect_specular=1.0 - P_ABSORB)
+    z_wall = detect if z_walls == "detect" else mirror
     detector = Detector(argon)
     sx, sy, cx = X_MIRROR - X_MIN, 2 * HALF, (X_MIRROR + X_MIN) / 2
     for size, centre, surf in [((1.0, sy + 2, sy + 2), (X_MIN - 0.5, 0, 0), detect),
                                ((1.0, sy + 2, sy + 2), (X_MIRROR + 0.5, 0, 0), mirror),
                                ((sx + 2, 1.0, sy + 2), (cx, -HALF - 0.5, 0), detect),
                                ((sx + 2, 1.0, sy + 2), (cx, HALF + 0.5, 0), detect),
-                               ((sx + 2, sy + 2, 1.0), (cx, 0, -HALF - 0.5), detect),
-                               ((sx + 2, sy + 2, 1.0), (cx, 0, HALF + 0.5), detect)]:
+                               ((sx + 2, sy + 2, 1.0), (cx, 0, -HALF - 0.5), z_wall),
+                               ((sx + 2, sy + 2, 1.0), (cx, 0, HALF + 0.5), z_wall)]:
         solid = Solid(box(*size), steel, argon, surface=surf)
         if surf is detect:
             detector.add_pmt(solid, displacement=centre)
@@ -132,10 +136,19 @@ def _engine(n, seed):
     # outside the argon volume: registers the wire materials and surface
     detector.add_solid(Solid(box(1.0, 1.0, 1.0), steel, argon, surface=polished), displacement=[X_MIN - 50.0, 0, 0])
     detector.wireplanes = [dict(origin=[X_WIRES, 0.0, 0.0], u=[0.0, 0.0, 1.0], v=[0.0, 1.0, 0.0], pitch=PITCH,
-                                radius=RADIUS, umin=-HALF, umax=HALF, vmin=-KMAX * PITCH, vmax=KMAX * PITCH, v0=0.0,
-                                surface=polished, material_inner=steel, material_outer=argon, color=0xFFFFFFFF)]
+                                radius=RADIUS, umin=-wire_length / 2, umax=wire_length / 2, vmin=-KMAX * PITCH,
+                                vmax=KMAX * PITCH, v0=0.0, surface=polished, material_inner=steel,
+                                material_outer=argon, color=0xFFFFFFFF)]
+    return create_geometry_from_obj(detector)
+
+
+def _engine(n, seed):
+    """The same photons through trichroma.simulation: (counts, bulk absorbed)."""
+    from chroma.event import Photons
+    from trichroma.simulation import Simulation
+
     pos, d, pol = _source(n, seed)
-    sim = Simulation(create_geometry_from_obj(detector), seed=seed)
+    sim = Simulation(_detector(), seed=seed)
     ev = next(sim.simulate([Photons(pos, d, pol, np.full(n, 450.0))], keep_photons_end=True, keep_flat_hits=False,
                            keep_hits=False, max_steps=MAX_STEPS, photons_per_batch=n))
     flags, last, final = ev.photons_end.flags, ev.photons_end.last_hit_triangles, ev.photons_end.pos
@@ -143,6 +156,29 @@ def _engine(n, seed):
     x_wall = detected & (np.abs(final[:, 0] - X_MIN) < 0.01)
     counts = np.array([(((flags & 8) != 0) & (last == -2)).sum(), x_wall.sum(), (detected & ~x_wall).sum()])
     return counts, int(((flags & 2) != 0).sum())
+
+
+def _first_boundary_of_rays_ending_inside_a_wire(n=20_000, seed=3):
+    """Rays aimed at points of the z = HALF mirror that lie inside a wire (the
+    wires run through that wall), from 5 mm away and outside the wire slab.
+    Returns each ray's first boundary: -2 for a wire, else a triangle."""
+    from chroma.event import Photons
+    from trichroma.simulation import Simulation
+
+    rng = np.random.default_rng(seed)
+    rho, phi = 0.9 * RADIUS * np.sqrt(rng.random(n)), rng.uniform(0, 2 * np.pi, n)
+    k = rng.integers(-KMAX, KMAX + 1, n)
+    aim = np.stack([X_WIRES + rho * np.cos(phi), k * PITCH + rho * np.sin(phi), np.full(n, HALF)], 1)
+    d = rng.normal(size=(n, 3))
+    d /= np.linalg.norm(d, axis=1)[:, None]
+    keep = (d[:, 2] > 0.2) & (np.abs(d[:, 0]) > 0.05)  # towards the wall; starts outside the slab
+    aim, d = aim[keep], d[keep]
+    pol = np.cross(d, rng.normal(size=d.shape))
+    pol /= np.linalg.norm(pol, axis=1)[:, None]
+    sim = Simulation(_detector(z_walls="mirror", wire_length=2 * HALF + 100.0), seed=seed)
+    ev = next(sim.simulate([Photons(aim - 5.0 * d, d, pol, np.full(len(d), 450.0))], keep_photons_end=True,
+                           keep_flat_hits=False, keep_hits=False, max_steps=1))
+    return ev.photons_end.last_hit_triangles
 
 
 def test_no_photon_enters_a_wire_and_outcomes_match_float64():
@@ -160,3 +196,14 @@ def test_bug_compatible_wires_keep_chroma_losses(monkeypatch):
     monkeypatch.setenv("CHROMA_TRITON_LEGACY_WIRES", "1")
     _, bulk = _engine(N // 3, 7)
     assert bulk > 0  # CUDA Chroma's defect, reproduced on request
+
+
+def test_rays_ending_on_a_wall_inside_a_wire_hit_the_wire_first():
+    first = _first_boundary_of_rays_ending_inside_a_wire()
+    assert len(first) > 5000 and np.all(first == -2)
+
+
+def test_bug_compatible_wires_keep_chroma_cull(monkeypatch):
+    monkeypatch.setenv("CHROMA_TRITON_LEGACY_WIRES", "1")
+    first = _first_boundary_of_rays_ending_inside_a_wire()
+    assert np.mean(first != -2) > 0.1  # CUDA Chroma's cull lets them reach the wall
