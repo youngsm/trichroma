@@ -1,9 +1,12 @@
 # Triton drop-in backend for Chroma: design
 
 This is the design reference of the Triton backend: its goals, the API
-contract it keeps, every deliberate difference from CUDA Chroma, the engine
+contract it keeps, the deliberate differences from CUDA Chroma, the engine
 and its measured throughput. Code layout: `src/chroma` (Chroma's API),
-`src/trichroma` (this implementation).
+`src/trichroma` (this implementation). [Exact vs production](exact_vs_production.md)
+lists every difference between the bitwise mode and the production engine,
+with the evidence that the production engine is unbiased and what each
+difference contributes to speed.
 
 ## Goals
 
@@ -35,7 +38,7 @@ and its measured throughput. Code layout: `src/chroma` (Chroma's API),
 | `CHROMA_TRITON_FUSED` | `1` (default), `0` | Fused register-resident transport kernel; `0` selects the wavefront scheduler |
 | `CHROMA_TRITON_GRID` | `1` (default), `0` | Certified empty-space grid (bulk shortcut of the wavefront scheduler; built only when that scheduler is selected) |
 | `CHROMA_TRITON_PIPELINE` | `1` (default), `0` | `simulate` propagates batch k+1 while the caller consumes batch k; `0` restores W's order of reading input and yielding events (results are identical either way) |
-| `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production fixes it (specular polarization, literal Fresnel, 16-bit history, FP32 wire intersection), with the production RNG: a statistical like-for-like comparison with CUDA Chroma |
+| `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production corrects it (specular polarization, literal Fresnel formulas, NaN-abort bit 1<<15, W's wire algorithm, W's t > 1e-6 at box faces), with the production RNG, geometry and arithmetic: a statistical like-for-like comparison with CUDA Chroma. It does not restore W's specular-direction formula or 16-bit history truncation ([exact vs production](exact_vs_production.md)) |
 | `CHROMA_TRITON_LEGACY_WIRES` | unset, `0`, `1` | Override the wire algorithm alone (default: legacy iff `CHROMA_TRITON_FIXES=0`) |
 | `CHROMA_TRITON_ROULETTE` | weight, e.g. `0.05` | Opt-in, weighted mode only: Russian roulette below that weight (unbiased for every tally; not W's weighted-mode semantics) |
 | `TRITON_CACHE_DIR` | path | Put Triton's JIT cache on `/lscratch`; `$HOME` has little quota |
@@ -83,7 +86,7 @@ Production-mode deviations from W, all deliberate and documented:
   uniforms from Philox blocks keyed by (photon id, steps done, block), four
   per call. Results do not depend on batch size, thread count, queue order or
   scheduler (fused, wavefront, bulk shortcut).
-* Analytic wires: two FP32 defects of W, both of which lose light.
+* Analytic wires: three defects of W, all of which lose light.
   * Far hits. W forms the discriminant as `B*B - A*C`, whose two terms are
     ~`t*t` while their difference is ~`r*r`; beyond a few hundred mm FP32
     rounding decides far hits. On 16.5M captured LAr boundary rays W reports
@@ -97,18 +100,49 @@ Production-mode deviations from W, all deliberate and documented:
     nothing. Production skips the wire a photon has just left outward (exact:
     a ray leaving a convex cylinder cannot meet it again; the skip ends at the
     photon's next event) and matches a float64 Monte Carlo of a wire plane at
-    x = 2160 mm within statistics (`tests/integration/test_wires.py`). What
-    remains (0.002% of photons) are reflections off a wall where chroma-lar
-    places a plane's end wires half inside the wall.
+    x = 2160 mm within statistics (`tests/integration/test_wires.py`).
+  * Culled planes. W skips a plane when the distance along the ray to the
+    plane of the wire axes exceeds the mesh hit plus one radius; an oblique
+    ray enters the wires up to r/|dn| earlier, so a ray ending on a wall the
+    wires pass through (chroma-lar's rotated planes extend through the TPC
+    walls) can reach a wall point inside a wire, and the photon is lost in
+    the steel. Production culls a plane only when the slab entry is beyond
+    the mesh hit (1568 photons in 10M of the weighted LUT fixture were lost
+    this way; +0.0016% detected light).
   * Together they raise the detected light on the LAr LUT workload
-    (reflect3wires, 128 nm) by 18% over W (3.13% to 3.70% of photons) and at
-    450 nm from 3.87% to 4.54%. `CHROMA_TRITON_LEGACY_WIRES=1` (or
-    `CHROMA_TRITON_FIXES=0`) reproduces W's algorithm.
+    (reflect3wires, 128 nm, weighted) by 18.0% (with every production
+    correction: 3.145% of the photons' weight in W, 3.697% in production),
+    and at 450 nm from 3.87% to 4.54%. On 2M rays of real
+    histories, W's wire answer is wrong for 98.8% of the rays where it differs
+    from production (spurious hits up to 25 radii from any wire, missed hits,
+    wrong wires, hit points up to 2.9 mm off); production agrees with float64
+    except within 0.2% of tangency. What is left in production are float32
+    limits (about 1 photon in 10^6 ends in steel): a Rayleigh scatter within
+    ~1e-4 mm of a steel surface, or a wall reflection at the edge of an end
+    wire that chroma-lar places half inside the wall.
+    `CHROMA_TRITON_LEGACY_WIRES=1` (or `CHROMA_TRITON_FIXES=0`) reproduces W's
+    algorithm (in Triton arithmetic, so its noise-decided far hits differ ray
+    by ray).
 * Analytic boxes do not re-hit the coplanar neighbour of the face a photon
-  just left (W's mesh traversal occasionally does, at t ~ 1e-5 mm).
-Flight time uses the phase velocity like W unless a material provides
-`group_velocity`; surface re-emission is instantaneous unless the surface
-provides `reemission_time_cdf`.
+  just left (W's mesh traversal occasionally does, at t ~ 1e-5 mm, and can
+  then put the photon inside the solid: 8 photons in 10^6 end in the
+  cathode's steel on reflect3wires).
+* Coincident faces. A photon that leaves a solid through a face lying in the
+  plane of a box face is left on that plane; W's triangle test (t > 1e-6)
+  lets it through whenever rounding puts it on or beyond the plane.
+  chroma-lar's PMT backs lie in the TPC walls, so 0.5% of the photons of the
+  LUT fixture leave the TPC through them in W. Production meets the box face
+  at distance 0 when the photon is on its plane within rounding (a few ulp)
+  and has not just met it: no photon leaves the TPC (+0.08% detected light).
+* Specular reflection uses the mirror formula `d - 2(d.n)n` (also with
+  `CHROMA_TRITON_FIXES=0`); W rotates the normal by the incidence angle,
+  which gives a NaN direction (NaN abort) for a photon exactly anti-parallel
+  to the normal and rounds directions within 2.4e-4 rad of normal incidence.
+* The DAQ clamps the time and charge CDFs at their ends and adds nothing for
+  a negative charge sample, as W does.
+
+Flight time uses the phase velocity `c/n` of the incident material and
+surface re-emission is instantaneous, as in W.
 
 ## Engine (production mode)
 
