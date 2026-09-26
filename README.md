@@ -77,6 +77,9 @@ a minute or two), then they come from `TRITON_CACHE_DIR`.
   deliberate difference from CUDA Chroma, the engine and its throughput.
 - [Bitwise mode](docs/bitwise_mode.md): recording and replaying CUDA Chroma's
   random numbers.
+- [Exact vs production](docs/exact_vs_production.md): every difference
+  between the bitwise mode and the production engine, the evidence that the
+  production engine is unbiased, and the speed each difference buys.
 - [Earlier Triton work](docs/earlier_triton_work.md), before the drop-in
   backend.
 - [The original Chroma README](docs/chroma/README.md), documentation and
