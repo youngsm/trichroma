@@ -63,7 +63,7 @@ def _slab(lx, ly, lz, ux, uy, uz, ox, oy, oz, dx, dy, dz, ix, iy, iz):
 
 @triton.jit
 def top_level_query(valid, ox, oy, oz, dx, dy, dz, last, nodes_ptr, tlas_nodes, boxes_ptr, n_boxes, box_tris_ptr,
-                    FACE_TRIS: tl.constexpr, STEPS: tl.constexpr):
+                    FACE_TRIS: tl.constexpr, STEPS: tl.constexpr, BOX_SNAP: tl.constexpr = False):
     """Analytic boxes, then the top-level tree without entering instances.
 
     Returns the nearest box hit (distance, triangle or -1, unnormalized
@@ -84,7 +84,7 @@ def top_level_query(valid, ox, oy, oz, dx, dy, dz, last, nodes_ptr, tlas_nodes, 
     for box_index in range(n_boxes):
         best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf = _analytic_box(
             boxes_ptr, box_tris_ptr, box_index, valid, ox, oy, oz, dx, dy, dz, last,
-            best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf, FACE_TRIS)
+            best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf, FACE_TRIS, BOX_SNAP)
     needs = tl.zeros(ox.shape, tl.int1)
     stop = tl.full(ox.shape, -1, tl.int32)
     ix = 1.0 / dx
@@ -302,7 +302,7 @@ def nearest_hit_kernel(
     LEAF: tl.constexpr, WIRE_MODE: tl.constexpr, BLOCK: tl.constexpr, FACE_TRIS: tl.constexpr = 8,
     STEPS: tl.constexpr = 4, STATS: tl.constexpr = False,
     stats_ptr=None, blas_slots=None, blas_count=None, PHASE: tl.constexpr = 0,
-    LEGACY_WIRES: tl.constexpr = False, tlas_nodes=0,
+    LEGACY_WIRES: tl.constexpr = False, tlas_nodes=0, BOX_SNAP: tl.constexpr = False,
 ):
     """PHASE 0: complete query. PHASE 1: analytic boxes and the top level only;
     rays that reach an instance are queued in ``blas_slots`` (wire candidates
@@ -377,7 +377,7 @@ def nearest_hit_kernel(
     for box_index in range(n_boxes if PHASE != 2 else 0):
         best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf = _analytic_box(
             boxes_ptr, box_tris_ptr, box_index, valid, ox, oy, oz, dx, dy, dz, last,
-            best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf, FACE_TRIS)
+            best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf, FACE_TRIS, BOX_SNAP)
 
     visits = tl.zeros((BLOCK,), tl.int32)
     tri_tests = tl.zeros((BLOCK,), tl.int32)
@@ -761,7 +761,9 @@ def _load_plane(wires_ptr, ip):
 
 @triton.jit
 def _wire_candidate(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires):
-    """True where some wire plane survives Chroma's per-plane early cull."""
+    """True where the ray may reach some wire plane's slab before ``cap``: the
+    production per-plane cull of :func:`_all_wires`, which keeps every ray
+    Chroma's cull keeps (so it also selects for the bug-compatible wires)."""
     any_plane = tl.zeros(ox.shape, tl.int1)
     for ip in range(n_wires):
         pox, poy, poz, nnx, nny, nnz, radius = _load_plane(wires_ptr, ip)
@@ -769,7 +771,7 @@ def _wire_candidate(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires):
         wn0 = (ox - pox) * nnx + (oy - poy) * nny + (oz - poz) * nnz
         far_plane = tl.abs(wn0) > radius + 0.01
         away = far_plane & (dn * wn0 > 0.)
-        too_far = far_plane & ~away & (-wn0 / dn > cap + radius)
+        too_far = far_plane & ~away & (tl.abs(wn0) - (radius + 0.01) > cap * tl.abs(dn))
         any_plane = any_plane | (valid & ~away & ~too_far)
     return any_plane
 
@@ -822,7 +824,14 @@ def _all_wires(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires, last_wire
         wn0 = wx * nnx + wy * nny + wz * nnz
         far_plane = tl.abs(wn0) > radius + 0.01
         away = far_plane & (dn * wn0 > 0.)
-        too_far = far_plane & ~away & (-wn0 / dn > cap + radius)
+        if LEGACY_WIRES:
+            # Chroma's cull (photon.h): the distance to the axis plane against cap + radius.
+            too_far = far_plane & ~away & (-wn0 / dn > cap + radius)
+        else:
+            # The ray enters the padded slab at (|wn0| - radius - 0.01) / |dn|. Chroma's
+            # test above culls oblique rays that end inside the slab (on a wall the
+            # wires pass through), which then reach wall points inside a wire.
+            too_far = far_plane & ~away & (tl.abs(wn0) - (radius + 0.01) > cap * tl.abs(dn))
         go = valid & ~away & ~too_far
         if tl.sum(go.to(tl.int32), axis=0) > 0:
             skip_k = tl.where((last_wire >= 0) & ((last_wire >> 20) == ip), (last_wire & 1048575) - 524288, NO_WIRE)
@@ -879,8 +888,9 @@ def wire_kernel(slots_ptr, slot_count_ptr, capacity, rows_ptr, pos_ptr, dir_ptr,
 
 
 @triton.jit
-def _box_triangle(box_tris_ptr, slot, m, ox, oy, oz, dx, dy, dz, last, best_t):
-    """Moller-Trumbore on one world-space box triangle; returns (ok, t, gid, n, codes)."""
+def _box_triangle(box_tris_ptr, slot, m, ox, oy, oz, dx, dy, dz, last, best_t, t_min):
+    """Moller-Trumbore on one world-space box triangle (hits beyond ``t_min``);
+    returns (ok, t, gid, n, codes)."""
     b = slot * BOX_TRI_WIDTH
     v0x = tl.load(box_tris_ptr + b + 0, mask=m, other=0.)
     v0y = tl.load(box_tris_ptr + b + 1, mask=m, other=0.)
@@ -905,7 +915,7 @@ def _box_triangle(box_tris_ptr, slot, m, ox, oy, oz, dx, dy, dz, last, best_t):
     v = inv * (dx * qx + dy * qy + dz * qz)
     t = inv * (e2x * qx + e2y * qy + e2z * qz)
     ok = m & (det != 0.) & (u >= -1e-6) & (v >= -1e-6) & (u + v <= 1.0 + 1e-6)
-    ok = ok & (t > 1e-6) & (t < best_t) & (gid != last)
+    ok = ok & (t > t_min) & (t < best_t) & (gid != last)
     nx = e1y * e2z - e1z * e2y
     ny = e1z * e2x - e1x * e2z
     nz = e1x * e2y - e1y * e2x
@@ -914,7 +924,8 @@ def _box_triangle(box_tris_ptr, slot, m, ox, oy, oz, dx, dy, dz, last, best_t):
 
 @triton.jit
 def _analytic_box(boxes_ptr, box_tris_ptr, ib, valid, ox, oy, oz, dx, dy, dz, last,
-                  best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf, FACE_TRIS: tl.constexpr):
+                  best_t, best_tri, bnx, bny, bnz, box_hit, bm1, bm2, bsf, FACE_TRIS: tl.constexpr,
+                  BOX_SNAP: tl.constexpr = False):
     """Crossing face of an axis-aligned box by the slab method, then
     Moller-Trumbore on that face's triangles (exact Chroma triangle ids); all
     triangles only if that fails (edges and corners).
@@ -922,6 +933,14 @@ def _analytic_box(boxes_ptr, box_tris_ptr, ib, valid, ox, oy, oz, dx, dy, dz, la
     The face is the entry face, or the exit face when the ray starts inside
     the box or on its surface (its last hit is one of the box's triangles). A
     ray leaving the box surface it starts on cannot hit the box again.
+
+    ``BOX_SNAP`` (production corrections): a ray that starts on the plane of
+    its exit face (within rounding) without having just met that face meets
+    it at distance 0. Coincident surfaces put photons there: one that leaves
+    another solid through a face lying in the box's face (chroma-lar's PMT
+    backs lie in the TPC walls) would otherwise pass through the box surface
+    whenever the rounding of its position gives t <= 1e-6, as it does with
+    Chroma's triangle test.
     """
     rb = ib * BOX_WIDTH
     lx = tl.load(boxes_ptr + rb + 0)
@@ -971,7 +990,22 @@ def _analytic_box(boxes_ptr, box_tris_ptr, ib, valid, ox, oy, oz, dx, dy, dz, la
     use_far = (t_near <= 0.) | (f_near == last_face)
     face_t = tl.where(use_far, t_far, t_near)
     face = tl.where(use_far, f_far, f_near)
-    candidate = ~miss & (face_t > 0.) & ~(use_far & (f_far == last_face)) & (face_t < best_t + tol)
+    leaving = use_far & (f_far == last_face)
+    t_min = tl.full(ox.shape, 1e-6, tl.float32)
+    if BOX_SNAP:
+        # "On the plane" means within the float32 rounding of that face's
+        # coordinate (~8 ulp): a photon farther out, for example one that
+        # scattered in the medium a micron outside a steel box, stays outside.
+        axis = f_far // 2
+        d_face = tl.abs(tl.where(axis == 0, dx, tl.where(axis == 1, dy, dz)))
+        plane = tl.where(f_far % 2 == 0, tl.where(axis == 0, lx, tl.where(axis == 1, ly, lz)),
+                         tl.where(axis == 0, ux, tl.where(axis == 1, uy, uz)))
+        tol_face = 1e-6 + 1e-6 * tl.abs(plane)
+        snap = ~miss & use_far & ~leaving & (tl.abs(t_far) * d_face <= tol_face)
+        t_min = tl.where(snap, -tl.minimum(tol_face / tl.maximum(d_face, 1e-6), 1.0), t_min)
+        candidate = ~miss & ((face_t > 0.) | snap) & ~leaving & (face_t < best_t + tol)
+    else:
+        candidate = ~miss & (face_t > 0.) & ~leaving & (face_t < best_t + tol)
     first = _bits(tl.load(boxes_ptr + rb + 6 + 2 * tl.maximum(face, 0), mask=candidate, other=0.))
     cnt = _bits(tl.load(boxes_ptr + rb + 7 + 2 * tl.maximum(face, 0), mask=candidate, other=0.))
     cnt = tl.where(candidate, cnt, 0)
@@ -980,7 +1014,10 @@ def _analytic_box(boxes_ptr, box_tris_ptr, ib, valid, ox, oy, oz, dx, dy, dz, la
     # when no lane's ray reaches this box before its current best hit).
     for k in range(tl.max(cnt, axis=0)):
         m = candidate & (k < cnt)
-        ok, t, gid, nx, ny, nz, slot = _box_triangle(box_tris_ptr, first + k, m, ox, oy, oz, dx, dy, dz, last, best_t)
+        ok, t, gid, nx, ny, nz, slot = _box_triangle(box_tris_ptr, first + k, m, ox, oy, oz, dx, dy, dz, last, best_t,
+                                                     t_min)
+        if BOX_SNAP:
+            t = tl.maximum(t, 0.)  # a snapped ray meets its face where it is
         best_t = tl.where(ok, t, best_t)
         best_tri = tl.where(ok, gid, best_tri)
         bnx, bny, bnz = tl.where(ok, nx, bnx), tl.where(ok, ny, bny), tl.where(ok, nz, bnz)
@@ -997,7 +1034,9 @@ def _analytic_box(boxes_ptr, box_tris_ptr, ib, valid, ox, oy, oz, dx, dy, dz, la
         for kk in range(total):
             ok, t, gid, nx, ny, nz, slot = _box_triangle(box_tris_ptr, tl.zeros(ox.shape, tl.int32) + (all_first + kk),
                                                           fallback, ox, oy, oz, dx, dy, dz,
-                                                          last, best_t)
+                                                          last, best_t, t_min)
+            if BOX_SNAP:
+                t = tl.maximum(t, 0.)
             best_t = tl.where(ok, t, best_t)
             best_tri = tl.where(ok, gid, best_tri)
             bnx, bny, bnz = tl.where(ok, nx, bnx), tl.where(ok, ny, bny), tl.where(ok, nz, bnz)

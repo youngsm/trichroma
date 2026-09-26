@@ -51,7 +51,8 @@ def _to_device(array, device, dtype=None):
 
 @triton.jit
 def _interp_cdf(x_ptr, y_ptr, n, u, mask):
-    """Chroma interp(u, n, cdf_y, cdf_x) on a non-uniform CDF."""
+    """Chroma interp(u, n, cdf_y, cdf_x) on a non-uniform CDF (the end points
+    outside ``[cdf_y[0], cdf_y[n-1]]``, as W's ``interp``)."""
     lo = tl.zeros(u.shape, tl.int32)
     hi = tl.zeros(u.shape, tl.int32) + n - 1
     while tl.sum((mask & (lo < hi - 1)).to(tl.int32), axis=0) > 0:
@@ -64,7 +65,9 @@ def _interp_cdf(x_ptr, y_ptr, n, u, mask):
     y1 = tl.load(y_ptr + hi, mask=mask, other=1.)
     x0 = tl.load(x_ptr + lo, mask=mask, other=0.)
     x1 = tl.load(x_ptr + hi, mask=mask, other=0.)
-    return x0 + (u - y0) * (x1 - x0) / tl.where(y1 != y0, y1 - y0, 1.)
+    value = x0 + (u - y0) * (x1 - x0) / tl.where(y1 != y0, y1 - y0, 1.)
+    value = tl.where(u <= tl.load(y_ptr), tl.load(x_ptr), value)
+    return tl.where(u >= tl.load(y_ptr + n - 1), tl.load(x_ptr + n - 1), value)
 
 
 @triton.jit(do_not_specialize=["start", "count", "seed"])
@@ -95,7 +98,7 @@ def _daq_kernel(t_ptr, flags_ptr, last_ptr, w_ptr, ids_ptr, start, count,
     ok = ok & (P.philox_uniform(ids, seed, tl.zeros(ids.shape, tl.int32) + (DAQ_COUNTER + 0)) < weight)
     time = tl.load(t_ptr + row, mask=valid, other=0.) + _interp_cdf(tcdf_x, tcdf_y, n_t, P.philox_uniform(ids, seed, tl.zeros(ids.shape, tl.int32) + (DAQ_COUNTER + 1)), ok)
     charge = _interp_cdf(qcdf_x, qcdf_y, n_q, P.philox_uniform(ids, seed, tl.zeros(ids.shape, tl.int32) + (DAQ_COUNTER + 2)), ok)
-    q_int = (charge / charge_unit + 0.5).to(tl.int32)
+    q_int = tl.maximum(charge / charge_unit + 0.5, 0.).to(tl.int32)  # W: (unsigned) roundf, negative -> 0
     ch = tl.maximum(channel, 0)
     # Chroma compares the raw float bits as unsigned integers; flipping the
     # sign bit maps that order onto signed int32 atomics.
@@ -195,9 +198,10 @@ class ProductionEngine(object):
         self.two_phase = True
         self.traversal_steps = 1
         # CHROMA_TRITON_FIXES=0 keeps the installed Chroma's behaviour where the
-        # production engine fixes it (specular polarization, Fresnel NaNs,
-        # 16-bit history, FP32 wire intersection) while keeping the Philox
-        # RNG: a statistical like-for-like comparison with CUDA Chroma.
+        # production engine fixes it (specular polarization, Fresnel NaNs, the
+        # NaN-abort bit 1<<15, FP32 wire intersection) while keeping the Philox
+        # RNG: a statistical like-for-like comparison with CUDA Chroma
+        # (docs/exact_vs_production.md lists what it does not restore).
         # CHROMA_TRITON_LEGACY_WIRES=0/1 overrides the wire algorithm alone.
         self.fixes = os.environ.get("CHROMA_TRITON_FIXES", "1") not in ("", "0")
         wires = os.environ.get("CHROMA_TRITON_LEGACY_WIRES", "")
@@ -292,7 +296,7 @@ class ProductionEngine(object):
                 self.boxes, self.n_boxes, self.box_tris,
                 out_t, out_tri, out_n, out_codes, n, self._dummy_i32, self._dummy_i32,
                 tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=0, BLOCK=BLOCK, FACE_TRIS=self.face_tris,
-                LEGACY_WIRES=self.legacy_wires, num_warps=1)
+                LEGACY_WIRES=self.legacy_wires, BOX_SNAP=self.fixes, num_warps=1)
         return out_t, out_tri, out_n, out_codes
 
     # ---------------------------------------------------------- transport
@@ -329,16 +333,16 @@ class ProductionEngine(object):
             nearest_hit_kernel[grid](
                 rows, cnt, pos, dirs, last, *common,
                 tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
-                blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=1, num_warps=1)
+                blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=1, BOX_SNAP=self.fixes, num_warps=1)
             nearest_hit_kernel[grid](
                 rows, ws["blas_count"], pos, dirs, last, *common,
                 tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
-                blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=2, num_warps=1)
+                blas_slots=ws["blas_slots"], blas_count=ws["blas_count"], PHASE=2, BOX_SNAP=self.fixes, num_warps=1)
         else:
             nearest_hit_kernel[grid](
                 rows, cnt, pos, dirs, last, *common,
                 tlas_nodes=self.tlas_nodes, LEAF=self.leaf_size, WIRE_MODE=1, BLOCK=BLOCK, FACE_TRIS=self.face_tris, STEPS=self.traversal_steps,
-                num_warps=1)
+                BOX_SNAP=self.fixes, num_warps=1)
         if self.n_wires:
             # Analytic wires only for the compacted rays that can reach a slab.
             wire_kernel[grid](ws["wire_slots"], ws["wire_count"], n, rows, pos, dirs, last, ws["last_wire"],
@@ -443,6 +447,8 @@ class ProductionEngine(object):
         from trichroma.engine.fused import fused_kernel
 
         photons, steps, cursor, norm, renorm = args
+        if max_steps <= 0:
+            return None  # W launches nothing: photons are left as they are
         ws = self._workspace
         n = len(photons)
         live = (photons.flags & TERMINAL) == 0

@@ -197,3 +197,17 @@ def test_trichroma_sources_simulate(detector):
                                keep_flat_hits=True, max_steps=1000))
     assert [ev.nphotons for ev in events] == [2000, 2000]
     assert all(len(ev.flat_hits) > 0 for ev in events)
+
+
+def test_negative_charge_samples_add_nothing(sources):
+    """As in Chroma, a charge sample that rounds below zero adds nothing to its
+    channel (the unit is cdf_x[-1] / 2**16: most samples here are negative)."""
+    from trichroma.simulation import Simulation
+
+    detector = _detector()
+    detector.charge_cdf = (np.linspace(-3.0, 1.0, 41), np.linspace(0.0, 1.0, 41))
+    sim = Simulation(detector, seed=11)
+    ev = next(sim.simulate(_host_events(sources[:1]), keep_flat_hits=True, run_daq=True, max_steps=1000))
+    q, hit = ev.channels.q, ev.channels.hit
+    assert hit.any()
+    assert np.all(q >= 0) and np.all(q[hit] <= 1.0 * len(ev.flat_hits))
