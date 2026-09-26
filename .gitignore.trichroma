@@ -10,3 +10,10 @@ dist/
 .env
 *.simg
 .DS_Store
+*~
+*.so
+*.root
+*.lprof
+.coverage
+.vscode/
+docs/chroma/doc/build/
