@@ -246,6 +246,8 @@ class ProductionEngine(object):
                 hit_n=torch.empty((capacity, 3), dtype=torch.float32, device=dev),
                 hit_codes=torch.empty((capacity, 3), dtype=torch.int32, device=dev),
                 wire_slots=torch.empty(capacity, dtype=torch.int32, device=dev),
+                last_wire=torch.empty(capacity, dtype=torch.int32, device=dev),  # per photon
+                hit_wire=torch.empty(capacity, dtype=torch.int32, device=dev),  # per query slot
                 wire_count=torch.zeros(1, dtype=torch.int32, device=dev),
                 blas_slots=torch.empty(capacity, dtype=torch.int32, device=dev),
                 blas_count=torch.zeros(1, dtype=torch.int32, device=dev),
@@ -339,8 +341,8 @@ class ProductionEngine(object):
                 num_warps=1)
         if self.n_wires:
             # Analytic wires only for the compacted rays that can reach a slab.
-            wire_kernel[grid](ws["wire_slots"], ws["wire_count"], n, rows, pos, dirs,
-                              out_t, out_tri, out_n, out_codes, self.wires, self.n_wires, BLOCK=BLOCK,
+            wire_kernel[grid](ws["wire_slots"], ws["wire_count"], n, rows, pos, dirs, last, ws["last_wire"],
+                              out_t, out_tri, out_n, out_codes, ws["hit_wire"], self.wires, self.n_wires, BLOCK=BLOCK,
                               LEGACY_WIRES=self.legacy_wires, num_warps=1)
 
     def _boundary_round(self, rows, cnt, count, n, photons, steps, cursor, norm, renorm, out_rows, out_count,
@@ -353,7 +355,7 @@ class ProductionEngine(object):
                           ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"])
         P.step_kernel[grid](
             rows, cnt, n, *self._step_args(photons, steps, cursor, norm, renorm),
-            ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"],
+            ws["hit_t"], ws["hit_tri"], ws["hit_n"], ws["hit_codes"], ws["last_wire"], ws["hit_wire"],
             *self._material_args(),
             self.s_present, self.s_model, self.s_detect, self.s_absorb, self.s_reemit,
             self.s_diffuse, self.s_specular, self.s_cdf,
@@ -361,7 +363,8 @@ class ProductionEngine(object):
             self.seed_arg, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp,
             USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=self.fixes, BLOCK=BLOCK,
-            ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette, num_warps=1)
+            ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette, LEGACY_WIRES=self.legacy_wires,
+            num_warps=1)
 
     def _bulk_epoch(self, photons, steps, cursor, norm, renorm, cur, nxt, grid_count, max_steps, use_weights,
                     history):
@@ -403,6 +406,7 @@ class ProductionEngine(object):
             return self._propagate_fused(args, max_steps, use_weights)
         live = torch.nonzero((photons.flags & TERMINAL) == 0).flatten().to(torch.int32)
         count = live.numel()
+        ws["last_wire"][:n].fill_(-1)
         if track or self.grid is None:
             return self._propagate_stepwise(photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track)
         cur = 0

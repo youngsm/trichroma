@@ -90,6 +90,7 @@ def fused_kernel(
     wl = zf + wl_start
     t = zf
     last = zi - 1
+    last_wire = zi - 1  # the wire just left outward (production wires skip it next)
     flags = zi
     weight = zf + 1.
     ids = tl.zeros((BLOCK,), tl.int64)
@@ -133,6 +134,7 @@ def fused_kernel(
             wl = tl.where(got, tl.load(wl_ptr + r, mask=got, other=wl_start), wl)
             t = tl.where(got, tl.load(t_ptr + r, mask=got, other=0.), t)
             last = tl.where(got, tl.load(last_ptr + r, mask=got, other=-1), last)
+            last_wire = tl.where(got, -1, last_wire)
             flags = tl.where(got, tl.load(flags_ptr + r, mask=got, other=0), flags)
             weight = tl.where(got, tl.load(w_ptr + r, mask=got, other=1.), weight)
             ids = tl.where(got, tl.load(ids_ptr + r, mask=got, other=0), ids)
@@ -185,8 +187,8 @@ def fused_kernel(
         bm2 = tl.where(from_mesh, tl.load(code_m2_ptr + best_code, mask=from_mesh, other=0), bm2)
         bsf = tl.where(from_mesh, tl.load(code_s_ptr + best_code, mask=from_mesh, other=-1), bsf)
         cap = tl.where(best_tri >= 0, best_t, 1e30)
-        wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz = _all_wires(go, x, y, z, dx, dy, dz, cap, wires_ptr,
-                                                                       n_wires, LEGACY_WIRES)
+        wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, wire_id = _all_wires(
+            go, x, y, z, dx, dy, dz, cap, wires_ptr, n_wires, tl.where(last == -2, last_wire, -1), LEGACY_WIRES)
         dist, tri, nx, ny, nz, m_inner, m_outer, sidx = merge_hit(go, best_t, best_tri, bnx, bny, bnz, bm1, bm2,
                                                                   bsf, wire_t, wire_s, wire_in, wire_out,
                                                                   wnx, wny, wnz)
@@ -209,6 +211,11 @@ def fused_kernel(
             comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
             s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
             seed, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES, ROULETTE, w_rr)
+        if not LEGACY_WIRES:
+            # A photon that reached a wire (last == -2: no bulk event first)
+            # and leaves it outward is outside that convex wire: skip it next.
+            outward = (dx * nx + dy * ny + dz * nz) > 0.
+            last_wire = tl.where(live, tl.where((last == -2) & outward, wire_id, -1), last_wire)
 
         # ---- finished photons are written back; their lanes take new work
         fin = alive & (((flags & terminal) != 0) | (step >= max_steps))

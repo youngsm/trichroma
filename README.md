@@ -13,10 +13,12 @@ Chroma on the same GPU:
 
 | Workload | CUDA Chroma | TriChroma |
 |---|---|---|
-| 30M prepared photons, one `simulate()` call, unweighted / weighted | 1.6 / 0.55M photons/s | 55-61 / 13-15M photons/s |
-| waveform-map macro, photons drawn on the GPU | 0.29 s per voxel (numpy photons) | 3 ms per voxel |
+| 30M prepared photons, one weighted `simulate()` call (LUT style) | 0.55M photons/s | 11.7M photons/s (23M with opt-in roulette) |
+| waveform-map macro, photons drawn on the GPU | 0.29 s per voxel (numpy photons) | 3.1 ms per voxel |
 | pixel-detector quantile LUT, 30M photons per voxel, GPU photons | ~42 s per voxel (numpy photons) | 0.22 s per voxel |
 
+CUDA Chroma's rates include its wire defects, which end many histories early
+and lose 15% of the light on these detectors (see the design notes).
 Scripts that generate photons with numpy on the CPU gain only 2-5x until the
 photons are drawn on the GPU (`trichroma.sources`); the macro numbers use
 the chroma-lar branch

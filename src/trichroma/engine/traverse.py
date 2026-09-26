@@ -559,8 +559,8 @@ def nearest_hit_kernel(
         wny = tl.zeros((BLOCK,), tl.float32)
         wnz = tl.zeros((BLOCK,), tl.float32)
     elif WIRE_MODE == 0:
-        wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz = _all_wires(valid, ox, oy, oz, dx, dy, dz, cap,
-                                                                       wires_ptr, n_wires, LEGACY_WIRES)
+        wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, _wid = _all_wires(
+            valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires, tl.zeros(ox.shape, tl.int32) - 1, LEGACY_WIRES)
     else:
         # Mesh-only pass: queue the slots whose rays may reach a wire slab.
         candidate = _wire_candidate(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires)
@@ -592,10 +592,13 @@ def nearest_hit_kernel(
     tl.store(out_codes + slot * 3 + 2, sidx, mask=store)
 
 
+NO_WIRE = tl.constexpr(-2147483647)  # a wire index no wire has
+
+
 @triton.jit
 def _wire_plane(go, wx, wy, wz, dx, dy, dz, dn, wn0, uux, uuy, uuz, vvx, vvy, vvz, nnx, nny, nnz,
                 pitch, radius, umin, umax, v0, kmin, kmax, psurf, pin, pout, cap,
-                wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, LEGACY: tl.constexpr):
+                wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, skip_k, hit_k, LEGACY: tl.constexpr):
     """Wire intersection for one plane (lanes in ``go``).
 
     ``LEGACY`` reproduces the installed Chroma FP32 algorithm. It tests every
@@ -607,6 +610,12 @@ def _wire_plane(go, wx, wy, wz, dx, dy, dz, dn, wn0, uux, uuy, uuz, vvx, vvy, vv
     (one extra wire each side covers rounding), uses the identical
     ``A*r*r - (wv*dn - wn0*dv)**2`` (no cancellation), and takes the hit
     normal from the same decomposition.
+
+    The production form also ignores wire ``skip_k`` of this plane: the wire
+    a photon has just left outward (a ray leaving a convex cylinder cannot
+    meet it again, but at metre-scale coordinates the FP32 surface point can
+    fall just inside, where the exit would be taken for a hit from inside).
+    ``hit_k`` returns the index of the wire hit (unchanged where none is).
     """
     du = dx * uux + dy * uuy + dz * uuz
     dv = dx * vvx + dy * vvy + dz * vvz
@@ -673,6 +682,7 @@ def _wire_plane(go, wx, wy, wz, dx, dy, dz, dn, wn0, uux, uuy, uuz, vvx, vvy, vv
             hy = (vn * il) * vvy + (nn * il) * nny
             hz = (vn * il) * vvz + (nn * il) * nnz
             wire_t = tl.where(live2, t, wire_t)
+            hit_k = tl.where(live2, k, hit_k)
             wire_s = tl.where(live2, psurf, wire_s)
             wire_in = tl.where(live2, pin, wire_in)
             wire_out = tl.where(live2, pout, wire_out)
@@ -706,6 +716,7 @@ def _wire_plane(go, wx, wy, wz, dx, dy, dz, dn, wn0, uux, uuy, uuz, vvx, vvy, vv
             inside = r20 < r2 - eps0
             t = tl.where(outside, t_small, tl.where(inside, t_large, 1.0e-4))
             live2 = live & (disc >= 0.) & ~(outside & (t_small <= 1.0e-4)) & ~(inside & (t_large <= 1.0e-4))
+            live2 = live2 & (k != skip_k)
             uc = wu + du * t
             live2 = live2 & (uc >= umin) & (uc <= umax) & (t < wire_t) & (t >= t_in) & (t <= t_out)
             wire_t = tl.where(live2, t, wire_t)
@@ -729,6 +740,7 @@ def _wire_plane(go, wx, wy, wz, dx, dy, dz, dn, wn0, uux, uuy, uuz, vvx, vvy, vv
             length = tl.sqrt(vn * vn + nn * nn)
             found = found & (length > 0.)
             il = 1.0 / length
+            hit_k = tl.where(found, best_k, hit_k)
             wire_s = tl.where(found, psurf, wire_s)
             wire_in = tl.where(found, pin, wire_in)
             wire_out = tl.where(found, pout, wire_out)
@@ -736,7 +748,7 @@ def _wire_plane(go, wx, wy, wz, dx, dy, dz, dn, wn0, uux, uuy, uuz, vvx, vvy, vv
             wny = tl.where(found, (vn * il) * vvy + (nn * il) * nny, wny)
             wnz = tl.where(found, (vn * il) * vvz + (nn * il) * nnz, wnz)
 
-    return wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz
+    return wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, hit_k
 
 
 @triton.jit
@@ -763,8 +775,14 @@ def _wire_candidate(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires):
 
 
 @triton.jit
-def _all_wires(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires, LEGACY_WIRES: tl.constexpr):
-    """Nearest analytic wire (installed Chroma FP32 algorithm) within ``cap``."""
+def _all_wires(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires, last_wire, LEGACY_WIRES: tl.constexpr):
+    """Nearest analytic wire within ``cap``.
+
+    ``last_wire`` (-1 for none) is the id of the wire the photon has just
+    left outward, which the production form skips; the returned ``wire_id``
+    identifies the wire hit (plane * 2**20 + wire index + 2**19).
+    """
+    wire_id = tl.full(ox.shape, -1, tl.int32)
     wire_t = tl.full(ox.shape, 1e30, tl.float32)
     wire_s = tl.full(ox.shape, -1, tl.int32)
     wire_in = tl.zeros(ox.shape, tl.int32)
@@ -807,18 +825,25 @@ def _all_wires(valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires, LEGACY_WI
         too_far = far_plane & ~away & (-wn0 / dn > cap + radius)
         go = valid & ~away & ~too_far
         if tl.sum(go.to(tl.int32), axis=0) > 0:
-            wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz = _wire_plane(
+            skip_k = tl.where((last_wire >= 0) & ((last_wire >> 20) == ip), (last_wire & 1048575) - 524288, NO_WIRE)
+            wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, hit_k = _wire_plane(
                 go, wx, wy, wz, dx, dy, dz, dn, wn0, uux, uuy, uuz, vvx, vvy, vvz, nnx, nny, nnz,
                 pitch, radius, umin, umax, v0, kmin, kmax, psurf, pin, pout, cap,
-                wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, LEGACY_WIRES)
-    return wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz
+                wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, skip_k, tl.zeros(ox.shape, tl.int32) + NO_WIRE,
+                LEGACY_WIRES)
+            wire_id = tl.where(hit_k != NO_WIRE, ip * 1048576 + hit_k + 524288, wire_id)
+    return wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, wire_id
 
 
 @triton.jit
-def wire_kernel(slots_ptr, slot_count_ptr, capacity, rows_ptr, pos_ptr, dir_ptr,
-                out_t, out_tri, out_n, out_codes, wires_ptr, n_wires, BLOCK: tl.constexpr,
+def wire_kernel(slots_ptr, slot_count_ptr, capacity, rows_ptr, pos_ptr, dir_ptr, last_ptr, last_wire_ptr,
+                out_t, out_tri, out_n, out_codes, hit_wire_ptr, wires_ptr, n_wires, BLOCK: tl.constexpr,
                 LEGACY_WIRES: tl.constexpr = False):
-    """Merge analytic wires into the mesh results of the compacted candidate slots."""
+    """Merge analytic wires into the mesh results of the compacted candidate slots.
+
+    ``last_wire_ptr`` holds, per photon, the wire it has just left outward
+    (skipped while its last event is that wire boundary); the id of the wire
+    hit goes to ``hit_wire_ptr`` (per slot) for the step kernel."""
     lane = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     count = tl.load(slot_count_ptr)
     if tl.program_id(0) * BLOCK >= count:
@@ -835,9 +860,12 @@ def wire_kernel(slots_ptr, slot_count_ptr, capacity, rows_ptr, pos_ptr, dir_ptr,
     mesh_t = tl.load(out_t + slot, mask=valid, other=float("inf"))
     mesh_tri = tl.load(out_tri + slot, mask=valid, other=-1)
     cap = tl.where(mesh_tri >= 0, mesh_t, 1e30)
-    wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz = _all_wires(valid, ox, oy, oz, dx, dy, dz, cap,
-                                                                   wires_ptr, n_wires, LEGACY_WIRES)
+    last = tl.load(last_ptr + row, mask=valid, other=-1)
+    last_wire = tl.load(last_wire_ptr + row, mask=valid, other=-1)
+    wire_t, wire_s, wire_in, wire_out, wnx, wny, wnz, wire_id = _all_wires(
+        valid, ox, oy, oz, dx, dy, dz, cap, wires_ptr, n_wires, tl.where(last == -2, last_wire, -1), LEGACY_WIRES)
     use_wire = valid & (wire_s >= 0) & (wire_t + 1e-6 < mesh_t)
+    tl.store(hit_wire_ptr + slot, wire_id, mask=use_wire)
     norm = tl.sqrt(wnx * wnx + wny * wny + wnz * wnz)
     inv_norm = tl.where(norm > 0., 1.0 / norm, 0.)
     tl.store(out_t + slot, wire_t, mask=use_wire)

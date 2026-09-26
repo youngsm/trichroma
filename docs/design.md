@@ -83,13 +83,27 @@ Production-mode deviations from W, all deliberate and documented:
   uniforms from Philox blocks keyed by (photon id, steps done, block), four
   per call. Results do not depend on batch size, thread count, queue order or
   scheduler (fused, wavefront, bulk shortcut).
-* Analytic wires: W forms the discriminant as `B*B - A*C`, whose two terms
-  are ~`t*t` while their difference is ~`r*r`; beyond a few hundred mm FP32
-  rounding decides far hits. On 16.5M captured LAr boundary rays W reports 42%
-  more wire hits than a float64 reference (and a 4 degree median normal
-  error); production uses the identical `A*r*r - (wv*dn - wn0*dv)**2` and
-  agrees with float64 to 0.2% (FP32-limited: on-wire origins, tangent grazes).
-  On the LAr LUT fixture this raises the detected light by 8.6%.
+* Analytic wires: two FP32 defects of W, both of which lose light.
+  * Far hits. W forms the discriminant as `B*B - A*C`, whose two terms are
+    ~`t*t` while their difference is ~`r*r`; beyond a few hundred mm FP32
+    rounding decides far hits. On 16.5M captured LAr boundary rays W reports
+    42% more wire hits than a float64 reference (and a 4 degree median normal
+    error); production uses the identical `A*r*r - (wv*dn - wn0*dv)**2`.
+  * Leaving a wire. At metre-scale coordinates the FP32 reflection point on
+    a 75 um wire often lands just inside the cylinder. W then takes the exit
+    for a hit from inside, places the photon in the wire's material and
+    (steel: absorption length 0) absorbs it: 7.2% of all photons of a 450 nm
+    voxel bomb in reflect3wires, although the wire surface transmits
+    nothing. Production skips the wire a photon has just left outward (exact:
+    a ray leaving a convex cylinder cannot meet it again; the skip ends at the
+    photon's next event) and matches a float64 Monte Carlo of a wire plane at
+    x = 2160 mm within statistics (`tests/integration/test_wires.py`). What
+    remains (0.002% of photons) are reflections off a wall where chroma-lar
+    places a plane's end wires half inside the wall.
+  * Together they raise the detected light on the LAr LUT workload
+    (reflect3wires, 128 nm) by 18% over W (3.13% to 3.70% of photons) and at
+    450 nm from 3.87% to 4.54%. `CHROMA_TRITON_LEGACY_WIRES=1` (or
+    `CHROMA_TRITON_FIXES=0`) reproduces W's algorithm.
 * Analytic boxes do not re-hit the coplanar neighbour of the face a photon
   just left (W's mesh traversal occasionally does, at t ~ 1e-5 mm).
 Flight time uses the phase velocity like W unless a material provides
@@ -136,20 +150,21 @@ Compiled once per `Simulation` (`engine/scene.py`).
   models are implemented in exact mode only; the production engine raises
   `NotImplementedError` for them (to do).
 
-Throughput on the A100 (reflect3wires, 128 nm, 30M photons): unweighted bomb
-at (-1000, 0, 0) 86M photons/s in the engine; weighted LUT voxel at
-(-450, 60, -120) (~90 steps and ~5.7 PMT-mesh descents per photon) 15M
-photons/s through `Simulation.simulate` with flat hits, 27M photons/s with
-`CHROMA_TRITON_ROULETTE=0.05`. CUDA Chroma: 0.64M photons/s on the weighted
-workload.
+Throughput on the A100 (reflect3wires, LUT voxel at (-450, 60, -120), 128 nm,
+30M photons, one `Simulation.simulate` call with flat hits,
+`benchmarks/simulate_throughput.py`): 63M photons/s unweighted, 11.7M
+photons/s weighted (~90 steps and ~5.7 PMT-mesh descents per photon),
+23M photons/s weighted with `CHROMA_TRITON_ROULETTE=0.05` (same detected weight). CUDA
+Chroma: 1.6M and 0.55M photons/s (with its wire losses, which end many
+histories early).
 
 The chroma-lar waveform map (`pyrat macros/waveform_map_pyrat.py`: 200K
 photons per 30 mm voxel at 450 nm, one event per voxel, flat hits, a 2D
-histogram and HDF5 rows per voxel): the engine alone does 92M photons/s with
-5M photons per launch (98M/s with 20M; 29M/s with 200K, where the last
-photons of each launch dominate). Through `Simulation.simulate`, with photons
-drawn on the GPU and 5M photons per batch, 720 voxels take 2.1 s (68M
-photons/s, ~82M/s after the first batch), against ~60 ms per voxel with the
+histogram and HDF5 rows per voxel): the engine alone does 66M photons/s with
+5M photons per launch and 87M/s with 20M (1.5G steps/s; the last photons of
+each launch dominate small launches). Through `Simulation.simulate`, with
+photons drawn on the GPU and 5M photons per batch, 720 voxels take 2.2 s (64M
+photons/s), against ~60 ms per voxel with the
 macro's original numpy photons and one voxel per batch. Kernels are never
 specialized on the seed (a new seed used to recompile the fused kernel, ~20
 s), and the hashing Triton does before its first cache lookup (~0.4 s) runs on
