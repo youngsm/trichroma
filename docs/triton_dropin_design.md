@@ -31,7 +31,8 @@ shared specification for everyone working on the drop-in.
 | `CHROMA_TRITON_TAPE_SORT` | `1` | Record with sorted survivor queues (the `canonical` schedule) |
 | `CHROMA_TRITON_DEVICE` | CUDA ordinal | Overrides `cuda_device` for the Triton backend |
 | `CHROMA_TRITON_FUSED` | `1` (default), `0` | Fused register-resident transport kernel; `0` selects the wavefront scheduler |
-| `CHROMA_TRITON_GRID` | `1` (default), `0` | Certified empty-space grid (bulk shortcut of the wavefront scheduler) |
+| `CHROMA_TRITON_GRID` | `1` (default), `0` | Certified empty-space grid (bulk shortcut of the wavefront scheduler; built only when that scheduler is selected) |
+| `CHROMA_TRITON_PIPELINE` | `1` (default), `0` | `simulate` propagates batch k+1 while the caller consumes batch k; `0` restores W's order of reading input and yielding events (results are identical either way) |
 | `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production fixes it (specular polarization, literal Fresnel, 16-bit history, FP32 wire intersection), with the production RNG: a statistical like-for-like comparison with CUDA Chroma |
 | `CHROMA_TRITON_LEGACY_WIRES` | unset, `0`, `1` | Override the wire algorithm alone (default: legacy iff `CHROMA_TRITON_FIXES=0`) |
 | `CHROMA_TRITON_ROULETTE` | weight, e.g. `0.05` | Opt-in, weighted mode only: Russian roulette below that weight (unbiased for every tally; not W's weighted-mode semantics) |
@@ -57,7 +58,18 @@ with W's batching, `evidx` rewriting and event wrapping. Outputs are the same
 
 Inputs may be numpy `Photons`, or any object whose arrays expose
 `__cuda_array_interface__` (PyCUDA `GPUArray`, torch tensors, CuPy); they are
-wrapped with `torch.as_tensor` without copying when possible.
+wrapped with `torch.as_tensor` without copying when possible. Photons drawn on
+the GPU (events whose `photons_beg` holds CUDA tensors) never pass through
+host memory.
+
+In production mode `simulate` is pipelined: batch k+1 is taken from the input
+and propagated while the caller consumes the events of batch k. The outputs
+of batch k are packed on the device before batch k+1 starts and copied to
+page-locked memory on a second stream while it runs; the propagation itself
+needs no host synchronization. Photon ids (the RNG keys) are assigned in input
+order, so the results do not change; only the input is read one batch ahead
+(`CHROMA_TRITON_PIPELINE=0` turns this off). Exact mode and photon tracking
+are not pipelined.
 
 Production-mode deviations from W, all deliberate and documented:
 * NaN-free Fresnel at normal incidence and at the critical angle; transverse
@@ -128,6 +140,18 @@ at (-1000, 0, 0) 86M photons/s in the engine; weighted LUT voxel at
 photons/s through `Simulation.simulate` with flat hits, 27M photons/s with
 `CHROMA_TRITON_ROULETTE=0.05`. CUDA Chroma: 0.64M photons/s on the weighted
 workload.
+
+The chroma-lar waveform map (`pyrat macros/waveform_map_pyrat.py`: 200K
+photons per 30 mm voxel at 450 nm, one event per voxel, flat hits, a 2D
+histogram and HDF5 rows per voxel): the engine alone does 92M photons/s with
+5M photons per launch (98M/s with 20M; 29M/s with 200K, where the last
+photons of each launch dominate). Through `Simulation.simulate`, with photons
+drawn on the GPU and 5M photons per batch, 720 voxels take 2.1 s (68M
+photons/s, ~82M/s after the first batch), against ~60 ms per voxel with the
+macro's original numpy photons and one voxel per batch. Kernels are never
+specialized on the seed (a new seed used to recompile the fused kernel, ~20
+s), and the hashing Triton does before its first cache lookup (~0.4 s) runs on
+a worker thread while the scene compiles.
 
 ## Bitwise legacy mode
 

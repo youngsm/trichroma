@@ -6,6 +6,7 @@ device. The host reads one counter per round.
 """
 
 import os
+import threading
 
 import numpy as np
 import torch
@@ -20,6 +21,23 @@ from chroma.triton.engine.traverse import nearest_hit_kernel, wire_kernel
 BLOCK = 32  # one ray/photon per thread: launch with num_warps=1
 DAQ_COUNTER = tl.constexpr(0x7FFFFF00)  # Philox draw counters reserved for the DAQ
 SIGN = tl.constexpr(-2147483648)
+
+
+def _warm_up_triton():
+    """Before its first kernel cache lookup, a process running Triton hashes
+    the Triton installation (``triton_key``, ~0.4 s, mostly libtriton.so) and
+    the kernel's source tree. Doing both on a worker thread while the scene
+    compiles takes them off the first propagation (the hashing releases the
+    GIL). Best effort: any failure just leaves the work to the first launch."""
+    try:
+        from triton.compiler.compiler import triton_key
+
+        triton_key()
+        from chroma.triton.engine.fused import fused_kernel
+
+        fused_kernel.cache_key
+    except Exception:
+        pass
 
 
 def _to_device(array, device, dtype=None):
@@ -47,11 +65,12 @@ def _interp_cdf(x_ptr, y_ptr, n, u, mask):
     return x0 + (u - y0) * (x1 - x0) / tl.where(y1 != y0, y1 - y0, 1.)
 
 
-@triton.jit
+@triton.jit(do_not_specialize=["start", "count", "seed"])
 def _daq_kernel(t_ptr, flags_ptr, last_ptr, w_ptr, ids_ptr, start, count,
                 solid_offsets, nsolids, channel_of_solid,
                 tcdf_x, tcdf_y, n_t, qcdf_x, qcdf_y, n_q, charge_unit,
                 out_time_bits, out_q, out_hist, seed, BLOCK: tl.constexpr):
+    seed = seed.to(tl.uint32, bitcast=True)  # passed as its int32 bit pattern (ProductionEngine.seed_arg)
     lane = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     valid = lane < count
     row = start + lane
@@ -92,6 +111,10 @@ class ProductionEngine(object):
     def __init__(self, detector, *, seed, device, leaf_size=4, tape=None, simulation=None):
         self.device = torch.device(device)
         self.seed = int(seed) & 0xFFFFFFFF
+        # Kernels take the seed as its int32 bit pattern and never specialize on
+        # it: Triton types a Python int by value (i32 or i64) and specializes on
+        # divisibility by 16, so every new seed could otherwise recompile them.
+        self.seed_arg = self.seed - (1 << 32) if self.seed >= (1 << 31) else self.seed
         if tape is not None and tape.enabled:
             # CHROMA_TRITON_TAPE=replay:<dir>: the same round scheduler with W's arithmetic,
             # BVH and recorded draws (engine/exact_mode.py); ``simulation`` holds the
@@ -101,6 +124,7 @@ class ProductionEngine(object):
             self._workspace = None  # device queues of _buffers(), used by the exact rounds
             self.exact = ExactMode(self, detector, tape, seed=seed, **(simulation or {}))
             return
+        threading.Thread(target=_warm_up_triton, name="chroma-triton-warm-up", daemon=True).start()
         self.scene = scene = compile_scene(detector, leaf_size=leaf_size)
         self.leaf_size = leaf_size
         dev = self.device
@@ -193,8 +217,10 @@ class ProductionEngine(object):
         self._dummy_f32 = torch.zeros(1, dtype=torch.float32, device=dev)
         self._dummy_i64 = torch.zeros(1, dtype=torch.int64, device=dev)
         self._dummy_i32 = torch.zeros(1, dtype=torch.int32, device=dev)
+        # The certified empty-space grid serves only the wavefront scheduler's
+        # bulk shortcut; the fused kernel never reads it.
         self.grid = None
-        if os.environ.get("CHROMA_TRITON_GRID", "1") != "0":
+        if not self.fused and os.environ.get("CHROMA_TRITON_GRID", "1") != "0":
             self.enable_grid(detector)
 
     # ------------------------------------------------------------ helpers
@@ -209,7 +235,7 @@ class ProductionEngine(object):
             dev = self.device
             ws = dict(
                 capacity=capacity,
-                bulk=[torch.empty(capacity, dtype=torch.int32, device=dev) for _ in range(2)],
+                bulk=[torch.empty(capacity + 1, dtype=torch.int32, device=dev) for _ in range(2)],
                 bulk_count=[torch.zeros(1, dtype=torch.int32, device=dev) for _ in range(2)],
                 boundary=torch.empty(capacity, dtype=torch.int32, device=dev),
                 boundary_count=torch.zeros(1, dtype=torch.int32, device=dev),
@@ -330,7 +356,7 @@ class ProductionEngine(object):
             self.s_present, self.s_model, self.s_detect, self.s_absorb, self.s_reemit,
             self.s_diffuse, self.s_specular, self.s_cdf,
             out_rows, out_count,
-            self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+            self.seed_arg, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp,
             USE_WEIGHTS=bool(use_weights), TAPE=False, FIXES=self.fixes, BLOCK=BLOCK,
             ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette, num_warps=1)
@@ -350,7 +376,7 @@ class ProductionEngine(object):
             g.shape[0], g.shape[1], g.shape[2],
             *self._material_args(),
             ws["bulk"][nxt], ws["bulk_count"][nxt], ws["boundary"], ws["boundary_count"],
-            self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+            self.seed_arg, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights),
             TAPE=False, FIXES=self.fixes, HISTORY=history, BLOCK=BLOCK,
             ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette, num_warps=1)
@@ -368,15 +394,15 @@ class ProductionEngine(object):
         # Production mode normalizes direction/polarization once on entry,
         # like a single original launch.
         renorm = torch.zeros(1, dtype=torch.int32, device=dev)
-        live = torch.nonzero((photons.flags & TERMINAL) == 0).flatten().to(torch.int32)
         ws = self._buffers(n)
-        count = live.numel()
         self.last_steps = steps  # per-photon step counts of the last call (diagnostics)
-        if track or getattr(self, "grid", None) is None:
-            return self._propagate_stepwise(photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track)
         args = (photons, steps, cursor, norm, renorm)
-        if self.fused:
-            return self._propagate_fused(args, live, max_steps, use_weights)
+        if self.fused and not track:
+            return self._propagate_fused(args, max_steps, use_weights)
+        live = torch.nonzero((photons.flags & TERMINAL) == 0).flatten().to(torch.int32)
+        count = live.numel()
+        if track or self.grid is None:
+            return self._propagate_stepwise(photons, live, steps, cursor, norm, renorm, max_steps, use_weights, track)
         cur = 0
         ws["bulk"][cur][:count] = live
         ws["bulk_count"][cur].fill_(count)
@@ -401,17 +427,25 @@ class ProductionEngine(object):
                 break
         return None
 
-    def _propagate_fused(self, args, live, max_steps, use_weights):
-        """All photons in one persistent fused launch (see engine/fused.py)."""
+    def _propagate_fused(self, args, max_steps, use_weights):
+        """All photons in one persistent fused launch (see engine/fused.py).
+
+        Nothing here waits for the GPU: the work list (the rows without a
+        TERMINAL bit, in order) and its length are built on the device, where
+        the kernel reads them.
+        """
         from chroma.triton.engine.fused import fused_kernel
 
         photons, steps, cursor, norm, renorm = args
         ws = self._workspace
-        count = live.numel()
-        ws["bulk"][0][:count] = live
-        ws["bulk_count"][0].fill_(count)
+        n = len(photons)
+        live = (photons.flags & TERMINAL) == 0
+        slot = torch.cumsum(live, 0, dtype=torch.int32)
+        rows = torch.arange(n, dtype=torch.int32, device=self.device)
+        ws["bulk"][0].scatter_(0, torch.where(live, slot - 1, n).long(), rows)  # dead rows land in slot n
+        ws["bulk_count"][0].copy_(slot[-1:])
         ws["head"].zero_()
-        programs = max(1, min(self.sm_count * self.fused_warps_per_sm, triton.cdiv(count, BLOCK)))
+        programs = max(1, min(self.sm_count * self.fused_warps_per_sm, triton.cdiv(n, BLOCK)))
         fused_kernel[(programs,)](
             ws["bulk"][0], ws["bulk_count"][0], ws["head"],
             photons.pos, photons.dir, photons.pol, photons.wavelengths, photons.t, photons.last_hit_triangles,
@@ -421,7 +455,7 @@ class ProductionEngine(object):
             *self._material_args(),
             self.s_present, self.s_model, self.s_detect, self.s_absorb, self.s_reemit,
             self.s_diffuse, self.s_specular, self.s_cdf,
-            self.seed, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+            self.seed_arg, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights), FIXES=self.fixes,
             LEGACY_WIRES=self.legacy_wires, LEAF=self.leaf_size, FACE_TRIS=self.face_tris,
             STEPS=self.traversal_steps, BLOCK=BLOCK, PARK=self.fused_park,
@@ -497,19 +531,40 @@ class ProductionEngine(object):
     def acquire(self, photons, start, count):
         if self.exact is not None:
             return self.exact.acquire(photons, start, count)
+        words = self.acquire_batch(photons, [start, start + count])
+        return self.daq_channels(*(w[0].cpu().numpy() for w in words))
+
+    def acquire_batch(self, photons, bounds):
+        """DAQ words of every event ``[bounds[i], bounds[i+1])`` of a batch.
+
+        Returns device int32 tensors (time bits, charge counts, history) of
+        shape [events, padded channels], for :meth:`daq_channels`. Rows are
+        padded to 16 bytes so that every row pointer has the same alignment
+        (one compiled kernel).
+        """
         nch = self.nchannels
+        nev = len(bounds) - 1
         dev = self.device
-        time_bits = torch.full((nch,), int(np.float32(1e9).view(np.int32)) ^ -2147483648, dtype=torch.int32, device=dev)
-        q = torch.zeros(nch, dtype=torch.int32, device=dev)
-        hist = torch.zeros(nch, dtype=torch.int32, device=dev)
-        if count > 0:
-            grid = (triton.cdiv(count, 256),)
-            _daq_kernel[grid](photons.t, photons.flags, photons.last_hit_triangles, photons.weights, photons.ids,
-                              start, count, self.solid_offsets, int(self.solid_offsets.numel() - 1),
-                              self.solid_id_to_channel_index,
-                              self.tcdf_x, self.tcdf_y, int(self.tcdf_x.numel()),
-                              self.qcdf_x, self.qcdf_y, int(self.qcdf_x.numel()), self.charge_unit,
-                              time_bits, q, hist, self.seed, BLOCK=256)
-        t = (time_bits.cpu().numpy() ^ np.int32(-2147483648)).view(np.float32).copy()
-        charge = (q.cpu().numpy().view(np.uint32).astype(np.float32) * np.float32(self.charge_unit)).astype(np.float32)
-        return DaqChannels(t=t, q=charge, flags=hist.cpu().numpy().view(np.uint32).copy())
+        width = (nch + 3) // 4 * 4
+        time_bits = torch.full((nev, width), int(np.float32(1e9).view(np.int32)) ^ -2147483648, dtype=torch.int32,
+                               device=dev)
+        q = torch.zeros((nev, width), dtype=torch.int32, device=dev)
+        hist = torch.zeros((nev, width), dtype=torch.int32, device=dev)
+        for i in range(nev):
+            start, count = int(bounds[i]), int(bounds[i + 1] - bounds[i])
+            if count > 0:
+                _daq_kernel[(triton.cdiv(count, 256),)](
+                    photons.t, photons.flags, photons.last_hit_triangles, photons.weights, photons.ids,
+                    start, count, self.solid_offsets, int(self.solid_offsets.numel() - 1),
+                    self.solid_id_to_channel_index,
+                    self.tcdf_x, self.tcdf_y, int(self.tcdf_x.numel()),
+                    self.qcdf_x, self.qcdf_y, int(self.qcdf_x.numel()), self.charge_unit,
+                    time_bits[i], q[i], hist[i], self.seed_arg, BLOCK=256)
+        return time_bits, q, hist
+
+    def daq_channels(self, time_bits, q, hist):
+        """DaqChannels of one event from its host (numpy int32) DAQ words."""
+        nch = self.nchannels
+        t = (time_bits[:nch] ^ np.int32(-2147483648)).view(np.float32).copy()
+        charge = (q[:nch].view(np.uint32).astype(np.float32) * np.float32(self.charge_unit)).astype(np.float32)
+        return DaqChannels(t=t, q=charge, flags=hist[:nch].view(np.uint32).copy())
