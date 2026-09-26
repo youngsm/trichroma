@@ -498,6 +498,12 @@ class Simulation(object):
             sources = [ev.photons_beg for ev in batch_events]
             bounds = np.cumsum(np.concatenate([[0], [_photon_count(src) for src in sources]])).astype(np.int64)
             batch = _Batch(batch_events, bounds, self._gather(sources))
+            del sources
+            if not keep_photons_beg:
+                # The input photons are copied: let them go now rather than
+                # when the events are yielded (GPU-drawn sources hold memory).
+                for batch_ev in batch_events:
+                    batch_ev.photons_beg = None
             if previous is not None:
                 self._pack(previous, keep_photons_end, want_hits, run_daq)
             self.engine.propagate(batch.photons, max_steps=max_steps, use_weights=use_weights)
