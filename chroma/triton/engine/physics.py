@@ -499,7 +499,7 @@ def step_kernel(
     rows_ptr, count_ptr, capacity,
     pos_ptr, dir_ptr, pol_ptr, wl_ptr, t_ptr, last_ptr, flags_ptr, w_ptr, ids_ptr,
     steps_ptr, cursor_ptr, norm_ptr, tape_ptr, tape_off_ptr, renorm_ptr, n_renorm,
-    hit_t, hit_tri, hit_n, hit_codes,
+    hit_t, hit_tri, hit_n, hit_codes, last_wire_ptr, hit_wire_ptr,
     rindex, absorption, scattering,
     comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
     s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
@@ -507,7 +507,7 @@ def step_kernel(
     seed, max_steps, wl_start, wl_step, time_start, time_step,
     NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr,
     USE_WEIGHTS: tl.constexpr, TAPE: tl.constexpr, FIXES: tl.constexpr, BLOCK: tl.constexpr,
-    ROULETTE: tl.constexpr = False, w_rr=0.0,
+    ROULETTE: tl.constexpr = False, w_rr=0.0, LEGACY_WIRES: tl.constexpr = False,
 ):
     seed = seed.to(tl.uint32, bitcast=True)  # passed as its int32 bit pattern (ProductionEngine.seed_arg)
     lane = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
@@ -568,6 +568,12 @@ def step_kernel(
         comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
         s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
         seed, wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, USE_WEIGHTS, FIXES, ROULETTE, w_rr)
+    if not LEGACY_WIRES:
+        # A photon that reached a wire (last == -2: no bulk event first) and
+        # leaves it outward is outside that convex wire: the next query skips it.
+        hit_wire = tl.load(hit_wire_ptr + lane, mask=live & (last == -2), other=-1)
+        outward = (dx * nx + dy * ny + dz * nz) > 0.
+        tl.store(last_wire_ptr + row, tl.where((last == -2) & outward, hit_wire, -1), mask=live)
 
     if FIXES:
         terminal = TERMINAL_32
