@@ -51,17 +51,16 @@ ways.
    to ±0.006%), twice as fast, and noisier only in the late tail of the time
    spectrum.
 
-**Speed.** On the weighted LUT fixture (10M photons, A100), CUDA Chroma
-takes 15-17 s and production 0.91 s (0.46 s with roulette), although
-production follows each photon for 47% more steps. Per difference:
+**Speed.** Unweighted LUT fixture, 30M photons, A100. CUDA Chroma does
+1.77M photons/s (its fastest call) and production 65.4M (37x). Per difference:
 - The engine alone (Philox, the geometry structures, the scheduler) is
-  3.2 times faster at equal physics.
-- The corrected wires cut the cost of a step by a factor of 3.2.
-- The fused kernel is another 2.5 times faster.
-- The other corrections cost at most 4%.
-- Exact mode is 10 times slower than CUDA Chroma itself.
+  6.8 times faster at equal physics.
+- The corrected wires are another 2.4 times faster.
+- The fused kernel is another 2.0 times faster.
+- The other corrections cost nothing measurable.
+- Exact mode is 14 times slower than CUDA Chroma itself.
 
-Section 4 has the details.
+Section 4 has the details, and the weighted numbers.
 
 ## 1. The differences
 
@@ -364,51 +363,73 @@ CUDA Chroma has the same limits. They bound any remaining bias at ~1e-6.
 
 ## 4. Speed
 
-The weighted LUT fixture (W1) with 10M photons in one `simulate()` call. The
-times are warm (the last of four calls), measured on an A100 that no other
-job used during the measurement; the node's CPUs were shared (load ~17).
-Production's step count is read from the engine. CUDA Chroma's is not
-reported, but its physics is that of the `FIXES=0` rows (84.7 steps).
+Setup for these measurements:
+- **Workload:** the LUT fixture (W1) unweighted, 30M photons prepared in
+  numpy, one `simulate()` call with flat hits (default 1M-photon batches,
+  `max_steps=1000`).
+- **Timing:** the best of the calls after the first, so compilation is
+  excluded (for CUDA Chroma, its fastest call; see below).
+- **Machine:** an A100 used by nothing else during each run. The node's CPUs
+  were shared (load ~17).
 
-| Configuration | Time | Photons/s | Steps/photon | ns/step | Speed-up |
-|---|---|---|---|---|---|
-| CUDA Chroma | 15.2 s (17.4 s in an earlier run) | 0.66M | ~85 | ~18 | 1 |
-| production engine, CUDA Chroma's physics (`FIXES=0`), wavefront scheduler | 4.75 s | 2.1M | 84.7 | 5.6 | 3.2 |
-| + production wires (`FIXES=0 LEGACY_WIRES=0`) | 2.16 s | 4.6M | 123.7 | 1.75 | 7.0 |
-| + every correction (default physics) | 2.25 s | 4.4M | 124.6 | 1.8 | 6.8 |
-| + grid bulk shortcut (`CHROMA_TRITON_FUSED=0`) | 2.62 s | 3.8M | 124.6 | 2.1 | 5.8 |
-| fused kernel, CUDA Chroma's physics (`FIXES=0`) | 7.58 s | 1.3M | 84.7 | 8.9 | 2.0 |
-| fused kernel, corrections but legacy wires | 7.65 s | 1.3M | 85.2 | 9.0 | 2.0 |
-| fused kernel, production wires, `FIXES=0` otherwise | 0.87 s | 11.5M | 123.7 | 0.70 | 17 |
-| **fused kernel, default** | **0.91 s** | **11.0M** | 124.6 | 0.73 | **17** |
-| fused kernel, default, `CHROMA_TRITON_ROULETTE=0.05` | 0.46 s | 21.7M | 56.3 | 0.82 | 33 |
+The rows add one difference at a time. Production reports its steps per
+photon; CUDA Chroma's physics is that of the `FIXES=0` rows.
 
-At 200K photons: CUDA Chroma 0.15 s, production 0.04 s. Exact mode takes
-1.59 s: 0.55 s reading the 299 MB tape, 0.92 s for the 348 rounds.
+| Configuration | Photons/s | Speed-up | Steps/photon |
+|---|---|---|---|
+| CUDA Chroma (fastest call) | 1.77M | 1 | ~16.4 |
+| production engine, CUDA Chroma's physics (`FIXES=0`), wavefront scheduler | 12.1M | 6.8 | 16.4 |
+| + production wires (`FIXES=0 LEGACY_WIRES=0`) | 28.9M | 16 | 17.1 |
+| + every correction (default physics) | 32.1M | 18 | 17.1 |
+| + grid bulk shortcut (`CHROMA_TRITON_FUSED=0`) | 32.0M | 18 | 17.1 |
+| fused kernel, CUDA Chroma's physics (`FIXES=0`) | 6.7M | 3.8 | 16.4 |
+| fused kernel, corrections but legacy wires | 6.9M | 3.9 | 16.4 |
+| fused kernel, production wires, `FIXES=0` otherwise | 62.3M | 35 | 17.1 |
+| **fused kernel, default** | **65.4M** | **37** | 17.1 |
+
+**CUDA Chroma's row is host-bound.** Unweighted, it launches one step at a
+time while more than 65,536 photons are queued, and synchronises the host
+after each launch. Six calls in two processes on the same 30M photons took
+17 to 84 s (0.36M to 1.77M photons/s): the GPU was idle in 68 of 88 samples,
+waiting for the busy CPUs. The table uses the fastest call. Production's
+fused kernel takes one launch per batch and does not depend on the CPU.
+
+**At 200K photons:**
+- CUDA Chroma: 3.0M photons/s (0.067 s).
+- Production: 20M photons/s (0.010 s).
+- Exact mode: 0.21M photons/s (0.93 s), made of 0.16 s reading the tape,
+  0.09 s preparation and 0.63 s for its 183 rounds.
 
 What each difference buys:
 
-- **Random numbers, geometry structures, scheduler (R, G, SC):** 3.2x at
+- **Random numbers, geometry structures, scheduler (R, G, SC):** 6.8x at
   equal physics (CUDA Chroma to the first production row). These were not
   timed separately.
-- **Wires (W1-W3, W6):** the step cost falls from 5.6 to 1.75 ns, while
-  photons live 46% longer because the wires no longer kill them. CUDA
+- **Wires (W1-W3, W6):** 2.4x (12.1M to 28.9M photons/s), although photons
+  now take 4% more steps, because the wires no longer kill them. CUDA
   Chroma's algorithm tests every wire between the ray origin's position
-  across the plane and the slab exit, up to all 1,967 wires of a plane for a
+  across the plane and the slab exit: up to all 1,967 wires of a plane for a
   ray at a grazing angle. Production tests only the wires the slab crossing
   can reach.
-- **Polarization, Fresnel, box faces (S1-S4, G9):** 0% to 4% (2.16 s to
-  2.25 s), mostly from the 0.7% more steps the extra light takes.
-- **Fused kernel (SC2):** 2.5x with the production wires (2.25 s to 0.91 s),
-  but 0.6x with CUDA Chroma's wires. Presumably their long, uneven loop holds
-  up all 32 lanes of a warp, since the fused kernel steps a warp's photons
-  together; this was not profiled.
-- **Grid shortcut:** slower on this workload (2.62 s); the default fused
-  kernel does not use it.
-- **Roulette (WT1):** 2x, from half as many steps.
-- **Exact mode:** reading the tape and CUDA Chroma's arithmetic make it
-  10 times slower than CUDA Chroma. It exists to prove equality, not to run
-  productions.
+- **Polarization, Fresnel, box faces (S1-S4, G9):** no measurable cost
+  (28.9M against 32.1M photons/s in the wavefront rows, and 62.3M against
+  65.4M in the fused rows, both within the run-to-run spread).
+- **Fused kernel (SC2):** 2.0x with the production wires (32.1M to 65.4M
+  photons/s), but 0.56x with CUDA Chroma's wires. Presumably their long,
+  uneven loop holds up all 32 lanes of a warp, since the fused kernel steps a
+  warp's photons together; this was not profiled.
+- **Grid shortcut:** no gain on this workload. The default fused kernel does
+  not use it.
+- **Roulette (WT1):** applies to weighted mode only.
+- **Exact mode:** reading the tape and CUDA Chroma's arithmetic make it 14
+  times slower than CUDA Chroma at the same size. It exists to prove
+  equality, not to run productions.
+
+**Weighted mode** (`use_weights=True`, the LUT generator's mode;
+`benchmarks/simulate_throughput.py --weighted`, 30M photons): 0.55M photons/s
+for CUDA Chroma, 11.7M for production, 23M with
+`CHROMA_TRITON_ROULETTE=0.05`. Weighted histories are ~7 times longer (~125
+steps), and CUDA Chroma runs them in a single launch.
 
 ## 5. Other findings
 
