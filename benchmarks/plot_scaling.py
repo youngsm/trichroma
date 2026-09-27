@@ -1,9 +1,10 @@
 """Log-log plot of throughput versus photons per launch from ``throughput_scaling.py`` results.
 
-    python benchmarks/plot_scaling.py scaling.png LABEL=a100_lar.json[:turing_lar.json] ...
+    python benchmarks/plot_scaling.py scaling.png [--legend "upper left"] LABEL=a100.json[:turing.json] ...
 
 Each argument after the output is a curve label and one or two JSON files; the first file is drawn
-solid, the second dashed (for example two GPUs), in the same color.
+solid, the second dashed (for example two GPUs), in the same color. ``--legend`` places the legend
+(a matplotlib location; default lower right).
 """
 import json
 import sys
@@ -25,6 +26,9 @@ STYLES = (dict(ls="-", lw=2.2, marker="o", ms=4.8), dict(ls=(0, (4, 2.5)), lw=1.
 
 def main():
     out, specs = sys.argv[1], sys.argv[2:]
+    legend_loc = "lower right"
+    if specs[:1] == ["--legend"]:
+        legend_loc, specs = specs[1], specs[2:]
     plt.rcParams.update({"font.size": 9.5, "axes.edgecolor": MUTED, "axes.labelcolor": INK,
                          "xtick.color": MUTED, "ytick.color": MUTED, "xtick.labelcolor": INK,
                          "ytick.labelcolor": INK})
@@ -71,7 +75,7 @@ def main():
     for v in RIGHT_TICKS:
         ax.axhline(v, color="#d9d9d9", lw=0.7, ls=(0, (1, 2.5)), zorder=0)
 
-    ax.legend(handles=handles, loc="lower right", frameon=False, fontsize=8.5, handlelength=2.6,
+    ax.legend(handles=handles, loc=legend_loc, frameon=False, fontsize=8.5, handlelength=2.6,
               labelspacing=0.45, borderaxespad=0.8)
     fig.tight_layout()
     fig.savefig(out, facecolor="white", bbox_inches="tight")

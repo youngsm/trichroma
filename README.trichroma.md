@@ -6,10 +6,10 @@ optical photon simulation that needs no PyCUDA. It installs Chroma's API as
 [chroma-lar](https://github.com/youngsm/chroma-lar) runs unchanged, and the
 Triton engine behind `chroma.sim.Simulation` as `trichroma`.
 
-![Transport throughput versus photons per launch](docs/img/throughput_scaling.png)
+![LArTPC photons/s versus photons per launch, TriChroma and CUDA Chroma](docs/img/lar_vs_chroma.png)
 
-On an A100 the engine transports up to ~175M photons/s. On LAr lookup-table
-workloads, `simulate()` runs ~40x faster than CUDA Chroma
+On chroma-lar's LArTPC it transports up to 176M photons/s on an A100, 15-75x
+CUDA Chroma depending on the photons per launch
 ([performance](docs/performance.md)). An exact mode
 (`CHROMA_TRITON_TAPE=replay:<dir>`) reproduces recorded CUDA Chroma runs bit
 for bit.

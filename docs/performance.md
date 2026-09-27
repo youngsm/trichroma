@@ -2,8 +2,15 @@
 
 ## Against CUDA Chroma
 
-On an A100 (40 GB) with LAr detectors built by chroma-lar, against CUDA
-Chroma on the same GPU:
+![LArTPC photons/s versus photons per launch, TriChroma and CUDA Chroma](img/lar_vs_chroma.png)
+
+Transport alone on chroma-lar's reflect3wires LArTPC (128 nm point source at
+the LUT voxel, unweighted, photons already on the GPU). CUDA Chroma runs in
+its packed mode, the one chroma-lar's LUT script uses. TriChroma is 15x
+faster at 10^6 photons per launch and 74x at 10^8 on the A100 (16x and 35x on
+the RTX 2080 Ti). CUDA Chroma is fastest near 10^6 photons per launch.
+
+Whole workloads on an A100 (40 GB), against CUDA Chroma on the same GPU:
 
 | Workload | CUDA Chroma | TriChroma |
 |---|---|---|
