@@ -19,8 +19,8 @@ difference contributes to speed.
    detector-specific compiler is allowed in the general path.
 3. **Throughput.** The general mechanism sustains at least 25M input photons/s
    on the local A100 for the reflect3wires detector built by W's chroma-lar,
-   with the same event contents the fast LAr path produces. Theia-like and
-   pixel-TPC detectors are reported as generality checks.
+   with the same event contents the fast LAr path produces. Large instanced
+   PMT-array and pixel-TPC detectors are reported as generality checks.
 4. **Bitwise mode.** A second environment variable switches the Triton backend
    to Chroma's exact arithmetic, XORWOW streams, RNG-slot assignment and launch
    schedule, including every known original defect, so that its outputs are
@@ -152,33 +152,56 @@ Compiled once per `Simulation` (`engine/scene.py`).
   of one bottom-level structure (BLAS) in the mesh's local frame. Global
   triangle ids stay identical to `geometry.flatten()`, so `last_hit_triangles`,
   solid ids and channel ids are unchanged.
-* **Trees.** Top-level and bottom-level trees are binned-SAH BVHs stored as
-  eight threaded (escape-link) copies, one per ray-direction octant, near
-  child first. Traversal is stackless and picks the copy from the sign bits of
-  the (local) ray direction.
+* **Trees.** Top-level and bottom-level trees are binned-SAH BVHs (built
+  level by level, vectorized over the nodes of a level) stored as eight
+  threaded (escape-link) copies, one per ray-direction octant, near child
+  first. Traversal is stackless and picks the copy from the sign bits of the
+  (local) ray direction. Each node of a copy stores the box corner its rays
+  reach first and the far one, so the slab test needs no per-axis min/max.
+  A top-level leaf holds the box of the instance's placed vertices (the tree
+  is built on the rotated local boxes, so its order does not depend on it).
+* **Box and triangle tests.** Boxes: conservative slabs (Ize 2013) with
+  finite inverse directions. Triangles: the watertight test of Woop, Benthin
+  and Wald (JCGT 2013) on exact shared float32 vertices, with non-contracted
+  edge functions, so a ray through a shared edge or vertex meets at least one
+  of its triangles.
+* **Enclosing instances.** An instance whose box covers at least a quarter of
+  the scene box (a tank or cavity around the rest) is entered after the rest
+  of the lane's top-level walk, with exact ties resolved in the walk's order.
+  It is skipped when the ray segment up to the nearest hit found lies inside
+  its empty core: the largest box, sphere or axis-aligned cylinder that is
+  certified in float64 to contain no triangle point, shrunk by a margin far
+  above float32 rounding.
 * **Analytic boxes.** Axis-aligned box solids (up to 64 triangles) are tested
   analytically before the top-level tree: slab method for the crossing face
   (entry face, or exit face when starting inside or on the box; the face of
-  the last-hit triangle decides a ray leaving it), then Moller-Trumbore on that
-  face's triangles for exact triangle ids.
+  the last-hit triangle decides a ray leaving it), then 2D edge functions
+  (exact float64 coefficients) on that face's triangles for the triangle id.
+  Boxes nested in a box the ray starts in are skipped.
 * **Wires.** W's wire-plane records; the accurate intersection above (or W's
   exactly with `CHROMA_TRITON_LEGACY_WIRES=1`), merged with the mesh hit as W
   does (`t_wire + 1e-6 < t_mesh`).
 * **Fused transport** (`engine/fused.py`, default). Persistent one-warp
-  programs keep 32 photons in registers and run them to completion, taking new
-  photons from the work list as lanes free up. Each iteration takes one W step
-  for every live lane: boxes and the top-level tree, wires, boundary physics.
-  A lane whose ray reaches an instance waits with its top-level result until
-  8 lanes of the warp (or all its live lanes) need an instance descent; the
-  warp then descends for them together, resuming the top-level walk where it
-  stopped. Rare branches (re-emission, WLS, diffuse, Fresnel) run only when
-  some lane takes them.
+  programs, each with up to 128 photons in flight in its own queues in global
+  memory, run their photons to completion ("in-warp wavefront"). Every
+  iteration picks one mode for the whole warp: a step for 32 photons kept in
+  registers (boxes, the top-level walk, wires, boundary physics), a descent
+  batch for 32 queued instance descents, the completion of steps whose descent
+  finished, or taking new photons from the work list. Descents walk 8 nodes
+  per round per lane, refilling idle lanes from the queue; mesh leaf tests are
+  postponed and run warp-cooperatively (one (ray, triangle) pair per lane,
+  merged in each ray's own test order). Warp-uniform decisions are warp votes,
+  not reductions. Rare branches (re-emission, WLS, diffuse, Fresnel) run only
+  when some lane takes them. No scheduling choice changes a photon's result.
 * **Wavefront scheduler** (`CHROMA_TRITON_FUSED=0`, and photon tracking).
   Device queues with one host read per round: a certified empty-space grid
   lets bulk collisions run without geometry queries (same draws, so the
-  outcome equals a full step), a two-pass boundary query (top level for every
-  ray, instance descent for the compacted rays that reach one), and the same
-  boundary physics. The last rounds replay from a CUDA graph.
+  outcome equals a full step, except for rare float32 back-face hits at a
+  silhouette edge, whose triangle the full step would take for the next
+  boundary; `CHROMA_TRITON_GRID=0` turns it off), a two-pass boundary query
+  (top level for every ray, instance descent for the compacted rays that
+  reach one), and the same boundary physics. The last rounds replay from a
+  CUDA graph.
 * **Physics.** W's default and WLS surface models, multi-component bulk
   re-emission, weights, `max_steps`. The complex, dichroic and angular surface
   models are implemented in exact mode only; the production engine raises
@@ -186,15 +209,19 @@ Compiled once per `Simulation` (`engine/scene.py`).
 
 Throughput on the A100 (reflect3wires, LUT voxel at (-450, 60, -120), 128 nm,
 30M photons, one `Simulation.simulate` call with flat hits,
-`benchmarks/simulate_throughput.py`): 63M photons/s unweighted, 11.7M
+`benchmarks/simulate_throughput.py`): 96M photons/s unweighted, 21M
 photons/s weighted (~90 steps and ~5.7 PMT-mesh descents per photon),
-23M photons/s weighted with `CHROMA_TRITON_ROULETTE=0.05` (same detected weight). CUDA
-Chroma: 1.6M and 0.55M photons/s (with its wire losses, which end many
-histories early).
+41M photons/s weighted with `CHROMA_TRITON_ROULETTE=0.05` (same detected
+weight). CUDA Chroma: 1.6M and 0.55M photons/s (with its wire losses, which
+end many histories early). The transport kernel alone (20M unweighted photons
+already on the GPU) does 172M photons/s (2.9G steps/s) on this fixture; on a
+detector of 30k instanced PMTs (18M triangles) 69M photons/s, and on a
+4.2M-triangle TPC mesh 174M photons/s.
 
 The chroma-lar waveform map (`pyrat macros/waveform_map_pyrat.py`: 200K
 photons per 30 mm voxel at 450 nm, one event per voxel, flat hits, a 2D
-histogram and HDF5 rows per voxel): the engine alone does 66M photons/s with
+histogram and HDF5 rows per voxel; measured before the September 2026 engine
+revision): the engine alone does 66M photons/s with
 5M photons per launch and 87M/s with 20M (1.5G steps/s; the last photons of
 each launch dominate small launches). Through `Simulation.simulate`, with
 photons drawn on the GPU and 5M photons per batch, 720 voxels take 2.2 s (64M
@@ -262,7 +289,7 @@ Bitwise equality is demonstrated on the *recorded schedule* of a real CUDA run
 * Unit tests against the CPU reference for every physics branch.
 * Statistical comparisons with the original CUDA backend (fractions within
   6 standard errors, DKW bounds on distributions) for reflect3wires, the pixel
-  TPC and Theia.
+  TPC and a large instanced PMT-array detector.
 * Bitwise-mode equality on the recorded native fixtures and on new canonical
   runs through the `Simulation` interface.
 * Throughput: `benchmark_mesh_occupancy.py` and a reflect3wires full-event

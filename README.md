@@ -13,7 +13,7 @@ Chroma on the same GPU:
 
 | Workload | CUDA Chroma | TriChroma |
 |---|---|---|
-| 30M prepared photons, one weighted `simulate()` call (LUT style) | 0.55M photons/s | 11.7M photons/s (23M with opt-in roulette) |
+| 30M prepared photons, one weighted `simulate()` call (LUT style) | 0.55M photons/s | 21M photons/s (41M with opt-in roulette) |
 | waveform-map macro, photons drawn on the GPU | 0.29 s per voxel (numpy photons) | 3.1 ms per voxel |
 | pixel-detector quantile LUT, 30M photons per voxel, GPU photons | ~42 s per voxel (numpy photons) | 0.22 s per voxel |
 
