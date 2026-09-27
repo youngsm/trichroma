@@ -1,0 +1,63 @@
+{
+ "detector": "pmts",
+ "description": "pmt array",
+ "gpu": "NVIDIA A100-SXM4-40GB",
+ "spectrum": "cherenkov",
+ "wavelength": 420.0,
+ "rows": [
+  {
+   "n": 10000,
+   "seconds": 0.0037276744842529297,
+   "photons_per_s": 2682637.6718899906,
+   "steps_per_photon": 6.0239996910095215
+  },
+  {
+   "n": 30000,
+   "seconds": 0.0051496028900146484,
+   "photons_per_s": 5825691.930181953,
+   "steps_per_photon": 6.003666877746582
+  },
+  {
+   "n": 100000,
+   "seconds": 0.006649494171142578,
+   "photons_per_s": 15038737.898888491,
+   "steps_per_photon": 6.074249744415283
+  },
+  {
+   "n": 300000,
+   "seconds": 0.009956598281860352,
+   "photons_per_s": 30130772.730538063,
+   "steps_per_photon": 6.064736843109131
+  },
+  {
+   "n": 1000000,
+   "seconds": 0.02071690559387207,
+   "photons_per_s": 48269757.05753052,
+   "steps_per_photon": 6.083293914794922
+  },
+  {
+   "n": 3000000,
+   "seconds": 0.05456900596618652,
+   "photons_per_s": 54976262.56668371,
+   "steps_per_photon": 6.0782318115234375
+  },
+  {
+   "n": 10000000,
+   "seconds": 0.1734921932220459,
+   "photons_per_s": 57639481.14484546,
+   "steps_per_photon": 6.072725772857666
+  },
+  {
+   "n": 30000000,
+   "seconds": 0.5104453563690186,
+   "photons_per_s": 58772206.71258681,
+   "steps_per_photon": 6.077782154083252
+  },
+  {
+   "n": 100000000,
+   "seconds": 1.6921508312225342,
+   "photons_per_s": 59096386.772893436,
+   "steps_per_photon": 6.076661109924316
+  }
+ ]
+}
