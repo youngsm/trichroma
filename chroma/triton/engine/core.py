@@ -319,7 +319,9 @@ class ProductionEngine(object):
 
         Directions should be unit vectors, as in transport: the thresholds
         near the origin (a hit needs t > 1e-6 mm) are distances along the
-        ray only for unit directions.
+        ray only for unit directions, and the box tests count a direction
+        component below 1e-30 as 1e-30, which only a unit direction can
+        afford (a ray of length 1e-28 can miss a box it meets at t = 1e32).
 
         Returns (distance, triangle, unit normal [N,3], codes [N,3] =
         inner material, outer material, surface).
