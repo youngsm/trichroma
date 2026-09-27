@@ -13,6 +13,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.ticker import NullFormatter, NullLocator  # noqa: E402
+
+# Plain-number ticks (millions of photons/s) on the right-hand axis.
+RIGHT_TICKS = (40, 80, 120, 160, 200)
 
 
 def main():
@@ -36,6 +40,15 @@ def main():
                               ms=4, label=gpu))
     ax.set_xscale("log")
     ax.set_yscale("log")
+    low, high = ax.get_ylim()
+    ax.set_ylim(low, max(high, 1.1 * max(RIGHT_TICKS)))
+    right = ax.twinx()
+    right.set_yscale("log")
+    right.set_ylim(ax.get_ylim())
+    right.yaxis.set_minor_locator(NullLocator())
+    right.yaxis.set_minor_formatter(NullFormatter())
+    right.set_yticks(RIGHT_TICKS)
+    right.set_yticklabels([str(v) for v in RIGHT_TICKS])
     ax.set_xlabel("photons per launch")
     ax.set_ylabel("photons / s (millions)")
     ax.set_title("Transport throughput (unweighted, photons on the GPU)")
