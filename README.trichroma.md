@@ -33,14 +33,14 @@ included.
 ![Transport throughput versus photons per launch](docs/img/throughput_scaling.png)
 
 The transport engine alone, for three kinds of detector:
-- **LAr TPC:** chroma-lar's reflect3wires (162 PMTs, analytic TPC boxes, three
+- **LArTPC (VUV):** chroma-lar's reflect3wires (162 PMTs, analytic TPC boxes, three
   wire planes), a point source at the LUT voxel (-450, 60, -120) mm, 128 nm,
   ~17 steps per photon.
-- **30k-PMT scintillator detector:** 30,210 instanced 20-inch PMT meshes (18M
+- **Theia-like (Cherenkov):** 30,210 instanced 20-inch PMT meshes (18M
   triangles) around a liquid-scintillator volume, a point source at the
   centre, a Cherenkov spectrum (the scintillator absorbs its UV part and
   re-emits it), ~6 steps per photon.
-- **LXe TPC:** a 4.2M-triangle CAD mesh (chroma-lxe), 178 nm, ~1.6 steps per
+- **LXeTPC (VUV):** a 4.2M-triangle CAD mesh (chroma-lxe), 178 nm, ~1.6 steps per
   photon.
 
 Each point is an isotropic point source drawn on the GPU and run to
@@ -50,9 +50,9 @@ Photons per second:
 
 | Detector | A100, 10^6 photons | A100, 10^8 | RTX 2080 Ti, 10^6 | RTX 2080 Ti, 3·10^7 |
 |---|---|---|---|---|
-| LAr TPC | 108M | 176M | 53M | 68M |
-| 30k-PMT detector, Cherenkov spectrum | 48M | 59M | 24M | 25M |
-| LXe TPC | 121M | 175M | 80M | 83M |
+| LArTPC (VUV) | 108M | 176M | 53M | 68M |
+| Theia-like (Cherenkov) | 48M | 59M | 24M | 25M |
+| LXeTPC (VUV) | 121M | 175M | 80M | 83M |
 
 Small launches cannot fill the GPU. Each warp keeps up to 128 photons in
 flight, so an A100 holds ~280k at once, and below a few million photons the
