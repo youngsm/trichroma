@@ -1,10 +1,10 @@
 # TriChroma
 
-A Triton implementation of [Chroma](https://github.com/youngsm/chroma-lite)'s
-optical photon simulation that needs no PyCUDA. It installs Chroma's API as
-`chroma`, so existing code such as
-[chroma-lar](https://github.com/youngsm/chroma-lar) runs unchanged, and the
-Triton engine behind `chroma.sim.Simulation` as `trichroma`.
+A Triton backend for [Chroma](https://github.com/youngsm/chroma-lite)'s
+optical photon simulation that needs no PyCUDA. Chroma (chroma-lite) keeps the
+API and the CUDA backend; with TriChroma installed, `chroma.sim.Simulation`
+runs on Triton, so existing code such as
+[chroma-lar](https://github.com/youngsm/chroma-lar) runs unchanged.
 
 ![LArTPC photons/s versus photons per launch, TriChroma and CUDA Chroma](docs/img/lar_vs_chroma.png)
 
@@ -20,11 +20,10 @@ Linux with a CUDA GPU; the validated environment is Python 3.10, PyTorch
 2.5.0+cu124 and Triton 3.1.0 (`requirements-triton.txt` pins it).
 
 ```bash
+pip install 'git+https://github.com/youngsm/chroma-lite.git'   # Chroma's API ('[cuda]' adds the CUDA backend)
 git clone https://github.com/youngsm/trichroma.git
-cd trichroma
-python -m pip install -e .            # numpy, scipy, torch, triton
-python -m pip install -e '.[cuda]'    # optional: the original CUDA backend and tape recording
-export TRITON_CACHE_DIR=/lscratch/$USER/triton-cache   # compiled kernels (default: ~/.triton)
+pip install -e trichroma                                        # numpy, scipy, torch, triton
+export TRITON_CACHE_DIR=/lscratch/$USER/triton-cache            # compiled kernels (default: ~/.triton)
 ```
 
 ## Use
@@ -39,11 +38,16 @@ for event in sim.simulate(photons, keep_flat_hits=True, max_steps=1000):
     ...
 ```
 
-`chroma.sim.Simulation` is the Triton implementation when PyCUDA is not
-installed; `CHROMA_BACKEND=triton` or `cuda` chooses explicitly. For speed,
-draw photons on the GPU with `trichroma.sources`. The first run on a new
-detector compiles its kernels, and later runs load them from
-`TRITON_CACHE_DIR`.
+`chroma.sim.Simulation` is TriChroma when PyCUDA is not installed;
+`CHROMA_BACKEND=triton` or `cuda` chooses explicitly, so both backends can be
+installed side by side. For speed, draw photons on the GPU with
+`trichroma.sources`. The first run on a new detector compiles its kernels, and
+later runs load them from `TRITON_CACHE_DIR`.
+
+`trichroma.utils` compares two runs: `compare_events` bitwise (exact mode
+against the CUDA run it replays, or TriChroma against itself), and
+`compare_statistics` within statistical errors (production against CUDA
+Chroma).
 
 ## Documentation
 

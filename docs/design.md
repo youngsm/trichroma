@@ -2,8 +2,9 @@
 
 This is the design reference of the Triton backend: its goals, the API
 contract it keeps, the deliberate differences from CUDA Chroma, the engine
-and its measured throughput. Code layout: `src/chroma` (Chroma's API),
-`src/trichroma` (this implementation). [Exact vs production](exact_vs_production.md)
+and its measured throughput. Chroma's API and CUDA backend come from
+chroma-lite (which also selects the backend, `chroma.backend`); this
+repository is the Triton implementation, `src/trichroma`. [Exact vs production](exact_vs_production.md)
 lists every difference between the bitwise mode and the production engine,
 with the evidence that the production engine is unbiased and what each
 difference contributes to speed.
@@ -303,20 +304,17 @@ Bitwise equality is demonstrated on the *recorded schedule* of a real CUDA run
 
 | Location | Contents |
 |---|---|
-| `src/chroma/` | Chroma's API, and the original CUDA backend (`sim_cuda.py`, `gpu/`, `cuda/`, `camera.py`; needs `[cuda]`) |
 | `src/trichroma/simulation.py` | The Triton `Simulation`: batching, events, hits, DAQ, pipelining |
 | `src/trichroma/engine/` | Scene compiler, SAH trees, fused transport kernel, physics, exact mode |
 | `src/trichroma/sources.py` | Photon sources drawn on the GPU |
 | `src/trichroma/tape/` | Bitwise mode: tape format, CUDA-side recorder, replay checks, fixtures |
-| `tests/` | `unit/`, `integration/`, `bitwise/` (recorded tapes), `cuda_backend/` (original Chroma suite) |
+| `src/trichroma/utils.py` | Bitwise and statistical comparison of two runs |
+| `tests/` | `unit/`, `integration/`, `bitwise/` (recorded tapes) |
 | `benchmarks/` | Throughput, scaling, profiling and backend comparison scripts |
-| `docs/` | Design notes and validation records; `docs/chroma/` has the original Chroma README, documentation and container recipes |
-| `bin/` | The original Chroma command-line tools |
+| `docs/` | Design notes and validation records |
 
 - **Tests:** `python -m pytest` runs the unit, integration and bitwise tests;
   GPU tests skip without a GPU.
-- **Original Chroma suite:** `tests/cuda_backend`. Run it by name, with PyCUDA;
-  many of its tests failed before TriChroma.
 - **Tape checks:** `python -m trichroma.tape.verify` records fixtures with
   CUDA Chroma and checks the Triton replay word for word
   ([bitwise mode](bitwise_mode.md)).

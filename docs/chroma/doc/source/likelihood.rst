@@ -1,2 +1,0 @@
-Evaluating a Likelihood
-=======================
