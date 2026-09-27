@@ -27,6 +27,7 @@ WIRE_WIDTH = tl.constexpr(_scene.WIRE_WIDTH)
 BOX_WIDTH = tl.constexpr(_scene.BOX_WIDTH)
 BOX_TRI_WIDTH = tl.constexpr(_scene.BOX_TRI_WIDTH)
 HAS_CORE = tl.constexpr(_scene.HAS_CORE)
+PIN_LEAF_MIN = tl.constexpr(7)  # see nearest_hit_kernel's instance entry
 
 
 # Conservative slab test: every ray/box distance carries at most a few float32
@@ -758,12 +759,24 @@ def nearest_hit_kernel(
                 e00, e01, e02, e10, e11, e12, e20, e21, e22, tdx, tdy, tdz, esg, eroot, etri, ecode = _ld_inst(
                     inst_ptr, ie)
                 wx, wy, wz = ox - tdx, oy - tdy, oz - tdz
-                rox = tl.where(enter, e00 * wx + e01 * wy + e02 * wz, rox)
-                roy = tl.where(enter, e10 * wx + e11 * wy + e12 * wz, roy)
-                roz = tl.where(enter, e20 * wx + e21 * wy + e22 * wz, roz)
-                rdx = tl.where(enter, e00 * dx + e01 * dy + e02 * dz, rdx)
-                rdy = tl.where(enter, e10 * dx + e11 * dy + e12 * dz, rdy)
-                rdz = tl.where(enter, e20 * dx + e21 * dy + e22 * dz, rdz)
+                if (PHASE == 0) and (LEAF >= PIN_LEAF_MIN):
+                    # The complete query with leaves of PIN_LEAF_MIN+ triangles: the transform rounded exactly as
+                    # LLVM contracted it in these specializations of the parent tree (it rounds the e_i0 product
+                    # of rows 0 and 2 of the origin and row 0 of the direction), pinned so that engine.query
+                    # stays bitwise the same; elsewhere the parent's contraction is the one below's.
+                    rox = tl.where(enter, _fma_rn(e02, wz, _fma_rn(e01, wy, _mul_rn(e00, wx))), rox)
+                    roy = tl.where(enter, _fma_rn(e12, wz, _fma_rn(e10, wx, _mul_rn(e11, wy))), roy)
+                    roz = tl.where(enter, _fma_rn(e22, wz, _fma_rn(e21, wy, _mul_rn(e20, wx))), roz)
+                    rdx = tl.where(enter, _fma_rn(e02, dz, _fma_rn(e01, dy, _mul_rn(e00, dx))), rdx)
+                    rdy = tl.where(enter, _fma_rn(e12, dz, _fma_rn(e10, dx, _mul_rn(e11, dy))), rdy)
+                    rdz = tl.where(enter, _fma_rn(e22, dz, _fma_rn(e20, dx, _mul_rn(e21, dy))), rdz)
+                else:
+                    rox = tl.where(enter, e00 * wx + e01 * wy + e02 * wz, rox)
+                    roy = tl.where(enter, e10 * wx + e11 * wy + e12 * wz, roy)
+                    roz = tl.where(enter, e20 * wx + e21 * wy + e22 * wz, roz)
+                    rdx = tl.where(enter, e00 * dx + e01 * dy + e02 * dz, rdx)
+                    rdy = tl.where(enter, e10 * dx + e11 * dy + e12 * dz, rdy)
+                    rdz = tl.where(enter, e20 * dx + e21 * dy + e22 * dz, rdz)
                 eroot = eroot + _octant(rdx, rdy, rdz) * _bits(tl.load(inst_ptr + ie * INSTANCE_WIDTH + 18))
                 ekz, ensx, ensy, esz, eokx, eoky, eokz = _shear(rdx, rdy, rdz, rox, roy, roz)
                 kz = tl.where(enter, ekz, kz)
@@ -1398,7 +1411,7 @@ def _in_core(px, py, pz, mask, cx, cy, cz, r2, hx, hy, hz):
 def batch_traversal(ring_f, ring_i, STRIDE: tl.constexpr, CAP: tl.constexpr, first, count,
                     nodes_ptr, inst_ptr, tri_ptr, tri_local_ptr, code_m1_ptr, code_m2_ptr, code_s_ptr,
                     LEAF: tl.constexpr, BLOCK: tl.constexpr, REFILL: tl.constexpr, PEND: tl.constexpr = 12,
-                    INNER: tl.constexpr = 8):
+                    INNER: tl.constexpr = 8, DEFER: tl.constexpr = True):
     """Complete the queries of ring entries ``first .. first+count-1`` (slot =
     entry mod CAP): the top-level walk from the node where ``top_level_query``
     stopped and the instance meshes, starting from the analytic-box result.
@@ -1613,7 +1626,12 @@ def batch_traversal(ring_f, ring_i, STRIDE: tl.constexpr, CAP: tl.constexpr, fir
                 # The walk of the deferred instance (bit 0) ends after its mesh.
                 phase = (dflag & 1) != 0
                 ret = tl.where(phase, -1, escape)
-                defer = enter & ~phase & (dnode < 0) & (encl >= 0)
+                if DEFER:
+                    defer = enter & ~phase & (dnode < 0) & (encl >= 0)
+                else:
+                    # CHROMA_TRITON_STRICT: enclosing instances in the walk's own order,
+                    # so every box test sees the distance of the plain traversal.
+                    defer = enter & False
                 dnode = tl.where(defer, node, dnode)
                 dflag = tl.where(defer, 0, dflag)
                 enter = enter & ~defer

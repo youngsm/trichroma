@@ -39,6 +39,7 @@ difference contributes to speed.
 | `CHROMA_TRITON_GRID` | `1` (default), `0` | Certified empty-space grid (bulk shortcut of the wavefront scheduler; built only when that scheduler is selected) |
 | `CHROMA_TRITON_PIPELINE` | `1` (default), `0` | `simulate` propagates batch k+1 while the caller consumes batch k; `0` restores W's order of reading input and yielding events (results are identical either way) |
 | `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production corrects it (specular polarization, literal Fresnel formulas, NaN-abort bit 1<<15, W's wire algorithm, W's t > 1e-6 at box faces), with the production RNG, geometry and arithmetic: a statistical like-for-like comparison with CUDA Chroma. It does not restore W's specular-direction formula or 16-bit history truncation ([exact vs production](exact_vs_production.md)) |
+| `CHROMA_TRITON_STRICT` | `0` (default), `1` | `1` turns off the optimizations that can change a result at the float32 rounding level (today: entering an enclosing instance after the rest of the walk), so every result is bitwise that of the plain traversal; about 6% slower on detectors with a tank or cavity mesh |
 | `CHROMA_TRITON_LEGACY_WIRES` | unset, `0`, `1` | Override the wire algorithm alone (default: legacy iff `CHROMA_TRITON_FIXES=0`) |
 | `CHROMA_TRITON_ROULETTE` | weight, e.g. `0.05` | Opt-in, weighted mode only: Russian roulette below that weight (unbiased for every tally; not W's weighted-mode semantics) |
 | `TRITON_CACHE_DIR` | path | Put Triton's JIT cache on `/lscratch`; `$HOME` has little quota |
@@ -171,7 +172,10 @@ Compiled once per `Simulation` (`engine/scene.py`).
   It is skipped when the ray segment up to the nearest hit found lies inside
   its empty core: the largest box, sphere or axis-aligned cylinder that is
   certified in float64 to contain no triangle point, shrunk by a margin far
-  above float32 rounding.
+  above float32 rounding. Entering it later only matters where one of its
+  faces and another instance's face are within float32 rounding of each
+  other along the ray (the tree's box tests are exact only up to that); then
+  either may be the hit. `CHROMA_TRITON_STRICT=1` keeps the walk's own order.
 * **Analytic boxes.** Axis-aligned box solids (up to 64 triangles) are tested
   analytically before the top-level tree: slab method for the crossing face
   (entry face, or exit face when starting inside or on the box; the face of
