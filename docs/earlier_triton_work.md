@@ -694,3 +694,14 @@ On an available CUDA GPU, remove the `CUDA_VISIBLE_DEVICES=''` prefix while
 keeping the same test list; that also exercises the Triton BVH, physics,
 source, and queue kernels plus a real four-tile/three-slot Torch executor
 smoke.  The CPU fake-driver executor tests remain active in both modes.
+
+## Provenance
+
+- Modules from the earlier detector-specific Triton work:
+  [`c951290`](https://github.com/youngsm/trichroma/tree/c951290/src/trichroma/chroma/triton).
+- The chroma-lar copy this repository once carried:
+  [`78e4b1a`](https://github.com/youngsm/trichroma/tree/78e4b1ab4b64bf5be9f78d848c8490170dae8d68/chroma-lar).
+- [The consolidation manifest](consolidation_manifest.json): the upstream
+  revisions the repository started from.
+- The local work is based on
+  [youngsm/chroma-lite](https://github.com/youngsm/chroma-lite).
