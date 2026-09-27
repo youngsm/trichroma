@@ -248,7 +248,7 @@ def fused_kernel(
     ROULETTE: tl.constexpr = False, w_rr=0.0,
     CAP: tl.constexpr = 128, BATCH: tl.constexpr = 32, REFILL: tl.constexpr = 8,
     GRID: tl.constexpr = False, HAS_WLS: tl.constexpr = True, HAS_REEMIT: tl.constexpr = True,
-    DESC_INNER: tl.constexpr = 8,
+    DESC_INNER: tl.constexpr = 8, DEFER: tl.constexpr = True,
 ):
     """Propagate the photons listed in ``work_ptr[:work_count]`` (rows) until
     they are terminal or reach ``max_steps``. Persistent: launch a few programs
@@ -368,7 +368,8 @@ def fused_kernel(
             ids = zi.to(tl.int64)
             tl.debug_barrier()
             batch_traversal(rf, ri, CAP, CAP, ds, n_wait, nodes_ptr, inst_ptr, tri_ptr, tri_local_ptr,
-                            code_m1_ptr, code_m2_ptr, code_s_ptr, LEAF, BLOCK, REFILL, INNER=DESC_INNER)
+                            code_m1_ptr, code_m2_ptr, code_s_ptr, LEAF, BLOCK, REFILL, INNER=DESC_INNER,
+                            DEFER=DEFER)
             tl.debug_barrier()
             ds = wr
         elif mode == MODE_REFILL:

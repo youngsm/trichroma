@@ -209,6 +209,11 @@ class ProductionEngine(object):
         self.fixes = os.environ.get("CHROMA_TRITON_FIXES", "1") not in ("", "0")
         wires = os.environ.get("CHROMA_TRITON_LEGACY_WIRES", "")
         self.legacy_wires = (not self.fixes) if wires == "" else wires != "0"
+        # CHROMA_TRITON_STRICT=1 turns off the optimizations that can change a
+        # result at the float32 rounding level: an enclosing instance (a tank
+        # or cavity) is then entered in the walk's own order instead of last.
+        # Every other optimization gives bitwise the same results either way.
+        self.strict = os.environ.get("CHROMA_TRITON_STRICT", "0") not in ("", "0")
         # CHROMA_TRITON_ROULETTE=<w> (opt-in, weighted mode only): Russian
         # roulette below weight w. Unbiased for every tally, but not Chroma's
         # weighted-mode semantics (hit weights are w or more instead of down to
@@ -284,6 +289,10 @@ class ProductionEngine(object):
 
     def query(self, origins, directions, last_hit=None):
         """Nearest boundary for arbitrary rays (tensors [N,3]); diagnostics/certification.
+
+        Directions should be unit vectors, as in transport: the thresholds
+        near the origin (a hit needs t > 1e-6 mm) are distances along the
+        ray only for unit directions.
 
         Returns (distance, triangle, unit normal [N,3], codes [N,3] =
         inner material, outer material, surface).
@@ -495,7 +504,7 @@ class ProductionEngine(object):
             ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette,
             CAP=cap, GRID=self.grid is not None,
             HAS_WLS=self.has_wls, HAS_REEMIT=self.has_reemit, BATCH=int(self.fused_batch), REFILL=int(self.fused_refill),
-            DESC_INNER=max(1, int(self.fused_inner)),
+            DESC_INNER=max(1, int(self.fused_inner)), DEFER=not self.strict,
             **({"maxnreg": self.fused_maxnreg} if self.fused_maxnreg else {}), num_warps=1)
         return None
 
