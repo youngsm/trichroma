@@ -178,7 +178,7 @@ The weighted-mode rules are identical in both modes:
 | O2 | `photon_tracks` include photons already finished on input | omitted | none | (c) |
 | O3 | accepts optical tables production rejects (probabilities outside [0, 1], unnormalised CDFs, ...) | validates and refuses them | none | (c) |
 | D1 | DAQ time and charge CDFs clamped at their ends | the same (fixed with this audit) | - | - |
-| D2 | `Detector._pdf_to_cdf` builds a CDF one entry short, and both modes read past it | the same bug (in Chroma's API) | - | (d) |
+| D2 | CDFs from `Detector._pdf_to_cdf`, one entry short: CUDA Chroma's DAQ reads past their end (a 0 in fresh memory puts every time and charge at the last bin edge; later, stale memory), so the replay refuses them | the missing leading 0 restored | `FIXES=0` appends the 0 of fresh memory | (b) |
 | D3 | a negative charge sample adds nothing | the same (fixed with this audit) | - | - |
 | M1 | `max_steps <= 0`: nothing is propagated | the same (fixed with this audit; the fused kernel took one step) | - | - |
 | SC1 | reads a batch, propagates it, yields its events | pipelined: batch k+1 is read and propagated before batch k's events are yielded | `CHROMA_TRITON_PIPELINE=0` | (a)/(c) |
