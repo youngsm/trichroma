@@ -12,7 +12,7 @@ except ImportError:
 from chroma.geometry import Geometry, Solid, Mesh, vacuum
 from chroma.detector import Detector
 from chroma.stl import mesh_from_stl
-from chroma.gpu import create_cuda_context
+from chroma.backend import backend_name
 
 def load_geometry_from_string(geometry_str, 
                               auto_build_bvh=True, read_bvh_cache=True,
@@ -151,6 +151,7 @@ def load_bvh(geometry,  bvh_name="default",
 
         start = time.time()
 
+        from chroma.gpu import create_cuda_context
         context = create_cuda_context(cuda_device)
         bvh = make_recursive_grid_bvh(geometry.mesh, target_degree=3)
         context.pop()
@@ -185,7 +186,14 @@ def create_geometry_from_obj(obj, bvh_name="default",
 
     geometry.flatten()
 
-    if geometry.bvh is None and make_recursive_grid_bvh is not None:
+    if geometry.bvh is None and backend_name() == "triton":
+        # The Triton backend builds its own acceleration structures. A cached
+        # Chroma BVH is still attached when available (bitwise legacy mode
+        # uses it); none is built because that requires PyCUDA.
+        geometry.bvh = load_bvh(geometry, auto_build_bvh=False,
+                                read_bvh_cache=read_bvh_cache,
+                                update_bvh_cache=False, cache_dir=cache_dir)
+    elif geometry.bvh is None and make_recursive_grid_bvh is not None:
         geometry.bvh = load_bvh(geometry, auto_build_bvh=auto_build_bvh,
                                 read_bvh_cache=read_bvh_cache,
                                 update_bvh_cache=update_bvh_cache,

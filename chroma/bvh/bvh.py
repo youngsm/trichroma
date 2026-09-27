@@ -1,7 +1,11 @@
 '''chroma.bvh: Bounding Volume Hierarchy generation and manipulation.'''
 
 import numpy as np
-from pycuda.gpuarray import vec
+try:
+    from pycuda.gpuarray import vec
+except ImportError:  # the Triton backend does not require PyCUDA
+    class vec:  # minimal stand-in for pycuda.gpuarray.vec
+        uint4 = np.dtype([('x', np.uint32), ('y', np.uint32), ('z', np.uint32), ('w', np.uint32)])
 
 uint4 = vec.uint4 # pylint: disable-msg=C0103,E1101
 

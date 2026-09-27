@@ -9,8 +9,10 @@ except ImportError:
     pass # Allow chroma usage when pygame not present
 from chroma import geometry
 from chroma import event
-try: 
-    from chroma import gpu
+from chroma.backend import backend_name as _backend_name
+try:
+    if _backend_name() == "cuda":
+        from chroma import gpu
     from chroma.sim import Simulation
 except ImportError:
     print("WARNING: GPU context init failed. Chroma cannot perform simulations!")
