@@ -24,5 +24,8 @@ def test_explicit_backend_and_validation():
 def test_tape_mode_parsing():
     assert not tape_mode({}).enabled
     assert tape_mode({"CHROMA_TRITON_TAPE": "replay:/tmp/t"}).directory == "/tmp/t"
+    sorted_mode = tape_mode({"CHROMA_TRITON_TAPE": "record-sorted:/tmp/t"})
+    assert (sorted_mode.mode, sorted_mode.directory, sorted_mode.sorted) == ("record", "/tmp/t", True)
+    assert not tape_mode({"CHROMA_TRITON_TAPE": "record:/tmp/t"}).sorted
     with pytest.raises(ValueError):
         tape_mode({"CHROMA_TRITON_TAPE": "replay"})

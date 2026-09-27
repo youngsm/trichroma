@@ -1,6 +1,6 @@
 """One weighted simulate() call on chroma-lar's reflect3wires detector with either backend; saves every photon's end state.
 
-usage: weighted_run.py WORKLOAD SEED N OUT.npz  (backend: CHROMA_BACKEND; engine options: CHROMA_TRITON_*)
+usage: weighted_run.py WORKLOAD SEED N OUT.npz  (backend: CHROMA_BACKEND; engine options: CHROMA_TRITON)
   W1: the LUT fixture (generate_lut.py): N photons at (-450, 60, -120), isotropic, polarization +x, 128 nm
   W2: N photons uniform in the simulated half detector (x -2310..0, y/z -2160..2160), isotropic, transverse
       random polarization, 128 nm

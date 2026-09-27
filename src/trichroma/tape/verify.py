@@ -322,7 +322,7 @@ def main(argv=None):
     p.add_argument("--cuda-python", default=os.environ.get("CHROMA_VERIFY_CUDA_PYTHON", sys.executable))
     p.add_argument("--triton-python", default=os.environ.get("CHROMA_VERIFY_TRITON_PYTHON", sys.executable))
     p.add_argument("--sort-queues", action="store_true",
-                   help="record with ascending survivor queues (CHROMA_TRITON_TAPE_SORT=1)")
+                   help="record with ascending survivor queues (CHROMA_TRITON_TAPE=record-sorted:<dir>)")
     p.add_argument("--transparency", action="store_true",
                    help="also run CUDA without recording (CHROMA_TRITON_TAPE=canonical) and require identical "
                         "outputs; implies --sort-queues (unsorted multi-launch runs are not repeatable)")
@@ -372,7 +372,7 @@ def _all(args):
         # Original Chroma appends survivors to the next launch's queue with
         # warp-level atomics, so two unrecorded multi-launch runs already
         # differ from each other; compare under the canonical (sorted) order.
-        print("--transparency: recording with sorted queues (CHROMA_TRITON_TAPE_SORT=1)")
+        print("--transparency: recording with sorted queues (CHROMA_TRITON_TAPE=record-sorted:<dir>)")
         args.sort_queues = True
     runs = args.runs or [r["name"] for r in fixtures.RUNS[args.fixture]]
     summary = {}
@@ -383,9 +383,8 @@ def _all(args):
         if os.path.exists(os.path.join(tape_dir, "manifest.json")):
             raise SystemExit("%s already holds a tape; choose a fresh --work directory" % tape_dir)
         cuda_out = os.path.join(args.work, tag + "_cuda.npz")
-        env = dict(base_env, CHROMA_BACKEND="cuda", CHROMA_TRITON_TAPE="record:" + tape_dir)
-        if args.sort_queues:
-            env["CHROMA_TRITON_TAPE_SORT"] = "1"
+        env = dict(base_env, CHROMA_BACKEND="cuda",
+                   CHROMA_TRITON_TAPE=("record-sorted:" if args.sort_queues else "record:") + tape_dir)
         cmd = [args.cuda_python, "-m", "trichroma.tape.verify", "run", "--fixture", args.fixture,
                "--run", run, "--output", cuda_out, "--scale", str(args.scale)]
         subprocess.run(cmd, env=env, check=True)

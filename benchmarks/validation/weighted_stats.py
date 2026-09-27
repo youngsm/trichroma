@@ -1,9 +1,9 @@
 """Statistics of the weighted validation runs (weighted_run.py outputs named TAG_WORKLOAD_sSEED.npz).
 
 usage: weighted_stats.py DATA_DIR
-Tags: C_cuda (CUDA Chroma), P0_fixes0 (CHROMA_TRITON_FIXES=0), P1_fixes_legacywires (CHROMA_TRITON_LEGACY_WIRES=1),
-P2_default, P3_roulette (CHROMA_TRITON_ROULETTE=0.05), P4_wavefront (CHROMA_TRITON_FUSED=0 CHROMA_TRITON_GRID=0),
-P5_wavefront_grid (CHROMA_TRITON_FUSED=0), P6_wavefront_fixes0; workloads W1, W2 (and W1nw, W2nw without wires).
+Tags: C_cuda (CUDA Chroma), P0_fixes0 (CHROMA_TRITON=legacy), P1_fixes_legacywires (CHROMA_TRITON=legacy-wires),
+P2_default, P3_roulette (CHROMA_TRITON=roulette=0.05), P4_wavefront (CHROMA_TRITON=wavefront,no-grid),
+P5_wavefront_grid (CHROMA_TRITON=wavefront), P6_wavefront_fixes0; workloads W1, W2 (and W1nw, W2nw without wires).
 
 Observable: every photon's detected weight w_i (0 if not detected; a non-finite weight counts as 0, as
 chroma-lar's generate_lut.py drops them), its channel and its detection time. Errors are per-photon
@@ -198,7 +198,7 @@ def report_unpaired(w, a_tag, b_tag, seeds, what):
 if __name__ == "__main__":
     for w in ("W1", "W2"):
         report_paired(w)
-        report_unpaired(w, "C_cuda", "P0_fixes0", range(1, 7), "CUDA Chroma vs bug-compatible production (FIXES=0)")
+        report_unpaired(w, "C_cuda", "P0_fixes0", range(1, 7), "CUDA Chroma vs bug-compatible production (CHROMA_TRITON=legacy)")
         report_unpaired(w, "P2_default", "C_cuda", range(1, 7), "Production default vs CUDA Chroma (the fixes' net effect)")
     for w in ("W1nw", "W2nw"):
         report_unpaired(w, "C_cuda", "P0_fixes0", range(1, 7), "No wires: CUDA Chroma vs bug-compatible production")

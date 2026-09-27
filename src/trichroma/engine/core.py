@@ -5,7 +5,6 @@ for every queued photon; survivors are appended to the next queue on the
 device. The host reads one counter per round.
 """
 
-import os
 import threading
 
 import numpy as np
@@ -17,6 +16,7 @@ from trichroma.engine.api import DaqChannels, DevicePhotons, TERMINAL
 from trichroma.engine import physics as P
 from trichroma.engine.scene import WIRE_WIDTH, compile_scene
 from trichroma.engine.traverse import nearest_hit_kernel, wire_kernel
+from trichroma.options import options
 
 BLOCK = 32  # one ray/photon per thread: launch with num_warps=1
 DAQ_COUNTER = tl.constexpr(0x7FFFFF00)  # Philox draw counters reserved for the DAQ
@@ -214,10 +214,10 @@ class ProductionEngine(object):
         del nsurf
         self.solid_offsets = _to_device(scene.solid_tri_offset, dev, np.int64)
         self.solid_id_to_channel_index = _to_device(scene.solid_id_to_channel_index, dev, np.int32)
+        opts = options()
         if hasattr(detector, "time_cdf"):
-            fixes = os.environ.get("CHROMA_TRITON_FIXES", "1") not in ("", "0")  # (self.fixes below)
-            tx, ty = daq_cdf(*detector.time_cdf, fixes=fixes)
-            qx, qy = daq_cdf(*detector.charge_cdf, fixes=fixes)
+            tx, ty = daq_cdf(*detector.time_cdf, fixes=not opts.legacy)
+            qx, qy = daq_cdf(*detector.charge_cdf, fixes=not opts.legacy)
             self.tcdf_x = _to_device(tx, dev, f32)
             self.tcdf_y = _to_device(ty, dev, f32)
             self.qcdf_x = _to_device(qx, dev, f32)
@@ -227,30 +227,28 @@ class ProductionEngine(object):
         self._workspace = None
         self.two_phase = True
         self.traversal_steps = 1
-        # CHROMA_TRITON_FIXES=0 keeps the installed Chroma's behaviour where the
+        # CHROMA_TRITON=legacy keeps the installed Chroma's behaviour where the
         # production engine fixes it (specular polarization, Fresnel NaNs, the
         # NaN-abort bit 1<<15, FP32 wire intersection) while keeping the Philox
         # RNG: a statistical like-for-like comparison with CUDA Chroma
         # (docs/exact_vs_production.md lists what it does not restore).
-        # CHROMA_TRITON_LEGACY_WIRES=0/1 overrides the wire algorithm alone.
-        self.fixes = os.environ.get("CHROMA_TRITON_FIXES", "1") not in ("", "0")
-        wires = os.environ.get("CHROMA_TRITON_LEGACY_WIRES", "")
-        self.legacy_wires = (not self.fixes) if wires == "" else wires != "0"
-        # CHROMA_TRITON_STRICT=1 turns off the optimizations that can change a
-        # result at the float32 rounding level: an enclosing instance (a tank
-        # or cavity) is then entered in the walk's own order instead of last.
-        # Every other optimization gives bitwise the same results either way.
-        self.strict = os.environ.get("CHROMA_TRITON_STRICT", "0") not in ("", "0")
-        # CHROMA_TRITON_ROULETTE=<w> (opt-in, weighted mode only): Russian
-        # roulette below weight w. Unbiased for every tally, but not Chroma's
-        # weighted-mode semantics (hit weights are w or more instead of down to
-        # 1e-4); off by default.
-        self.roulette = float(os.environ.get("CHROMA_TRITON_ROULETTE", "0") or 0)
+        # legacy-wires selects the legacy wire algorithm alone.
+        self.fixes = not opts.legacy
+        self.legacy_wires = opts.legacy_wires
+        # strict turns off the optimizations that can change a result at the
+        # float32 rounding level: an enclosing instance (a tank or cavity) is
+        # then entered in the walk's own order instead of last. Every other
+        # optimization gives bitwise the same results either way.
+        self.strict = opts.strict
+        # roulette=<w> (opt-in, weighted mode only): Russian roulette below
+        # weight w. Unbiased for every tally, but not Chroma's weighted-mode
+        # semantics (hit weights are w or more instead of down to 1e-4).
+        self.roulette = opts.roulette
         # Rounds with at most this many live photons are replayed from a CUDA graph.
         self.tail_capacity = 32768
         self.tail_graphs = True
         # Fused transport (photon state in registers; see engine/fused.py).
-        self.fused = os.environ.get("CHROMA_TRITON_FUSED", "1") not in ("", "0")
+        self.fused = not opts.wavefront
         self.fused_warps_per_sm = 20
         self.fused_park = 8
         self.fused_maxnreg = 96
@@ -270,7 +268,7 @@ class ProductionEngine(object):
         # The certified empty-space grid serves only the wavefront scheduler's
         # bulk shortcut; the fused kernel never reads it.
         self.grid = None
-        if not self.fused and os.environ.get("CHROMA_TRITON_GRID", "1") != "0":
+        if not self.fused and opts.grid:
             self.enable_grid(detector)
 
     # ------------------------------------------------------------ helpers

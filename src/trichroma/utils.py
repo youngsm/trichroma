@@ -3,7 +3,7 @@
 * :func:`compare_photons` and :func:`compare_events`: bitwise, word for word.
   Use them where the two runs must be identical: TriChroma's exact mode
   (``CHROMA_TRITON_TAPE=replay:<dir>``) against the CUDA run it replays, or
-  TriChroma against itself on the same GPU type (``CHROMA_TRITON_STRICT=1``
+  TriChroma against itself on the same GPU type (``CHROMA_TRITON=strict``
   against the default, one version against another).
 * :func:`compare_statistics`: for runs with different random numbers, such as
   TriChroma's production engine against CUDA Chroma. It tests that the two

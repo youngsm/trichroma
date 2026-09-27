@@ -13,8 +13,9 @@ the surface model, and ``propagate_at_boundary``. Random numbers are drawn
 
 ``FIXES`` selects the documented numerical fixes (angle-free Fresnel without
 normal/critical-incidence NaNs, specular reflection of the polarization,
-32-bit history). With ``FIXES=False`` the original behaviour is kept,
-including the 16-bit device history (NaN abort = ``NO_HIT | 1<<15``).
+32-bit history). With ``FIXES=False`` (``CHROMA_TRITON=legacy``) the
+original behaviour is kept, including the 16-bit device history (NaN abort =
+``NO_HIT | 1<<15``).
 """
 
 import triton

@@ -45,7 +45,7 @@ def main():
     parser.add_argument("--config", default="detector_config_reflect_reflect3wires")
     args = parser.parse_args()
     if args.no_grid:
-        os.environ["CHROMA_TRITON_GRID"] = "0"
+        os.environ["CHROMA_TRITON"] = ",".join(filter(None, [os.environ.get("CHROMA_TRITON"), "no-grid"]))
     geometry = build_detector_from_config(args.config)
     t0 = time.time()
     engine = ProductionEngine(geometry, seed=1234, device="cuda")

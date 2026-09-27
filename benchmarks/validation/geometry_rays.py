@@ -49,7 +49,7 @@ pos, dirs, last, kinds = (torch.cat(x).contiguous() for x in (pos, dirs, last, k
 n = len(last)
 print("rays: %d (from %d W1 + %d W2 photon histories)" % (n, nph, nph), flush=True)
 
-# production nearest boundary (whatever wires this process selected: CHROMA_TRITON_LEGACY_WIRES)
+# production nearest boundary (whatever wires this process selected: CHROMA_TRITON=legacy-wires)
 t0 = time.time()
 tp, trip, np_, codes = [], [], [], []
 for a in range(0, n, 1 << 20):

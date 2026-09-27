@@ -1290,7 +1290,7 @@ def _analytic_box(boxes_ptr, box_tris_ptr, ib, valid, ox, oy, oz, dx, dy, dz, ix
         snap = ~miss & use_far & ~leaving & (tl.abs(t) * d_face <= tol_face)
         # An entry face counts for any t > 0: rejecting one at t <= 1e-6 dropped
         # the box, and the ray passed through the solid. (Fix; the legacy path
-        # below, CHROMA_TRITON_FIXES=0, keeps the previous behaviour bit for bit.)
+        # below, CHROMA_TRITON=legacy, keeps the previous behaviour bit for bit.)
         above = tl.where(snap, (t * tl.maximum(d_face, 1e-6) > -tol_face) & (t > -1.0),
                          t > tl.where(use_far, 1e-6, 0.))
     else:
@@ -1629,7 +1629,7 @@ def batch_traversal(ring_f, ring_i, STRIDE: tl.constexpr, CAP: tl.constexpr, fir
                 if DEFER:
                     defer = enter & ~phase & (dnode < 0) & (encl >= 0)
                 else:
-                    # CHROMA_TRITON_STRICT: enclosing instances in the walk's own order,
+                    # CHROMA_TRITON=strict: enclosing instances in the walk's own order,
                     # so every box test sees the distance of the plain traversal.
                     defer = enter & False
                 dnode = tl.where(defer, node, dnode)

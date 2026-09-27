@@ -35,7 +35,7 @@ in arbitrary warp order, and the queue position selects the RNG slot. The tape
 records the order that actually happened. `CHROMA_TRITON_TAPE=canonical`
 (CUDA backend, no recording) sorts every survivor queue before the next launch,
 which is one legal execution of the unmodified kernels; with
-`CHROMA_TRITON_TAPE_SORT=1` the recorder applies the same sort. Canonical runs
+`CHROMA_TRITON_TAPE=record-sorted:<dir>` the recorder applies the same sort. Canonical runs
 are repeatable and are what the transparency check compares.
 
 ## 2. Recording without touching the kernels
