@@ -38,12 +38,12 @@ def main():
                 res = json.load(f)
             rows = res["rows"]
             ax.plot([r["n"] for r in rows], [r["photons_per_s"] / 1e6 for r in rows], color=color,
-                    mec="white", mew=0.8, solid_capstyle="round", zorder=3, **STYLES[k % 2])
+                    mew=0, solid_capstyle="round", zorder=3, **STYLES[k % 2])
             if len(gpus) <= k:
                 gpus.append(res["gpu"].replace("NVIDIA ", "").replace("GeForce ", "").split("-")[0])
         handles.append(Line2D([], [], color=color, lw=2.6, label=label))
     for k, gpu in enumerate(gpus):
-        handles.append(Line2D([], [], color=MUTED, mec="white", label=gpu, **STYLES[k % 2]))
+        handles.append(Line2D([], [], color=MUTED, mew=0, label=gpu, **STYLES[k % 2]))
 
     ax.set_xscale("log")
     ax.set_yscale("log")
