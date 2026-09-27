@@ -294,3 +294,30 @@ Bitwise equality is demonstrated on the *recorded schedule* of a real CUDA run
   runs through the `Simulation` interface.
 * Throughput: `benchmark_mesh_occupancy.py` and a reflect3wires full-event
   benchmark through `Simulation`.
+
+## Repository layout
+
+| Location | Contents |
+|---|---|
+| `src/chroma/` | Chroma's API, and the original CUDA backend (`sim_cuda.py`, `gpu/`, `cuda/`, `camera.py`; needs `[cuda]`) |
+| `src/trichroma/simulation.py` | The Triton `Simulation`: batching, events, hits, DAQ, pipelining |
+| `src/trichroma/engine/` | Scene compiler, SAH trees, fused transport kernel, physics, exact mode |
+| `src/trichroma/sources.py` | Photon sources drawn on the GPU |
+| `src/trichroma/tape/` | Bitwise mode: tape format, CUDA-side recorder, replay checks, fixtures |
+| `tests/` | `unit/`, `integration/`, `bitwise/` (recorded tapes), `cuda_backend/` (original Chroma suite) |
+| `benchmarks/` | Throughput, scaling, profiling and backend comparison scripts |
+| `docs/` | Design notes and validation records; `docs/chroma/` has the original Chroma README, documentation and container recipes |
+| `bin/` | The original Chroma command-line tools |
+
+- **Tests:** `python -m pytest` runs the unit, integration and bitwise tests;
+  GPU tests skip without a GPU.
+- **Original Chroma suite:** `tests/cuda_backend`. Run it by name, with PyCUDA;
+  many of its tests failed before TriChroma.
+- **Tape checks:** `python -m trichroma.tape.verify` records fixtures with
+  CUDA Chroma and checks the Triton replay word for word
+  ([bitwise mode](bitwise_mode.md)).
+- **Benchmarks:**
+  - `simulate_throughput.py`: `simulate()` throughput, either backend;
+  - `throughput_scaling.py` and `plot_scaling.py`: throughput versus photons
+    per launch, any detector;
+  - an engine profiler and a statistical CUDA/Triton comparison.
