@@ -5,7 +5,7 @@ import os
 setup(
     name = 'Chroma',
     version = '0.5',
-    packages = find_packages(),
+    packages = find_packages(exclude=["test", "test.*"]),
     include_package_data=True,
     package_data={
         'chroma': ['cuda/*.cu', 'cuda/*.h'],
