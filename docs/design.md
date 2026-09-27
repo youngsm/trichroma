@@ -33,17 +33,29 @@ difference contributes to speed.
 | Variable | Values | Meaning |
 |---|---|---|
 | `CHROMA_BACKEND` | `cuda`, `triton` | Implementation behind `chroma.sim.Simulation`; unset: `cuda` when PyCUDA is installed, `triton` otherwise |
-| `CHROMA_TRITON_TAPE` | unset/`off`, `canonical`, `record:<dir>`, `replay:<dir>` | Bitwise mode (see below) |
-| `CHROMA_TRITON_TAPE_SORT` | `1` | Record with sorted survivor queues (the `canonical` schedule) |
-| `CHROMA_TRITON_DEVICE` | CUDA ordinal | Overrides `cuda_device` for the Triton backend |
-| `CHROMA_TRITON_FUSED` | `1` (default), `0` | Fused register-resident transport kernel; `0` selects the wavefront scheduler |
-| `CHROMA_TRITON_GRID` | `1` (default), `0` | Certified empty-space grid (bulk shortcut of the wavefront scheduler; built only when that scheduler is selected) |
-| `CHROMA_TRITON_PIPELINE` | `1` (default), `0` | `simulate` propagates batch k+1 while the caller consumes batch k; `0` restores W's order of reading input and yielding events (results are identical either way) |
-| `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production corrects it (specular polarization, literal Fresnel formulas, NaN-abort bit 1<<15, W's wire algorithm, W's t > 1e-6 at box faces, the DAQ's reading past short CDFs), with the production RNG, geometry and arithmetic: a statistical like-for-like comparison with CUDA Chroma. It does not restore W's specular-direction formula or 16-bit history truncation ([exact vs production](exact_vs_production.md)) |
-| `CHROMA_TRITON_STRICT` | `0` (default), `1` | `1` turns off the optimizations that can change a result at the float32 rounding level (today: entering an enclosing instance after the rest of the walk), so transport, and `engine.query` with unit directions, are bitwise those of the plain traversal; about 6% slower on detectors with a tank or cavity mesh |
-| `CHROMA_TRITON_LEGACY_WIRES` | unset, `0`, `1` | Override the wire algorithm alone (default: legacy iff `CHROMA_TRITON_FIXES=0`) |
-| `CHROMA_TRITON_ROULETTE` | weight, e.g. `0.05` | Opt-in, weighted mode only: Russian roulette below that weight (unbiased for every tally; not W's weighted-mode semantics) |
+| `CHROMA_TRITON` | comma-separated options (below) | The Triton backend's options; unset: production |
+| `CHROMA_TRITON_TAPE` | unset/`off`, `canonical`, `record:<dir>`, `record-sorted:<dir>`, `replay:<dir>` | Bitwise mode (see below); `record-sorted` re-queues survivors in ascending order, as `canonical` does |
 | `TRITON_CACHE_DIR` | path | Put Triton's JIT cache on `/lscratch`; `$HOME` has little quota |
+
+`CHROMA_TRITON` options, e.g. `CHROMA_TRITON=legacy,roulette=0.05`:
+
+| Option | Meaning |
+|---|---|
+| `legacy` | Keep W's behaviour where production corrects it (specular polarization, literal Fresnel formulas, NaN-abort bit 1<<15, W's wire algorithm, W's t > 1e-6 at box faces, the DAQ's reading past short CDFs), with the production RNG, geometry and arithmetic: a statistical like-for-like comparison with CUDA Chroma. It does not restore W's specular-direction formula or 16-bit history truncation ([exact vs production](exact_vs_production.md)) |
+| `strict` | Turn off the optimizations that can change a result at the float32 rounding level (today: entering an enclosing instance after the rest of the walk), so transport, and `engine.query` with unit directions, are bitwise those of the plain traversal; about 6% slower on detectors with a tank or cavity mesh |
+| `roulette=<w>` | Opt-in, weighted mode only: Russian roulette below weight w, e.g. `0.05` (unbiased for every tally; not W's weighted-mode semantics) |
+
+For debugging (results are identical either way, except `legacy-wires`):
+
+| Option | Meaning |
+|---|---|
+| `legacy-wires` | W's wire algorithm alone (`legacy` implies it) |
+| `wavefront` | The wavefront scheduler instead of the fused register-resident kernel |
+| `no-grid` | No certified empty-space grid (the wavefront scheduler's bulk shortcut) |
+| `no-pipeline` | `simulate` reads, propagates and yields one batch at a time, in W's order, instead of propagating batch k+1 while the caller consumes batch k |
+
+An unknown option raises `ValueError`. Choose the GPU with
+`CUDA_VISIBLE_DEVICES` or `Simulation(cuda_device=...)`.
 
 `chroma.sim` reads `CHROMA_BACKEND` at import time. `chroma.sim.Simulation`
 and `chroma.Simulation` both resolve to the selected class. The original code
@@ -75,7 +87,7 @@ of batch k are packed on the device before batch k+1 starts and copied to
 page-locked memory on a second stream while it runs; the propagation itself
 needs no host synchronization. Photon ids (the RNG keys) are assigned in input
 order, so the results do not change; only the input is read one batch ahead
-(`CHROMA_TRITON_PIPELINE=0` turns this off). Exact mode and photon tracking
+(`CHROMA_TRITON=no-pipeline` turns this off). Exact mode and photon tracking
 are not pipelined.
 
 Production-mode deviations from W, all deliberate and documented:
@@ -122,7 +134,7 @@ Production-mode deviations from W, all deliberate and documented:
     limits (about 1 photon in 10^6 ends in steel): a Rayleigh scatter within
     ~1e-4 mm of a steel surface, or a wall reflection at the edge of an end
     wire that chroma-lar places half inside the wall.
-    `CHROMA_TRITON_LEGACY_WIRES=1` (or `CHROMA_TRITON_FIXES=0`) reproduces W's
+    `CHROMA_TRITON=legacy-wires` (or `legacy`) reproduces W's
     algorithm (in Triton arithmetic, so its noise-decided far hits differ ray
     by ray).
 * Analytic boxes do not re-hit the coplanar neighbour of the face a photon
@@ -137,7 +149,7 @@ Production-mode deviations from W, all deliberate and documented:
   at distance 0 when the photon is on its plane within rounding (a few ulp)
   and has not just met it: no photon leaves the TPC (+0.08% detected light).
 * Specular reflection uses the mirror formula `d - 2(d.n)n` (also with
-  `CHROMA_TRITON_FIXES=0`); W rotates the normal by the incidence angle,
+  `CHROMA_TRITON=legacy`); W rotates the normal by the incidence angle,
   which gives a NaN direction (NaN abort) for a photon exactly anti-parallel
   to the normal and rounds directions within 2.4e-4 rad of normal incidence.
 * The DAQ clamps the time and charge CDFs at their ends and adds nothing for
@@ -149,7 +161,7 @@ Production-mode deviations from W, all deliberate and documented:
   the last bin edge, and later whatever the memory last held, so DAQ words
   depended on what ran before in the process. Production restores the
   leading 0 (chroma-lite now builds complete tables; detectors built or
-  pickled earlier still carry short ones); `CHROMA_TRITON_FIXES=0` appends
+  pickled earlier still carry short ones); `CHROMA_TRITON=legacy` appends
   the 0 of fresh memory instead.
 
 Flight time uses the phase velocity `c/n` of the incident material and
@@ -185,7 +197,7 @@ Compiled once per `Simulation` (`engine/scene.py`).
   above float32 rounding. Entering it later only matters where one of its
   faces and another instance's face are within float32 rounding of each
   other along the ray (the tree's box tests are exact only up to that); then
-  either may be the hit. `CHROMA_TRITON_STRICT=1` keeps the walk's own order.
+  either may be the hit. `CHROMA_TRITON=strict` keeps the walk's own order.
 * **Analytic boxes.** Axis-aligned box solids (up to 64 triangles) are tested
   analytically before the top-level tree: slab method for the crossing face
   (entry face, or exit face when starting inside or on the box; the face of
@@ -193,7 +205,7 @@ Compiled once per `Simulation` (`engine/scene.py`).
   (exact float64 coefficients) on that face's triangles for the triangle id.
   Boxes nested in a box the ray starts in are skipped.
 * **Wires.** W's wire-plane records; the accurate intersection above (or W's
-  exactly with `CHROMA_TRITON_LEGACY_WIRES=1`), merged with the mesh hit as W
+  exactly with `CHROMA_TRITON=legacy-wires`), merged with the mesh hit as W
   does (`t_wire + 1e-6 < t_mesh`).
 * **Fused transport** (`engine/fused.py`, default). Persistent one-warp
   programs, each with up to 128 photons in flight in its own queues in global
@@ -207,12 +219,12 @@ Compiled once per `Simulation` (`engine/scene.py`).
   merged in each ray's own test order). Warp-uniform decisions are warp votes,
   not reductions. Rare branches (re-emission, WLS, diffuse, Fresnel) run only
   when some lane takes them. No scheduling choice changes a photon's result.
-* **Wavefront scheduler** (`CHROMA_TRITON_FUSED=0`, and photon tracking).
+* **Wavefront scheduler** (`CHROMA_TRITON=wavefront`, and photon tracking).
   Device queues with one host read per round: a certified empty-space grid
   lets bulk collisions run without geometry queries (same draws, so the
   outcome equals a full step, except for rare float32 back-face hits at a
   silhouette edge, whose triangle the full step would take for the next
-  boundary; `CHROMA_TRITON_GRID=0` turns it off), a two-pass boundary query
+  boundary; `CHROMA_TRITON=no-grid` turns it off), a two-pass boundary query
   (top level for every ray, instance descent for the compacted rays that
   reach one), and the same boundary physics. The last rounds replay from a
   CUDA graph.
@@ -225,7 +237,7 @@ Throughput on the A100 (reflect3wires, LUT voxel at (-450, 60, -120), 128 nm,
 30M photons, one `Simulation.simulate` call with flat hits,
 `benchmarks/simulate_throughput.py`): 96M photons/s unweighted, 21M
 photons/s weighted (~90 steps and ~5.7 PMT-mesh descents per photon),
-41M photons/s weighted with `CHROMA_TRITON_ROULETTE=0.05` (same detected
+41M photons/s weighted with `CHROMA_TRITON=roulette=0.05` (same detected
 weight). CUDA Chroma: 1.6M and 0.55M photons/s (with its wire losses, which
 end many histories early). The transport kernel alone (20M unweighted photons
 already on the GPU) does 172M photons/s (2.9G steps/s) on this fixture; on a

@@ -19,7 +19,7 @@ Documented differences from the CUDA backend in production mode:
   batch size, ``nthreads_per_block`` or ``max_blocks``;
 * :meth:`Simulation.simulate` reads one batch ahead: batch k+1 is taken from
   the input and propagated on the GPU while the caller consumes the events of
-  batch k (the results are unchanged; ``CHROMA_TRITON_PIPELINE=0`` restores
+  batch k (the results are unchanged; ``CHROMA_TRITON=no-pipeline`` restores
   the CUDA backend's order of reading input and yielding events).
 
 In exact mode ``use_packed=True`` reproduces the CUDA backend instead:
@@ -39,6 +39,7 @@ from chroma import event
 from chroma import itertoolset
 from chroma.backend import tape_mode
 from trichroma.engine.api import SURFACE_DETECT, DevicePhotons, to_device
+from trichroma.options import options
 
 
 def pick_seed():
@@ -240,9 +241,7 @@ class Simulation(object):
         # Same global side effect as the CUDA backend.
         np.random.seed(self.seed)
 
-        override = os.environ.get("CHROMA_TRITON_DEVICE")
-        if override is not None:
-            cuda_device = int(override)
+        options()  # validate CHROMA_TRITON before any work
         if cuda_device is None:
             cuda_device = torch.cuda.current_device()
         self.device = torch.device("cuda", cuda_device)
@@ -397,7 +396,7 @@ class Simulation(object):
 
     def _pipelined(self):
         return (getattr(self.engine, "exact", None) is None and not self.photon_tracking
-                and os.environ.get("CHROMA_TRITON_PIPELINE", "1") not in ("", "0"))
+                and options().pipeline)
 
     def _pack(self, batch, keep_photons_end, want_hits, run_daq):
         """Pack everything the batch's events need into one device vector

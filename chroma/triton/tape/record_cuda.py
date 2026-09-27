@@ -9,7 +9,7 @@ Installed by :mod:`chroma.sim_cuda` when ``CHROMA_TRITON_TAPE`` is set:
   launch. The original appends survivors with warp-aggregated atomics in
   arbitrary warp order; ascending order is one legal execution of the
   unmodified kernels and makes multi-launch runs repeatable.
-  ``CHROMA_TRITON_TAPE_SORT=1`` applies the same sort while recording.
+  ``CHROMA_TRITON_TAPE=record-sorted:<dir>`` applies the same sort while recording.
 
 How the draws are obtained without touching the kernels
 -------------------------------------------------------
@@ -647,15 +647,14 @@ class TapeSession(object):
         self.simulation = simulation
         self.mode = mode
         self.record = mode.mode == "record"
-        self.sort_queues = mode.mode == "canonical" or (
-            self.record and os.environ.get("CHROMA_TRITON_TAPE_SORT", "").strip().lower() in ("1", "true", "yes", "on"))
+        self.sort_queues = mode.mode == "canonical" or (self.record and getattr(mode, "sorted", False))
         self.batch = None
         self.tracer = _SlotTracer() if self.record else None
         if hasattr(simulation, "gpu_daq"):
             simulation.gpu_daq.gpu_funcs = _DaqObserver(simulation.gpu_daq.gpu_funcs, self)
         self.index = None
         if self.record:
-            writer = _writer_for(mode.directory)
+            writer = _writer_for(mode.directory, self.sort_queues)
             nslots = simulation.nthreads_per_block * simulation.max_blocks
             initial = _read(simulation.rng_states, nslots * STATE_BYTES // 4, np.uint32).reshape(nslots, -1)
             entry = dict(seed=int(simulation.seed), nthreads_per_block=int(simulation.nthreads_per_block),
@@ -689,14 +688,14 @@ class TapeSession(object):
 _WRITERS = {}
 
 
-def _writer_for(directory):
+def _writer_for(directory, sorted_queues):
     directory = os.path.abspath(directory)
     writer = _WRITERS.get(directory)
     if writer is None:
         root, hashes = _source_hashes()
         writer = tapefmt.TapeWriter(directory, dict(
             mode="record", chroma_root=root, source_sha256=hashes, environment=_environment(),
-            argv=list(sys.argv), queue_sorted=os.environ.get("CHROMA_TRITON_TAPE_SORT", "") not in ("", "0")))
+            argv=list(sys.argv), queue_sorted=bool(sorted_queues)))
         _WRITERS[directory] = writer
     return writer
 

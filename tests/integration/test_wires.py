@@ -193,7 +193,7 @@ def test_no_photon_enters_a_wire_and_outcomes_match_float64():
 
 
 def test_bug_compatible_wires_keep_chroma_losses(monkeypatch):
-    monkeypatch.setenv("CHROMA_TRITON_LEGACY_WIRES", "1")
+    monkeypatch.setenv("CHROMA_TRITON", "legacy-wires")
     _, bulk = _engine(N // 3, 7)
     assert bulk > 0  # CUDA Chroma's defect, reproduced on request
 
@@ -204,6 +204,6 @@ def test_rays_ending_on_a_wall_inside_a_wire_hit_the_wire_first():
 
 
 def test_bug_compatible_wires_keep_chroma_cull(monkeypatch):
-    monkeypatch.setenv("CHROMA_TRITON_LEGACY_WIRES", "1")
+    monkeypatch.setenv("CHROMA_TRITON", "legacy-wires")
     first = _first_boundary_of_rays_ending_inside_a_wire()
     assert np.mean(first != -2) > 0.1  # CUDA Chroma's cull lets them reach the wall

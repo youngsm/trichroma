@@ -18,15 +18,15 @@ run() {  # TAG WORKLOAD SEED [VAR=VALUE ...]
 }
 for w in W1 W2 W1nw W2nw; do for seed in 1 2 3 4 5 6; do
   run C_cuda $w $seed CHROMA_BACKEND=cuda
-  run P0_fixes0 $w $seed CHROMA_BACKEND=triton CHROMA_TRITON_FIXES=0
+  run P0_fixes0 $w $seed CHROMA_BACKEND=triton CHROMA_TRITON=legacy
   run P2_default $w $seed CHROMA_BACKEND=triton
 done; done
 for w in W1 W2; do  # same seed, same random numbers: paired differences
-  run P1_fixes_legacywires $w 1 CHROMA_BACKEND=triton CHROMA_TRITON_LEGACY_WIRES=1
-  run P3_roulette $w 1 CHROMA_BACKEND=triton CHROMA_TRITON_ROULETTE=0.05
-  run P4_wavefront $w 1 CHROMA_BACKEND=triton CHROMA_TRITON_FUSED=0 CHROMA_TRITON_GRID=0
-  run P5_wavefront_grid $w 1 CHROMA_BACKEND=triton CHROMA_TRITON_FUSED=0
-  run P6_wavefront_fixes0 $w 1 CHROMA_BACKEND=triton CHROMA_TRITON_FUSED=0 CHROMA_TRITON_GRID=0 CHROMA_TRITON_FIXES=0
+  run P1_fixes_legacywires $w 1 CHROMA_BACKEND=triton CHROMA_TRITON=legacy-wires
+  run P3_roulette $w 1 CHROMA_BACKEND=triton CHROMA_TRITON=roulette=0.05
+  run P4_wavefront $w 1 CHROMA_BACKEND=triton CHROMA_TRITON=wavefront,no-grid
+  run P5_wavefront_grid $w 1 CHROMA_BACKEND=triton CHROMA_TRITON=wavefront
+  run P6_wavefront_fixes0 $w 1 CHROMA_BACKEND=triton CHROMA_TRITON=wavefront,no-grid,legacy
 done
 python benchmarks/validation/weighted_stats.py data
 ```
@@ -41,7 +41,7 @@ any reflect3wires run with `CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:<dir>`
 with float64 arithmetic.
 
 ```bash
-CHROMA_BACKEND=triton CHROMA_TRITON_FUSED=0 python benchmarks/validation/geometry_rays.py TAPE_DIR 8000 geometry.npz
+CHROMA_BACKEND=triton CHROMA_TRITON=wavefront python benchmarks/validation/geometry_rays.py TAPE_DIR 8000 geometry.npz
 python benchmarks/validation/geometry_stats.py geometry.npz
 python benchmarks/validation/wires_float64.py geometry.npz
 ```

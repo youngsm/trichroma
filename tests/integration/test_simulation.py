@@ -159,9 +159,9 @@ def _run(detector, events, seed=4242, photons_per_batch=5000, use_weights=False,
 
 @pytest.mark.parametrize("use_weights", [False, True])
 def test_pipelined_equals_sequential(detector, sources, monkeypatch, use_weights):
-    monkeypatch.setenv("CHROMA_TRITON_PIPELINE", "0")
+    monkeypatch.setenv("CHROMA_TRITON", "no-pipeline")
     sequential = _run(detector, _host_events(sources), use_weights=use_weights)
-    monkeypatch.setenv("CHROMA_TRITON_PIPELINE", "1")
+    monkeypatch.delenv("CHROMA_TRITON")
     pipelined = _run(detector, _host_events(sources), use_weights=use_weights)
     assert pipelined == sequential
     assert sum(hits for _, hits, _ in pipelined) > 0

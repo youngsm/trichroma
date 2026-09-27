@@ -82,6 +82,6 @@ def test_photons_leaving_a_solid_on_a_box_face_meet_the_box():
 
 
 def test_bug_compatible_mode_keeps_the_leak(monkeypatch):
-    monkeypatch.setenv("CHROMA_TRITON_FIXES", "0")
+    monkeypatch.setenv("CHROMA_TRITON", "legacy")
     escaped, n = _escaped()
     assert escaped > 0.01 * n  # Chroma's t > 1e-6 lets photons on the plane through
