@@ -5,10 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "trichroma"
 version = "0.1.0"
-description = "Chroma's optical photon simulation on Triton: a drop-in chroma.sim.Simulation without PyCUDA"
+description = "A Triton backend for Chroma's optical photon simulation: chroma.sim.Simulation without PyCUDA"
 readme = "README.md"
 license = {file = "LICENSE.txt"}
 requires-python = ">=3.9"
+# Chroma itself (the `chroma` package: geometry, detector, event, loader) comes
+# from chroma-lite, which is not on PyPI: install it first, see the README.
+# Validated with PyTorch 2.5 and Triton 3.1.
 dependencies = [
     "numpy",
     "scipy",
@@ -17,10 +20,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The original CUDA backend (CHROMA_BACKEND=cuda) and recording tapes for the bitwise mode.
-cuda = ["pycuda", "pytools"]
-# chroma.camera / EventViewer and the histogram helpers of the original Chroma.
-viz = ["pygame", "matplotlib", "uncertainties"]
 test = ["pytest"]
 
 [project.urls]
@@ -29,11 +28,7 @@ Homepage = "https://github.com/youngsm/trichroma"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools.package-data]
-chroma = ["cuda/*.cu", "cuda/*.h", "color/*.csv", "demo/*.txt", "models/*", "io/*.C", "bvh/*.cpp"]
-
 [tool.pytest.ini_options]
-# tests/cuda_backend (the original Chroma suite) runs only when named explicitly.
 testpaths = ["tests/unit", "tests/integration", "tests/bitwise"]
 pythonpath = ["src"]
 markers = [

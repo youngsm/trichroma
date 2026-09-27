@@ -199,26 +199,9 @@ def run(args):
                       "detected": int(np.count_nonzero(out["flags"] & 4)), "hits": int(len(out["hit_t"]))}))
 
 
-def _z(k1, n1, k2, n2):
-    p1, p2 = k1 / n1, k2 / n2
-    p = (k1 + k2) / (n1 + n2)
-    se = np.sqrt(max(p * (1 - p) * (1 / n1 + 1 / n2), 1e-300))
-    return (p1 - p2) / se if (k1 + k2) > 0 else 0.0
-
-
-def _ks(a, b, alpha=1e-6):
-    if len(a) < 20 or len(b) < 20:
-        return None
-    a, b = np.sort(a), np.sort(b)
-    grid = np.concatenate([a, b])
-    fa = np.searchsorted(a, grid, side="right") / len(a)
-    fb = np.searchsorted(b, grid, side="right") / len(b)
-    distance = float(np.max(np.abs(fa - fb)))
-    bound = float(np.sqrt(np.log(2 / alpha) / 2) * (np.sqrt(1 / len(a)) + np.sqrt(1 / len(b))))
-    return {"distance": distance, "bound": bound, "pass": distance <= bound}
-
-
 def compare(args):
+    from trichroma.utils import ks_test as _ks, two_proportion_z as _z
+
     a, b = np.load(args.a), np.load(args.b)
     n1, n2 = len(a["flags"]), len(b["flags"])
     rows, failures = [], []
