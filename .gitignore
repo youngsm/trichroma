@@ -12,5 +12,6 @@ distribute*.gz
 distribute*.egg
 .coverage
 *.simg
-
+node_modules
+package-lock.json
 .vscode

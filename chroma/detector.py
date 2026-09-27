@@ -34,18 +34,19 @@ class Detector(Geometry):
         self.time_cdf = (np.array([-0.00000001, 0.00000001]), np.array([0.0, 1.0]))
         self.charge_cdf = (np.array([0.999999999, 1.00000000]), np.array([0.0, 1.0]))
 
-    def add_solid(self, solid, rotation=None, displacement=None):
+    def add_solid(self, solid, rotation=None, displacement=None, name=None):
         """
         Add the solid `solid` to the geometry. When building the final triangle
         mesh, `solid` will be placed by rotating it with the rotation matrix
         `rotation` and displacing it by the vector `displacement`.
         """
-        solid_id = Geometry.add_solid(self, solid=solid, rotation=rotation, 
-                                      displacement=displacement)
+        solid_id = Geometry.add_solid(self, solid=solid, rotation=rotation,
+                                      displacement=displacement, name=name)
         self.solid_id_to_channel_index.append(-1) # solid maps to no channel
         return solid_id
 
-    def add_pmt(self, pmt, rotation=None, displacement=None, channel_type=None):
+    def add_pmt(self, pmt, rotation=None, displacement=None, channel_type=None,
+                name=None):
         """Add the PMT `pmt` to the geometry. When building the final triangle
         mesh, `solid` will be placed by rotating it with the rotation matrix
         `rotation` and displacing it by the vector `displacement`, just like
@@ -65,16 +66,20 @@ class Detector(Geometry):
                 Defaults to None, where the ID number will be set to the 
                 generated channel index.
                 The channel_type must be representable as a 32-bit integer.
+            `name`: str, optional
+                Label for this PMT solid (e.g. "pmt0"). If None, defaults to "pmt{channel_index}".
         
             Returns: dictionary { 'solid_id' : solid_id, 
                                   'channel_index' : channel_index,
                                   'channel_type' : channel_type }
         """
 
-        solid_id = self.add_solid(solid=pmt, rotation=rotation, 
-                                  displacement=displacement)
-
         channel_index = len(self.channel_index_to_solid_id)
+        if name is None:
+            name = f"pmt{channel_index}"
+
+        solid_id = self.add_solid(solid=pmt, rotation=rotation,
+                                  displacement=displacement, name=name)
         if channel_type is None:
             channel_type = channel_index
 

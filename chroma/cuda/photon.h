@@ -111,95 +111,98 @@ fill_state(State &s, Photon &p, const Geometry *g)
             const WirePlane *wp = g->wireplanes[ip];
             if (wp == 0) continue;
 
-            // orthonormal frame in FP64
-            const double ux = (double)wp->u.x, uy = (double)wp->u.y, uz = (double)wp->u.z;
-            const double vx0 = (double)wp->v.x, vy0 = (double)wp->v.y, vz0 = (double)wp->v.z;
-            const double un = 1.0 / sqrt(ux*ux + uy*uy + uz*uz);
-            const double ux1 = ux*un, uy1 = uy*un, uz1 = uz*un;
-            const double vdotu = vx0*ux1 + vy0*uy1 + vz0*uz1;
-            const double vx1 = vx0 - vdotu*ux1;
-            const double vy1 = vy0 - vdotu*uy1;
-            const double vz1 = vz0 - vdotu*uz1;
-            const double vn = 1.0 / sqrt(vx1*vx1 + vy1*vy1 + vz1*vz1);
-            const double vx = vx1*vn, vy = vy1*vn, vz = vz1*vn;
-            const double nx = uy1*vz - uz1*vy;
-            const double ny = uz1*vx - ux1*vz;
-            const double nz = ux1*vy - uy1*vx;
+            // use precomputed normalized orthonormal frame (FP32)
+            const float ux1 = wp->u_norm.x, uy1 = wp->u_norm.y, uz1 = wp->u_norm.z;
+            const float vx = wp->v_norm.x, vy = wp->v_norm.y, vz = wp->v_norm.z;
+            const float nx = wp->n_norm.x, ny = wp->n_norm.y, nz = wp->n_norm.z;
 
             float3 w = p.position - wp->origin;
-            double du = (double)p.direction.x*ux1 + (double)p.direction.y*uy1 + (double)p.direction.z*uz1;
-            double dv = (double)p.direction.x*vx  + (double)p.direction.y*vy  + (double)p.direction.z*vz;
-            double dn = (double)p.direction.x*nx  + (double)p.direction.y*ny  + (double)p.direction.z*nz;
-            double wu = (double)w.x*ux1 + (double)w.y*uy1 + (double)w.z*uz1;
-            double wv0 = (double)w.x*vx  + (double)w.y*vy  + (double)w.z*vz - (double)wp->v0;
-            double wn0 = (double)w.x*nx  + (double)w.y*ny  + (double)w.z*nz;
+            float dn = p.direction.x*nx  + p.direction.y*ny  + p.direction.z*nz;
+            float wn0 = w.x*nx  + w.y*ny  + w.z*nz;
+            
+            // EARLY CULL: quick plane distance check
+            // if photon is far from plane and moving away, skip this plane
+            float plane_dist = fabsf(wn0);
+            if (plane_dist > wp->radius + 0.01f) {
+                // photon is outside wire envelope
+                if (dn * wn0 > 0.0f) continue;  // moving away from plane
+                // estimate minimum distance to plane
+                float t_plane = -wn0 / dn;
+                if (t_plane > best_distance + wp->radius) continue;  // too far
+            }
 
-            // u-extent cull (FP64)
-            double t_in = -1.0e300, t_out = 1.0e300;
-            if (fabs(du) < 1e-15) {
-                if (wu < (double)wp->umin || wu > (double)wp->umax) continue;
+            float du = p.direction.x*ux1 + p.direction.y*uy1 + p.direction.z*uz1;
+            float dv = p.direction.x*vx  + p.direction.y*vy  + p.direction.z*vz;
+            float wu = w.x*ux1 + w.y*uy1 + w.z*uz1;
+            float wv0 = w.x*vx  + w.y*vy  + w.z*vz - wp->v0;
+
+            // u-extent cull (FP32)
+            float t_in = -1.0e30f, t_out = 1.0e30f;
+            if (fabsf(du) < 1e-7f) {
+                if (wu < wp->umin || wu > wp->umax) continue;
             } else {
-                double t1 = ((double)wp->umin - wu) / du;
-                double t2 = ((double)wp->umax - wu) / du;
-                if (t1 > t2) { double tmp=t1; t1=t2; t2=tmp; }
+                float t1 = (wp->umin - wu) / du;
+                float t2 = (wp->umax - wu) / du;
+                if (t1 > t2) { float tmp=t1; t1=t2; t2=tmp; }
                 if (t1 > t_in) t_in = t1;
                 if (t2 < t_out) t_out = t2;
                 if (t_in > t_out) continue;
             }
 
-            const double pitch = (double)wp->pitch;
-            const double inv_pitch = (pitch != 0.0) ? (1.0 / pitch) : 0.0;
-            const double wire_radius = (double)wp->radius;
-            const double wire_thickness = 2.0 * wire_radius;
-            const double pad_v = 0.5 * wire_thickness + 1e-6;
-            const double pad_n = 0.5 * wire_thickness + 1e-6;
+            const float pitch = wp->pitch;
+            const float inv_pitch = (pitch != 0.0f) ? (1.0f / pitch) : 0.0f;
+            const float wire_radius = wp->radius;
+            const float wire_thickness = 2.0f * wire_radius;
+            const float pad_v = 0.5f * wire_thickness + 1e-5f;
+            const float pad_n = 0.5f * wire_thickness + 1e-5f;
 
-            int kmin = (int)ceil(((double)wp->vmin - (double)wp->v0) / pitch);
-            int kmax = (int)floor(((double)wp->vmax - (double)wp->v0) / pitch);
-            double A = dv*dv + dn*dn;
+            // use precomputed wire index bounds
+            int kmin = wp->k_min;
+            int kmax = wp->k_max;
+            float A = dv*dv + dn*dn;
 
             int k_start = kmin;
             int k_stop = kmax;
 
             if (kmin <= kmax) {
-                const double t_eps = 1.0e-4;
-                double t_lo = fmax(t_in, t_eps);
-                double t_hi = t_out;
-                double best_cap = (double)best_distance;
+                const float t_eps = 1.0e-4f;
+                float t_lo = fmaxf(t_in, t_eps);
+                float t_hi = t_out;
+                float best_cap = best_distance;
                 if (best_cap < t_hi)
                     t_hi = best_cap;
 
-                if (fabs(dn) > 1e-12) {
-                    double tn1 = (-pad_n - wn0) / dn;
-                    double tn2 = ( pad_n - wn0) / dn;
-                    if (tn1 > tn2) { double tmp = tn1; tn1 = tn2; tn2 = tmp; }
-                    t_lo = fmax(t_lo, tn1);
-                    t_hi = fmin(t_hi, tn2);
+                if (fabsf(dn) > 1e-7f) {
+                    float tn1 = (-pad_n - wn0) / dn;
+                    float tn2 = ( pad_n - wn0) / dn;
+                    if (tn1 > tn2) { float tmp = tn1; tn1 = tn2; tn2 = tmp; }
+                    t_lo = fmaxf(t_lo, tn1);
+                    t_hi = fminf(t_hi, tn2);
                 } else {
-                    if (fabs(wn0) > pad_n)
+                    if (fabsf(wn0) > pad_n)
                         continue;
                 }
 
                 if (t_hi < t_lo)
                     continue;
 
-                if (fabs(dn) <= 1e-12 && fabs(dv) > 1e-12) {
-                    double t_span = (pitch + wire_thickness) / fabs(dv);
-                    t_hi = fmin(t_hi, t_lo + t_span);
+                if (fabsf(dn) <= 1e-7f && fabsf(dv) > 1e-7f) {
+                    float t_span = (pitch + wire_thickness) / fabsf(dv);
+                    t_hi = fminf(t_hi, t_lo + t_span);
                 }
 
-                double v_entry = wv0 + dv * t_lo;
-                double v_exit = wv0 + dv * t_hi;
-                double v_lo = fmin(v_entry, v_exit) - pad_v;
-                double v_hi = fmax(v_entry, v_exit) + pad_v;
+                float v_entry = wv0 + dv * t_lo;
+                float v_exit = wv0 + dv * t_hi;
+                float v_lo = fminf(v_entry, v_exit) - pad_v;
+                float v_hi = fmaxf(v_entry, v_exit) + pad_v;
 
                 if (wv0 - pad_v < v_lo)
                     v_lo = wv0 - pad_v;
                 if (wv0 + pad_v > v_hi)
                     v_hi = wv0 + pad_v;
 
-                long long k_lo = (long long)floor(v_lo * inv_pitch);
-                long long k_hi = (long long)ceil(v_hi * inv_pitch);
+                int k_lo = (int)floorf(v_lo * inv_pitch);
+                int k_hi = (int)ceilf(v_hi * inv_pitch);
 
                 if (k_lo < kmin)
                     k_lo = kmin;
@@ -208,26 +211,26 @@ fill_state(State &s, Photon &p, const Geometry *g)
                 if (k_lo > k_hi)
                     continue;
 
-                k_start = (int)k_lo;
-                k_stop = (int)k_hi;
+                k_start = k_lo;
+                k_stop = k_hi;
             }
 
+            const float r2_wire = wire_radius*wire_radius;
             for (int k=k_start; k<=k_stop; ++k) {
-                double wv = wv0 - (double)k * pitch;
-                double B = wv*dv + wn0*dn;
-                double C = wv*wv + wn0*wn0 - wire_radius*wire_radius;
-                double disc = B*B - A*C;
-                if (disc < 0.0) continue;
-                double sqrt_disc = sqrt(disc);
-                double t_small = (-B - sqrt_disc) / A;
-                double t_large = (-B + sqrt_disc) / A;
+                float wv = wv0 - (float)k * pitch;
+                float B = wv*dv + wn0*dn;
+                float C = wv*wv + wn0*wn0 - r2_wire;
+                float disc = B*B - A*C;
+                if (disc < 0.0f) continue;
+                float sqrt_disc = sqrtf(disc);
+                float t_small = (-B - sqrt_disc) / A;
+                float t_large = (-B + sqrt_disc) / A;
                 // robust epsilon to avoid immediate self-hit at boundary
-                const double t_min = 1.0e-4; // mm
-                const double r2_wire = wire_radius*wire_radius;
-                const double r2_0 = wv*wv + wn0*wn0; // squared radius at ray start for this k
-                const double eps0 = fmax(1e-18, 1e-12 * r2_wire);
+                const float t_min = 1.0e-4f; // mm
+                const float r2_0 = wv*wv + wn0*wn0; // squared radius at ray start for this k
+                const float eps0 = fmaxf(1e-12f, 1e-6f * r2_wire);
 
-                double t;
+                float t;
                 if (r2_0 > r2_wire + eps0) {
                     // origin outside: require a valid forward entry root; otherwise skip
                     if (t_small <= t_min) continue;
@@ -240,23 +243,24 @@ fill_state(State &s, Photon &p, const Geometry *g)
                     // origin numerically on boundary: take a small step forward
                     t = t_min;
                 }
-                double uc = wu + du * t;
+                float uc = wu + du * t;
                 if (uc < wp->umin || uc > wp->umax) continue;
-                if ((float)t >= analytic_distance) continue;
+                if (t >= analytic_distance) continue;
                 // enforce u-slab window
                 if (t < t_in || t > t_out) continue;
 
-                double vn_hit = wv + dv * t;
-                double nn_hit = wn0 + dn * t;
-                double len = sqrt(vn_hit*vn_hit + nn_hit*nn_hit);
-                if (len <= 0.0) continue;
-                float3 n_local = make_float3((float)((vn_hit/len)*vx + (nn_hit/len)*nx),
-                                             (float)((vn_hit/len)*vy + (nn_hit/len)*ny),
-                                             (float)((vn_hit/len)*vz + (nn_hit/len)*nz));
+                float vn_hit = wv + dv * t;
+                float nn_hit = wn0 + dn * t;
+                float len = sqrtf(vn_hit*vn_hit + nn_hit*nn_hit);
+                if (len <= 0.0f) continue;
+                float inv_len = 1.0f / len;
+                float3 n_local = make_float3((vn_hit*inv_len)*vx + (nn_hit*inv_len)*nx,
+                                             (vn_hit*inv_len)*vy + (nn_hit*inv_len)*ny,
+                                             (vn_hit*inv_len)*vz + (nn_hit*inv_len)*nz);
                 float3 n_world_raw = n_local; // outward cylinder normal (unoriented)
                 float dot_raw_local = dot(n_world_raw, -p.direction);
 
-                analytic_distance = (float)t;
+                analytic_distance = t;
                 analytic_surface = wp->surface_index;
                 analytic_mat_inner = wp->material_inner_index;
                 analytic_mat_outer = wp->material_outer_index;
@@ -271,9 +275,8 @@ fill_state(State &s, Photon &p, const Geometry *g)
 
     bool use_analytic = false;
     if (analytic_surface >= 0) {
-        double da = (double)analytic_distance;
-        double dm = (double)best_distance;
-        use_analytic = (da + 1e-12 < dm);
+        // use FP32 comparison with small epsilon
+        use_analytic = (analytic_distance + 1e-6f < best_distance);
     }
 
     Material *material1 = 0;

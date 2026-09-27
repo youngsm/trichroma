@@ -21,12 +21,13 @@ def pick_seed():
 
 class Simulation(object):
     def __init__(self, detector, seed=None, cuda_device=None, photon_tracking=False,
-                 nthreads_per_block=512, max_blocks=1024):
+                 nthreads_per_block=512, max_blocks=1024, use_packed=False):
         self.detector = detector
 
         self.nthreads_per_block = nthreads_per_block
         self.max_blocks = max_blocks
         self.photon_tracking = photon_tracking
+        self.use_packed = use_packed  # use float4 packed format for A100 optimization
 
         if seed is None:
             self.seed = pick_seed()
@@ -51,7 +52,7 @@ class Simulation(object):
 
         self.pdf_config = None
      
-    def _simulate_batch(self,batch_events,keep_photons_beg=False,keep_photons_end=False,keep_hits=True,keep_flat_hits=True,run_daq=False, max_steps=100, verbose=False):
+    def _simulate_batch(self,batch_events,keep_photons_beg=False,keep_photons_end=False,keep_hits=True,keep_flat_hits=True,run_daq=False, max_steps=100, use_weights=False, verbose=False):
         '''Assumes batch_events is a list of Event objects with photons_beg having evidx set to the index in the array.
            
            Yields the fully formed events. Do not call directly.'''
@@ -84,16 +85,27 @@ class Simulation(object):
             copy_flags=copy_flags,
             copy_triangles=copy_triangles,
             copy_weights=copy_weights,
+            use_packed=self.use_packed,
         )
         t_copy_end = timer()
         if verbose:
             print('GPU copy took %0.2f s' % (t_copy_end-t_copy_start))
 
         t_prop_start = timer()
-        tracking = gpu_photons.propagate(self.gpu_geometry, self.rng_states,
-                              nthreads_per_block=self.nthreads_per_block,
-                              max_blocks=self.max_blocks,
-                              max_steps=max_steps,track=self.photon_tracking)
+        if self.use_packed:
+            gpu_photons.propagate_packed(self.gpu_geometry, self.rng_states,
+                                  nthreads_per_block=self.nthreads_per_block,
+                                  max_blocks=self.max_blocks,
+                                  max_steps=max_steps,
+                                  use_weights=use_weights)
+            tracking = None  # tracking not supported in packed mode
+        else:
+            tracking = gpu_photons.propagate(self.gpu_geometry, self.rng_states,
+                                  nthreads_per_block=self.nthreads_per_block,
+                                  max_blocks=self.max_blocks,
+                                  max_steps=max_steps,
+                                  use_weights=use_weights,
+                                  track=self.photon_tracking)
             
         t_prop_end = timer()
         if verbose:
@@ -224,7 +236,7 @@ class Simulation(object):
 
     def simulate(self, iterable, keep_photons_beg=False, keep_photons_end=False,
                  keep_hits=True, keep_flat_hits=True, run_daq=False, max_steps=1000,
-                 photons_per_batch=1000000):
+                 use_weights=False, photons_per_batch=1000000):
         if isinstance(iterable, event.Photons):
             first_element, iterable = iterable, [iterable]
         else:
@@ -264,6 +276,7 @@ class Simulation(object):
                                                 keep_hits=keep_hits,
                                                 keep_flat_hits=keep_flat_hits,
                                                 run_daq=run_daq, max_steps=max_steps,
+                                                use_weights=use_weights,
                                                 )
                 nphotons = 0
                 batch_events = []
@@ -275,8 +288,8 @@ class Simulation(object):
                                             keep_hits=keep_hits,
                                             keep_flat_hits=keep_flat_hits,
                                             run_daq=run_daq, max_steps=max_steps,
+                                            use_weights=use_weights,
                                             )
-
 
     def __del__(self):
         self.context.pop()
