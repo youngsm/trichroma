@@ -107,7 +107,9 @@ class Detector(Geometry):
                normalized for bin width if variable binning is present.
         '''
         cdf_x = np.copy(bin_edges)
-        cdf_y = np.array([0.0]+bin_contents.cumsum())
+        # (np.array([0.0] + cumsum) added 0.0 to every entry instead of prepending it,
+        # leaving y one entry short and the DAQ reading past its end.)
+        cdf_y = np.concatenate([[0.0], np.cumsum(bin_contents)])
         cdf_y /= cdf_y[-1] # normalize
         return (cdf_x, cdf_y)
 
