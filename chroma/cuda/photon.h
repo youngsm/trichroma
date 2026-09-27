@@ -430,9 +430,9 @@ pick_new_direction(float3 axis, float theta, float phi)
 }
 
 __device__ void
-rayleigh_scatter(Photon &p, curandState &rng)
+rayleigh_scatter(Photon &p, ChromaPhotonRng &rng)
 {
-    float cos_theta = 2.0f*cosf((acosf(1.0f - 2.0f*curand_uniform(&rng))-2*PI)/3.0f);
+    float cos_theta = 2.0f*cosf((acosf(1.0f - 2.0f*chroma_photon_uniform(&rng))-2*PI)/3.0f);
     if (cos_theta > 1.0f)
         cos_theta = 1.0f;
     else if (cos_theta < -1.0f)
@@ -456,11 +456,11 @@ rayleigh_scatter(Photon &p, curandState &rng)
 } // scatter
 
 __device__
-int propagate_to_boundary(Photon &p, State &s, curandState &rng,
+int propagate_to_boundary(Photon &p, State &s, ChromaPhotonRng &rng,
                           bool use_weights=false, int scatter_first=0)
 {
-    float absorption_distance = -s.absorption_length*logf(curand_uniform(&rng));
-    float scattering_distance = -s.scattering_length*logf(curand_uniform(&rng));
+    float absorption_distance = -s.absorption_length*logf(chroma_photon_uniform(&rng));
+    float scattering_distance = -s.scattering_length*logf(chroma_photon_uniform(&rng));
 
     if (use_weights && p.weight > WEIGHT_LOWER_THRESHOLD) // Prevent absorption
         absorption_distance = 1e30;
@@ -475,7 +475,7 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
             int i=0;
             const int max_i = 1000;
             while (i < max_i && scattering_distance > s.distance_to_boundary) {
-                scattering_distance = -s.scattering_length*logf(curand_uniform(&rng));
+                scattering_distance = -s.scattering_length*logf(chroma_photon_uniform(&rng));
                 i++;
             }
             p.weight *= scatter_prob;
@@ -489,7 +489,7 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
             int i=0;
             const int max_i = 1000;
             while (i < max_i && scattering_distance <= s.distance_to_boundary) {
-                scattering_distance = -s.scattering_length*logf(curand_uniform(&rng));
+                scattering_distance = -s.scattering_length*logf(chroma_photon_uniform(&rng));
                 i++;
             }
             p.weight *= no_scatter_prob;
@@ -504,10 +504,12 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
             if (s.material1->num_comp == 0) {
                 p.last_hit_triangle = -1;
                 p.history |= BULK_ABSORB;
+                chroma_photon_mark_process(
+                    &rng, CHROMA_TAPE_PROCESS_BULK_ABSORB);
                 return BREAK;
             }
             
-            float uniform_sample_comp = curand_uniform(&rng);
+            float uniform_sample_comp = chroma_photon_uniform(&rng);
             float prob = 0.0f;
             int comp;
             for (comp = 0; ; comp++) {
@@ -516,7 +518,7 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
                 if (uniform_sample_comp < prob or comp+1 == s.material1->num_comp) break;
             }
             
-            float uniform_sample_reemit = curand_uniform(&rng);
+            float uniform_sample_reemit = chroma_photon_uniform(&rng);
             float comp_reemit_prob = interp_property(s.material1, p.wavelength, s.material1->comp_reemission_prob[comp]);
             if (uniform_sample_reemit < comp_reemit_prob) {
                 p.wavelength = sample_cdf(&rng, s.material1->wavelength_n, 
@@ -532,11 +534,15 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
                 p.polarization /= norm(p.polarization);
                 p.last_hit_triangle = -1;
                 p.history |= BULK_REEMIT;
+                chroma_photon_mark_process(
+                    &rng, CHROMA_TAPE_PROCESS_BULK_REEMIT);
                 return CONTINUE;
             } // photon is reemitted isotropically
             else {
                 p.last_hit_triangle = -1;
                 p.history |= BULK_ABSORB;
+                chroma_photon_mark_process(
+                    &rng, CHROMA_TAPE_PROCESS_BULK_ABSORB);
                 return BREAK;
             } // photon is absorbed in material1
         }
@@ -554,6 +560,8 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
             rayleigh_scatter(p, rng);
 
             p.history |= RAYLEIGH_SCATTER;
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_BULK_SCATTER);
 
             p.last_hit_triangle = -1;
 
@@ -573,7 +581,7 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
 } // propagate_to_boundary
 
 __noinline__ __device__ void
-propagate_at_boundary(Photon &p, State &s, curandState &rng)
+propagate_at_boundary(Photon &p, State &s, ChromaPhotonRng &rng)
 {
     float incident_angle = get_theta(s.surface_normal,-p.direction);
     float refracted_angle = asinf(sinf(incident_angle)*s.refractive_index1/s.refractive_index2);
@@ -595,18 +603,22 @@ propagate_at_boundary(Photon &p, State &s, curandState &rng)
     float normal_probability = normal_coefficient*normal_coefficient;
 
     float reflection_coefficient;
-    if (curand_uniform(&rng) < normal_probability) {
+    if (chroma_photon_uniform(&rng) < normal_probability) {
         // photon polarization normal to plane of incidence
         reflection_coefficient = -sinf(incident_angle-refracted_angle)/sinf(incident_angle+refracted_angle);
 
-        if ((curand_uniform(&rng) < reflection_coefficient*reflection_coefficient) || isnan(refracted_angle)) {
+        if ((chroma_photon_uniform(&rng) < reflection_coefficient*reflection_coefficient) || isnan(refracted_angle)) {
             p.direction = rotate(s.surface_normal, incident_angle, incident_plane_normal);
                         
             p.history |= REFLECT_SPECULAR;
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_REFLECT);
             // printf("Fresnel REFLECT last=%d\n", p.last_hit_triangle);
         }
         else {
             p.direction = rotate(s.surface_normal, PI-refracted_angle, incident_plane_normal);
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_TRANSMIT);
             // printf("Fresnel TRANSMIT last=%d\n", p.last_hit_triangle);
         }
 
@@ -616,15 +628,19 @@ propagate_at_boundary(Photon &p, State &s, curandState &rng)
         // photon polarization parallel to plane of incidence
         reflection_coefficient = tanf(incident_angle-refracted_angle)/tanf(incident_angle+refracted_angle);
 
-        if ((curand_uniform(&rng) < reflection_coefficient*reflection_coefficient) || isnan(refracted_angle)) {
+        if ((chroma_photon_uniform(&rng) < reflection_coefficient*reflection_coefficient) || isnan(refracted_angle)) {
             p.direction = rotate(s.surface_normal, incident_angle, incident_plane_normal);
                         
             p.history |= REFLECT_SPECULAR;
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_REFLECT);
             // printf("Fresnel REFLECT last=%d\n", p.last_hit_triangle);
 
         }
         else {
             p.direction = rotate(s.surface_normal, PI-refracted_angle, incident_plane_normal);
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_TRANSMIT);
             // printf("Fresnel TRANSMIT last=%d\n", p.last_hit_triangle);
         }
 
@@ -648,8 +664,24 @@ propagate_at_specular_reflector(Photon &p, State &s)
     return CONTINUE;
 } // propagate_at_specular_reflector
 
+#ifdef CHROMA_USE_RANDOM_TAPE
 __device__ int
-propagate_at_diffuse_reflector(Photon &p, State &s, curandState &rng)
+propagate_at_specular_reflector(Photon &p, State &s, ChromaPhotonRng *rng)
+{
+    int command = propagate_at_specular_reflector(p, s);
+    chroma_photon_mark_process(
+        rng, CHROMA_TAPE_PROCESS_SURFACE_SPECULAR);
+    return command;
+}
+#define CHROMA_PROPAGATE_SPECULAR(p, s, rng) \
+    propagate_at_specular_reflector(p, s, &(rng))
+#else
+#define CHROMA_PROPAGATE_SPECULAR(p, s, rng) \
+    propagate_at_specular_reflector(p, s)
+#endif
+
+__device__ int
+propagate_at_diffuse_reflector(Photon &p, State &s, ChromaPhotonRng &rng)
 {
     float ndotv;
     do {
@@ -659,18 +691,25 @@ propagate_at_diffuse_reflector(Photon &p, State &s, curandState &rng)
             p.direction = -p.direction;
             ndotv = -ndotv;
         }
-    } while (! (curand_uniform(&rng) < ndotv) );
+#ifdef CHROMA_USE_RANDOM_TAPE
+    } while (! (chroma_photon_uniform(&rng) < ndotv) &&
+             !chroma_photon_rng_failed(&rng));
+#else
+    } while (! (chroma_photon_uniform(&rng) < ndotv) );
+#endif
 
     p.polarization = cross(uniform_sphere(&rng), p.direction);
     p.polarization /= norm(p.polarization);
 
     p.history |= REFLECT_DIFFUSE;
+    chroma_photon_mark_process(
+        &rng, CHROMA_TAPE_PROCESS_SURFACE_DIFFUSE);
 
     return CONTINUE;
 } // propagate_at_diffuse_reflector
 
 __device__ int
-propagate_complex(Photon &p, State &s, curandState &rng, Surface* surface, bool use_weights=false)
+propagate_complex(Photon &p, State &s, ChromaPhotonRng &rng, Surface* surface, bool use_weights=false)
 {
     float detect = interp_property(surface, p.wavelength, surface->detect);
     float reflect_specular = interp_property(surface, p.wavelength, surface->reflect_specular);
@@ -795,29 +834,35 @@ propagate_complex(Photon &p, State &s, curandState &rng, Surface* surface, bool 
 
     if (use_weights && detect > 0.0f) {
         p.history |= SURFACE_DETECT;
+        chroma_photon_mark_process(
+            &rng, CHROMA_TAPE_PROCESS_SURFACE_DETECT);
         p.weight *= detect;
         return BREAK;
     }
 
-    float uniform_sample = curand_uniform(&rng);
+    float uniform_sample = chroma_photon_uniform(&rng);
 
     if (uniform_sample < absorb) {
         // detection probability is conditional on absorption here
-        float uniform_sample_detect = curand_uniform(&rng);
+        float uniform_sample_detect = chroma_photon_uniform(&rng);
         if (uniform_sample_detect < detect)
             p.history |= SURFACE_DETECT;
         else
             p.history |= SURFACE_ABSORB;
+        chroma_photon_mark_process(
+            &rng, uniform_sample_detect < detect
+                ? CHROMA_TAPE_PROCESS_SURFACE_DETECT
+                : CHROMA_TAPE_PROCESS_SURFACE_ABSORB);
 
         return BREAK;
     }
     else if (uniform_sample < absorb + reflect || !surface->transmissive) {
         // reflect, specularly (default) or diffusely
-        float uniform_sample_reflect = curand_uniform(&rng);
+        float uniform_sample_reflect = chroma_photon_uniform(&rng);
         if (uniform_sample_reflect < reflect_diffuse)
             return propagate_at_diffuse_reflector(p, s, rng);
         else
-            return propagate_at_specular_reflector(p, s);
+            return CHROMA_PROPAGATE_SPECULAR(p, s, rng);
     }
     else {
         // refract and transmit
@@ -825,19 +870,21 @@ propagate_complex(Photon &p, State &s, curandState &rng, Surface* surface, bool 
         p.polarization = cross(incident_plane_normal, p.direction);
         p.polarization /= norm(p.polarization);
         p.history |= SURFACE_TRANSMIT;
+        chroma_photon_mark_process(
+            &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_TRANSMIT);
         return CONTINUE;
     }
 } // propagate_complex
 
 __device__ int
-propagate_at_wls(Photon &p, State &s, curandState &rng, Surface *surface, bool use_weights=false)
+propagate_at_wls(Photon &p, State &s, ChromaPhotonRng &rng, Surface *surface, bool use_weights=false)
 {
     float absorb = interp_property(surface, p.wavelength, surface->absorb);
     float reflect_specular = interp_property(surface, p.wavelength, surface->reflect_specular);
     float reflect_diffuse = interp_property(surface, p.wavelength, surface->reflect_diffuse);
     float reemit = interp_property(surface, p.wavelength, surface->reemit);
 
-    float uniform_sample = curand_uniform(&rng);
+    float uniform_sample = chroma_photon_uniform(&rng);
 
     if (use_weights && p.weight > WEIGHT_LOWER_THRESHOLD && absorb < (1.0f - WEIGHT_LOWER_THRESHOLD)) {
         // Prevent absorption and reweight accordingly
@@ -849,9 +896,11 @@ propagate_at_wls(Photon &p, State &s, curandState &rng, Surface *surface, bool u
     }
 
     if (uniform_sample < absorb) {
-        float uniform_sample_reemit = curand_uniform(&rng);
+        float uniform_sample_reemit = chroma_photon_uniform(&rng);
         if (uniform_sample_reemit < reemit) {
             p.history |= SURFACE_REEMIT;
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_SURFACE_REEMIT);
             p.wavelength = sample_cdf(&rng, surface->wavelength_n, surface->wavelength_start, surface->wavelength_step, surface->reemission_cdf);
             p.direction = uniform_sphere(&rng);
             p.polarization = cross(uniform_sphere(&rng), p.direction);
@@ -859,26 +908,30 @@ propagate_at_wls(Photon &p, State &s, curandState &rng, Surface *surface, bool u
             return CONTINUE;
         } else {
           p.history |= SURFACE_ABSORB;
+          chroma_photon_mark_process(
+              &rng, CHROMA_TAPE_PROCESS_SURFACE_ABSORB);
           return BREAK;
         }
     }
     else if (uniform_sample < absorb + reflect_specular + reflect_diffuse) {
         // choose how to reflect, defaulting to diffuse
-        float uniform_sample_reflect = curand_uniform(&rng) * (reflect_specular + reflect_diffuse);
+        float uniform_sample_reflect = chroma_photon_uniform(&rng) * (reflect_specular + reflect_diffuse);
         if (uniform_sample_reflect < reflect_specular)
-            return propagate_at_specular_reflector(p, s);
+            return CHROMA_PROPAGATE_SPECULAR(p, s, rng);
         else
             return propagate_at_diffuse_reflector(p, s, rng);
     }
     else {
         p.history |= SURFACE_TRANSMIT;
+        chroma_photon_mark_process(
+            &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_TRANSMIT);
         return PASS;
     }
 } // propagate_at_wls
 
 
 __noinline__ __device__ int
-propagate_at_dichroic(Photon &p, State &s, curandState &rng, Surface *surface, bool use_weights=false)
+propagate_at_dichroic(Photon &p, State &s, ChromaPhotonRng &rng, Surface *surface, bool use_weights=false)
 {
     float incident_angle = get_theta(s.surface_normal, -p.direction);
     
@@ -894,23 +947,27 @@ propagate_at_dichroic(Photon &p, State &s, curandState &rng, Surface *surface, b
     float reflect_prob = reflect_prob_low + (reflect_prob_high-reflect_prob_low)*(idx-iidx);
     float transmit_prob = transmit_prob_low + (transmit_prob_high-transmit_prob_low)*(idx-iidx);
     
-    float uniform_sample = curand_uniform(&rng);
+    float uniform_sample = chroma_photon_uniform(&rng);
     if ((uniform_sample < reflect_prob)) {
-        return propagate_at_specular_reflector(p, s);
+        return CHROMA_PROPAGATE_SPECULAR(p, s, rng);
     }
     else if (uniform_sample < transmit_prob+reflect_prob) {
         p.history |= SURFACE_TRANSMIT;
+        chroma_photon_mark_process(
+            &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_TRANSMIT);
         return PASS;
     }
     else {
         p.history |= SURFACE_ABSORB;
+        chroma_photon_mark_process(
+            &rng, CHROMA_TAPE_PROCESS_SURFACE_ABSORB);
         return BREAK;
     }
 
 } // propagate_at_dichroic
 
 __device__ int
-propagate_at_angular(Photon &p, State &s, curandState &rng, Surface *surface, bool use_weights=false)
+propagate_at_angular(Photon &p, State &s, ChromaPhotonRng &rng, Surface *surface, bool use_weights=false)
 {
     float incident_angle = get_theta(s.surface_normal, -p.direction);
     
@@ -935,18 +992,22 @@ propagate_at_angular(Photon &p, State &s, curandState &rng, Surface *surface, bo
         reflect_diff_prob /= survive;
     }
     
-    float uniform_sample = curand_uniform(&rng);
+    float uniform_sample = chroma_photon_uniform(&rng);
     
     if (uniform_sample < absorb_prob) {
         p.history |= SURFACE_ABSORB;
+        chroma_photon_mark_process(
+            &rng, CHROMA_TAPE_PROCESS_SURFACE_ABSORB);
         return BREAK;
     }
     else if (uniform_sample < absorb_prob + transmit_prob) {
         p.history |= SURFACE_TRANSMIT;
+        chroma_photon_mark_process(
+            &rng, CHROMA_TAPE_PROCESS_DIELECTRIC_TRANSMIT);
         return PASS;
     }
     else if (uniform_sample < absorb_prob + transmit_prob + reflect_spec_prob) {
-        return propagate_at_specular_reflector(p, s);
+        return CHROMA_PROPAGATE_SPECULAR(p, s, rng);
     }
     else {
         return propagate_at_diffuse_reflector(p, s, rng);
@@ -954,7 +1015,7 @@ propagate_at_angular(Photon &p, State &s, curandState &rng, Surface *surface, bo
 } // propagate_at_angular
 
 __device__ int
-propagate_at_surface(Photon &p, State &s, curandState &rng, const Geometry *geometry,
+propagate_at_surface(Photon &p, State &s, ChromaPhotonRng &rng, const Geometry *geometry,
                      bool use_weights=false)
 {
     Surface *surface = geometry->surfaces[s.surface_index];
@@ -995,7 +1056,7 @@ propagate_at_surface(Photon &p, State &s, curandState &rng, const Geometry *geom
             reflect_specular += (1.0f - sum2);
         }
 #endif
-        float uniform_sample = curand_uniform(&rng);
+        float uniform_sample = chroma_photon_uniform(&rng);
 
         if (use_weights && p.weight > WEIGHT_LOWER_THRESHOLD 
             && absorb < (1.0f - WEIGHT_LOWER_THRESHOLD)) {
@@ -1012,26 +1073,32 @@ propagate_at_surface(Photon &p, State &s, curandState &rng, const Geometry *geom
 
         if (use_weights && detect > 0.0f) {
             p.history |= SURFACE_DETECT;
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_SURFACE_DETECT);
             p.weight *= detect;
             return BREAK;
         }
 
         if (uniform_sample < absorb) {
             p.history |= SURFACE_ABSORB;
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_SURFACE_ABSORB);
             return BREAK;
         }
         else if (uniform_sample < absorb + detect) {
             p.history |= SURFACE_DETECT;
+            chroma_photon_mark_process(
+                &rng, CHROMA_TAPE_PROCESS_SURFACE_DETECT);
             return BREAK;
         }
         else if (uniform_sample < absorb + detect + reflect_diffuse)
             return propagate_at_diffuse_reflector(p, s, rng);
         else if (uniform_sample < absorb + detect + reflect_diffuse + reflect_specular)
-            return propagate_at_specular_reflector(p, s);
+            return CHROMA_PROPAGATE_SPECULAR(p, s, rng);
         else
 #if CHROMA_FORCE_SCATTER_AT_PASS
             /* include any residual in specular to avoid PASS */
-            return propagate_at_specular_reflector(p, s);
+            return CHROMA_PROPAGATE_SPECULAR(p, s, rng);
 #else
             return PASS;
 #endif
