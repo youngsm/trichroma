@@ -38,8 +38,8 @@ The transport engine alone, for three kinds of detector:
   ~17 steps per photon.
 - **30k-PMT scintillator detector:** 30,210 instanced 20-inch PMT meshes (18M
   triangles) around a liquid-scintillator volume, a point source at the
-  centre. At 420 nm a photon takes ~5 steps. With a Cherenkov spectrum it
-  takes ~6, because the scintillator absorbs the UV part and re-emits it.
+  centre, a Cherenkov spectrum (the scintillator absorbs its UV part and
+  re-emits it), ~6 steps per photon.
 - **LXe TPC:** a 4.2M-triangle CAD mesh (chroma-lxe), 178 nm, ~1.6 steps per
   photon.
 
@@ -51,7 +51,6 @@ Photons per second:
 | Detector | A100, 10^6 photons | A100, 10^8 | RTX 2080 Ti, 10^6 | RTX 2080 Ti, 3·10^7 |
 |---|---|---|---|---|
 | LAr TPC | 108M | 176M | 53M | 68M |
-| 30k-PMT detector, 420 nm | 57M | 71M | 29M | 30M |
 | 30k-PMT detector, Cherenkov spectrum | 48M | 59M | 24M | 25M |
 | LXe TPC | 121M | 175M | 80M | 83M |
 
