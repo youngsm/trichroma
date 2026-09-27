@@ -44,6 +44,9 @@ ways.
    restores all but the specular-direction formula.
    - **Wires** (three defects): +18.0%.
    - **Photons leaking through coincident PMT and wall faces:** +0.08%.
+   - **Photons passing through an analytic box whose entry face is at most
+     1e-6 mm ahead:** not measurable on the LUT fixture (float64 checks:
+     below).
    - **Polarization after a specular reflection:** -0.37% ± 0.14%.
    - **Fresnel reflection and specular direction at normal incidence:** not
      measurable.
@@ -52,7 +55,16 @@ ways.
    spectrum.
 
 **Speed.** Unweighted LUT fixture, 30M photons, A100. CUDA Chroma does
-1.77M photons/s (its fastest call) and production 65.4M (37x). Per difference:
+1.77M photons/s (its fastest call) and production 96M (54x). The factors per
+difference below were measured before the September 2026 engine revision
+(production then 65.4M, 37x; design.md describes the revision). Of its
+changes, only the watertight triangle test (G10) and the analytic boxes'
+exact triangle location (G4) change results, at the float32 level, and the
+box entry-face correction (G11) on purpose. Against the engine before it, weighted
+detected light changed by +0.0002% (0.02σ on 60M photons; 0.04σ on 120M), and
+the paired channel and time spectra agree (p = 0.17-0.69). Every other change
+(scheduling, data layouts, warp votes, arithmetic identities) leaves each
+photon's result bitwise identical. Per difference:
 - The engine alone (Philox, the geometry structures, the scheduler) is
   6.8 times faster at equal physics.
 - The corrected wires are another 2.4 times faster.
@@ -105,12 +117,14 @@ block). No uniform is used twice, and none is shared between photons.
 | G1 | Chroma's BVH (16-bit quantised boxes), stack traversal; the first triangle found wins exact ties | binned-SAH trees in eight octant copies, stackless, a top-level tree over instances | none | edge ties only (3.4) | (a) |
 | G2 | triangle test rejects abs(det) < FLT_EPSILON (an absolute cut) and compares in double | rejects det = 0 only | none | none: the cut only misses near-grazing hits on sub-mm triangles | (b)/(d) |
 | G3 | instance triangles in float32 world coordinates | intersected in the mesh's frame with a float32 ray transform | none | hit points agree to 1.2e-3 mm (99.99%), normals to 2.4e-7 (3.4) | (a) |
-| G4 | a box face is two BVH triangles; a photon crossing it, or reflected at a point that rounds to the far side, can hit the other triangle at t ~ 1e-5 mm and end up inside the solid | up to 16 axis-aligned box solids are tested analytically, crossing face only | none | 8 photons in 10^6 end in the cathode's steel in CUDA Chroma (3.2) | (b) |
+| G4 | a box face is two BVH triangles; a photon crossing it, or reflected at a point that rounds to the far side, can hit the other triangle at t ~ 1e-5 mm and end up inside the solid | up to 16 axis-aligned box solids are tested analytically, crossing face only; the face's triangle is located with exact edge functions | none | 8 photons in 10^6 end in the cathode's steel in CUDA Chroma (3.2) | (b) |
 | G5 | 1000-entry traversal stack (an overflow breaks the traversal) | stackless | none | none (exact mode refuses such trees) | (d) |
 | G6 | material and surface indices packed in 8 bits (128 and above read wrong table rows) | int32 indices | none | none (few materials) | (b) |
 | G7 | zero-area triangle: NaN normal, photon aborted | zero normal, photon passes | none | none | (d) |
-| G8 | the material of a bulk event is always that of the next boundary | the wavefront grid shortcut takes it from a grid cell whose material is certified by sampling rays | `CHROMA_TRITON_GRID=0`; the default fused kernel never uses the grid | none (3.3) | (d) |
+| G8 | the material of a bulk event is always that of the next boundary | the wavefront grid shortcut takes it from a grid cell whose material is certified by sampling rays (it differs where the full step's next boundary would be a float32 back-face hit at a silhouette edge) | `CHROMA_TRITON_GRID=0`; the default fused kernel never uses the grid | none (3.3) | (d) |
 | G9 | a photon that leaves a solid through a face lying in a box face's plane is on that plane; the box face then needs t > 1e-6, so rounding lets the photon through | the box face is met at distance 0 when the photon is on its plane within a few ulp and has not just met it | `FIXES=0` | chroma-lar's PMT backs lie in the TPC walls: 0.5% of the photons leave the TPC in CUDA Chroma; +0.08% detected light (3.3) | (b) |
+| G10 | Chroma's triangle test; a ray through an edge or vertex shared by two triangles can miss both (a crack) | watertight test (Woop, Benthin & Wald 2013) on exact shared float32 vertices: such a ray meets at least one of them | none | statistically invisible: weighted LUT detected light +0.0002% (0.02σ, 60M photons) against the earlier production test; 194 of 198 divergent rays bitwise equal to float64, the rest grazing silhouettes 0.01-0.04 µm off | (b) |
+| G11 | - | an analytic box whose entry face is at most 1e-6 mm ahead was dropped and the ray passed through the solid; it is now met there | `FIXES=0` | float64 validation, 4.66M adversarial rays: 808 wrong answers before, 0 after; no photon of the LUT fixture meets the case | (b) |
 
 ### Wires
 
@@ -362,6 +376,9 @@ causes:
 CUDA Chroma has the same limits. They bound any remaining bias at ~1e-6.
 
 ## 4. Speed
+
+These measurements predate the September 2026 engine revision: production
+did 65.4M photons/s on this workload then and 96M now (design.md).
 
 Setup for these measurements:
 - **Workload:** the LUT fixture (W1) unweighted, 30M photons prepared in

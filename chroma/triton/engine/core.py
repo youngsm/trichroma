@@ -15,7 +15,7 @@ import triton.language as tl
 
 from trichroma.engine.api import DaqChannels, DevicePhotons, TERMINAL
 from trichroma.engine import physics as P
-from trichroma.engine.scene import compile_scene
+from trichroma.engine.scene import WIRE_WIDTH, compile_scene
 from trichroma.engine.traverse import nearest_hit_kernel, wire_kernel
 
 BLOCK = 32  # one ray/photon per thread: launch with num_warps=1
@@ -141,7 +141,7 @@ class ProductionEngine(object):
         self.code_m1 = _to_device(scene.code_m1, dev)
         self.code_m2 = _to_device(scene.code_m2, dev)
         self.code_s = _to_device(scene.code_surface, dev)
-        self.wires = _to_device(scene.wires if len(scene.wires) else np.zeros((1, 24), np.float32), dev)
+        self.wires = _to_device(scene.wires if len(scene.wires) else np.zeros((1, WIRE_WIDTH), np.float32), dev)
         self.n_wires = int(len(scene.wires))
         self.boxes = _to_device(scene.boxes if len(scene.boxes) else np.zeros((1, 20), np.float32), dev)
         self.box_tris = _to_device(scene.box_tris if len(scene.box_tris) else np.zeros((1, 16), np.float32), dev)
@@ -166,6 +166,8 @@ class ProductionEngine(object):
         self.comp_tcdf = _to_device(m.component_reemission_time_cdf.reshape(-1, self.nt) if m.component_count else np.zeros((1, self.nt), f32), dev, f32)
         self.comp_abs = _to_device(m.component_absorption_length.reshape(-1, self.nw) if m.component_count else np.ones((1, self.nw), f32), dev, f32)
         self.max_comp = max(1, int(np.max(np.diff(m.component_offsets))) if m.count else 1)
+        # Scene features the fused kernel compiles in only when present.
+        self.has_reemit = bool(m.count) and int(np.max(np.diff(m.component_offsets))) > 0
         models = np.asarray(s.model)[np.asarray(s.present, bool)]
         unsupported = sorted(set(int(v) for v in models) - {0, 2})
         if unsupported:
@@ -178,6 +180,7 @@ class ProductionEngine(object):
 
         self.s_present = _to_device(np.asarray(s.present, np.int32) if s.count else np.zeros(1, np.int32), dev)
         self.s_model = _to_device(np.asarray(s.model, np.int32) if s.count else np.zeros(1, np.int32), dev)
+        self.has_wls = bool(s.count) and bool(np.any(np.asarray(s.model) == 2))
         self.s_detect = surf_table(s.detect)
         self.s_absorb = surf_table(s.absorb)
         self.s_reemit = surf_table(s.reemit)
@@ -216,9 +219,18 @@ class ProductionEngine(object):
         self.tail_graphs = True
         # Fused transport (photon state in registers; see engine/fused.py).
         self.fused = os.environ.get("CHROMA_TRITON_FUSED", "1") not in ("", "0")
-        self.fused_warps_per_sm = 24
+        self.fused_warps_per_sm = 20
         self.fused_park = 8
-        self.fused_maxnreg = 80
+        self.fused_maxnreg = 96
+        # Parked photons per program (0: they wait in their lanes), how many wait
+        # before a batch completes their queries, and how many idle batch lanes
+        # take new entries at once (engine/fused.py).
+        self.fused_ring = 128
+        self.fused_batch = 32
+        self.fused_refill = 8
+        # Node steps per round of a descent batch (traverse.batch_traversal).
+        self.fused_inner = 8
+        self._ring = None
         self.sm_count = torch.cuda.get_device_properties(self.device).multi_processor_count
         self._dummy_f32 = torch.zeros(1, dtype=torch.float32, device=dev)
         self._dummy_i64 = torch.zeros(1, dtype=torch.int64, device=dev)
@@ -458,6 +470,13 @@ class ProductionEngine(object):
         ws["bulk_count"][0].copy_(slot[-1:])
         ws["head"].zero_()
         programs = max(1, min(self.sm_count * self.fused_warps_per_sm, triton.cdiv(n, BLOCK)))
+        from trichroma.engine.fused import Q_FIELDS
+        from trichroma.engine.traverse import RING_FIELDS
+
+        cap = max(int(self.fused_ring), 2 * BLOCK)
+        words = programs * (2 * Q_FIELDS.value + RING_FIELDS.value) * cap
+        if self._ring is None or self._ring.numel() < words:
+            self._ring = torch.empty(words, dtype=torch.float32, device=self.device)
         fused_kernel[(programs,)](
             ws["bulk"][0], ws["bulk_count"][0], ws["head"],
             photons.pos, photons.dir, photons.pol, photons.wavelengths, photons.t, photons.last_hit_triangles,
@@ -468,12 +487,24 @@ class ProductionEngine(object):
             self.s_present, self.s_model, self.s_detect, self.s_absorb, self.s_reemit,
             self.s_diffuse, self.s_specular, self.s_cdf,
             self.seed_arg, max_steps, self.wl_start, self.wl_step, self.time_start, self.time_step,
+            self._ring, self._ring.view(torch.int32),
+            *self._fused_grid_args(),
             NW=self.nw, NT=self.nt, MAX_COMP=self.max_comp, USE_WEIGHTS=bool(use_weights), FIXES=self.fixes,
             LEGACY_WIRES=self.legacy_wires, LEAF=self.leaf_size, FACE_TRIS=self.face_tris,
-            STEPS=self.traversal_steps, BLOCK=BLOCK, PARK=self.fused_park,
+            STEPS=self.traversal_steps, BLOCK=BLOCK,
             ROULETTE=bool(use_weights) and self.roulette > 0, w_rr=self.roulette,
+            CAP=cap, GRID=self.grid is not None,
+            HAS_WLS=self.has_wls, HAS_REEMIT=self.has_reemit, BATCH=int(self.fused_batch), REFILL=int(self.fused_refill),
+            DESC_INNER=max(1, int(self.fused_inner)),
             **({"maxnreg": self.fused_maxnreg} if self.fused_maxnreg else {}), num_warps=1)
         return None
+
+    def _fused_grid_args(self):
+        g = self.grid
+        if g is None:
+            return (self._dummy_i32, self._dummy_f32, 0., 0., 0., 1., 1., 1., 1, 1, 1)
+        return (self.grid_material, self.grid_boxes, float(g.lower[0]), float(g.lower[1]), float(g.lower[2]),
+                float(g.cell[0]), float(g.cell[1]), float(g.cell[2]), g.shape[0], g.shape[1], g.shape[2])
 
     def _finish_tail(self, args, cur, max_steps, use_weights, history, epochs=2, rounds_per_graph=4, replays=8):
         """Finish the last photons with CUDA-graph replays of whole rounds.

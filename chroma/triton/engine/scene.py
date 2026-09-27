@@ -22,31 +22,56 @@ from trichroma.engine.optics import compile_optical_tables
 
 from .bvh_build import build_sah_tree, build_threaded_bvh, thread_octants
 
-# Packed node record: lower xyz, upper xyz, escape (int32 bits), leaf (int32
-# bits: first*16+count for leaves, -1 for inner nodes).
+# Packed node record: near corner xyz, far corner xyz (the box's lower and
+# upper bounds in the order of the copy's direction octant, see
+# ``_pack_octants``), escape (int32 bits), leaf (int32 bits: first*16+count
+# for leaves, -1 for inner nodes).
 NODE_WIDTH = 8
 # Instance record (float32, ints stored as bit patterns):
 # 0-8 world->local matrix M (row-major), 9-11 translation d (local =
 # M @ (world - d)), 12 det sign of the placement, 13 BLAS root node (octant-0
 # copy), 14 global triangle offset, 15 code offset, 16 solid id, 17 BLAS
-# triangle-slot offset, 18 BLAS nodes per octant copy.
-INSTANCE_WIDTH = 20
+# triangle-slot offset, 18 BLAS nodes per octant copy; 19 enclosing-instance
+# word (int32: -1 for an ordinary instance; for an instance whose box holds
+# ENCLOSING_FRACTION of the scene's box, which the descent defers
+# (traverse.batch_traversal): ENCLOSING, plus HAS_CORE and the core's
+# round-axis mask when its mesh has an empty core), then that core (local
+# frame, see _empty_core): 20-22 center, 23 squared radius, 24-26
+# half-extents; 27 unused. (A multiple of 4 words: records are read with
+# 16-byte loads.)
+INSTANCE_WIDTH = 28
+ENCLOSING = 256
+HAS_CORE = 512
 # Every tree is stored as eight threaded copies, one per ray-direction octant
 # (bit a set when direction component a is negative), near child first: the
 # copy for octant o starts at root + o * (nodes per copy).
 OCTANTS = 8
 # Wire-plane record (float32, ints as bit patterns): origin 0-2, u_norm 3-5,
 # v_norm 6-8, n_norm 9-11, pitch 12, radius 13, umin 14, umax 15, v0 16,
-# k_min 17, k_max 18, surface 19, material_inner 20, material_outer 21.
-WIRE_WIDTH = 24
-TRI_WIDTH = 9  # v0 xyz, e1 xyz, e2 xyz (local frame)
+# k_min 17, k_max 18, surface 19, material_inner 20, material_outer 21; derived
+# float32 constants: 1/pitch 22, radius + 1e-5 23, radius**2 24, max(1e-12,
+# 1e-6 * radius**2) 25, pitch + 2 * radius 26 (as the kernel formed them).
+WIRE_WIDTH = 32
+# Triangle slot record (float32; 48 bytes, 16-byte aligned: three vector
+# loads): exact vertices v0 xyz 0-2, v1 xyz 3-5, v2 xyz 6-8 (local frame; a
+# vertex shared by two triangles has the same bits in both, which the
+# watertight triangle test needs), the local triangle id (int32 bits) 9,
+# zero 10-11.
+TRI_WIDTH = 12
+# Zero records after the last slot: a leaf test reads (and ignores) the slots
+# up to 15 past a leaf's first one, which saves the clamping of its address.
+TRI_PAD = 16
 # Analytic box record (float32; ints as bits): lower xyz 0-2, upper xyz 3-5,
 # then for faces (-x,+x,-y,+y,-z,+z): first box-triangle slot and count 6-17,
-# the solid's global triangle id range [first, end) 18-19.
-BOX_WIDTH = 20
-# Box triangle record (float32; ints as bits): world v0/e1/e2 0-8, global
-# triangle id 9, material1 10, material2 11, surface 12; and, in the row at
-# (box's first slot + k), the face of the box triangle with local id k 13.
+# the solid's global triangle id range [first, end) 18-19, and the bitmask of
+# the (earlier, smaller) boxes it contains 20.
+BOX_WIDTH = 24
+# Box triangle record (float32; ints as bits): the three edge functions
+# E_i(p) = A_i p_b + B_i p_c + C_i (>= 0 inside) of the triangle in its face's
+# in-plane coordinates (b, c) = (axis+1, axis+2 mod 3) as A0 B0 C0 A1 B1 C1 A2
+# B2 C2 (0-8), global triangle id 9, material1 10, material2 11, surface 12;
+# in the row at (box's first slot + k), the face of the box triangle with
+# local id k 13; the sign of its winding normal along the face axis 14.
 BOX_TRI_WIDTH = 16
 MAX_GLOBAL_BOXES = 16
 
@@ -72,8 +97,8 @@ class CompiledScene:
     nodes: np.ndarray  # float32 [M, NODE_WIDTH]; TLAS nodes first
     tlas_node_count: int
     instances: np.ndarray  # float32 [I, INSTANCE_WIDTH], TLAS leaf order
-    tri_data: np.ndarray  # float32 [S, TRI_WIDTH], all BLAS triangle slots
-    tri_local: np.ndarray  # int32 [S], local triangle id of every slot
+    tri_data: np.ndarray  # float32 [S + TRI_PAD, TRI_WIDTH], all BLAS triangle slots
+    tri_local: np.ndarray  # int32 [S], local triangle id of every slot (also word 9 of tri_data)
     code_m1: np.ndarray  # int32 [C]: material1 index per variant triangle
     code_m2: np.ndarray  # int32 [C]
     code_surface: np.ndarray  # int32 [C], -1 for none
@@ -134,6 +159,12 @@ def _wire_records(geometry, materials, surfaces):
         rec[15] = np.float32(desc["umax"])
         rec[16] = np.float32(desc["v0"])
         rec[17:22] = _f32_bits([k_min, k_max, surface_idx, inner_idx, outer_idx])
+        p32, r32 = np.float32(rec[12]), np.float32(rec[13])
+        rec[22] = np.float32(1.0) / p32 if p32 != 0 else np.float32(0.0)
+        rec[23] = r32 + np.float32(1e-5)
+        rec[24] = r32 * r32
+        rec[25] = max(np.float32(1e-12), np.float32(1e-6) * rec[24])
+        rec[26] = p32 + np.float32(2.0) * r32
         records.append(rec)
     return np.stack(records) if records else np.zeros((0, WIRE_WIDTH), np.float32)
 
@@ -142,10 +173,12 @@ def _wire_records(geometry, materials, surfaces):
 def detect_box(world_tri, tol=1e-4):
     """Return per-face triangle lists if ``world_tri`` [T,3,3] tiles an axis-aligned box.
 
-    Every triangle must lie in one face plane of the mesh bounding box (within
-    ``tol`` mm) and each face's triangle area must equal the face area.
-    Returns (lower, upper, faces) with faces a list of 6 index arrays, or None.
+    Every triangle must lie exactly (bitwise, in float32) in one face plane of
+    the mesh bounding box, which makes the box's faces exact axis planes, and
+    each face's triangle area must equal the face area. Returns (lower,
+    upper, faces) with faces a list of 6 index arrays, or None.
     """
+    world_tri = np.asarray(world_tri, np.float32).astype(np.float64)
     lo = world_tri.reshape(-1, 3).min(axis=0)
     hi = world_tri.reshape(-1, 3).max(axis=0)
     if np.any(hi - lo <= tol):
@@ -155,7 +188,7 @@ def detect_box(world_tri, tol=1e-4):
         placed = False
         for axis in range(3):
             for side, plane in ((0, lo[axis]), (1, hi[axis])):
-                if np.all(np.abs(tri[:, axis] - plane) <= tol):
+                if np.all(tri[:, axis] == plane):
                     faces[2 * axis + side].append(t)
                     placed = True
                     break
@@ -177,13 +210,42 @@ def detect_box(world_tri, tol=1e-4):
     return lo, hi, [np.asarray(f, np.int64) for f in faces]
 
 
-def _pack_octants(tree, node_base, slot_base):
+def _box_face_triangle(v, axis):
+    """Edge functions (A_i, B_i, C_i), i = 0..2, of the triangle with float32
+    vertices ``v`` [3,3] lying in a plane of constant ``axis``, in the in-plane
+    coordinates (b, c) = (axis+1, axis+2 mod 3), oriented positive inside, and
+    the sign of its winding normal along ``axis``.
+
+    The coefficients of edge P->Q are exact in float64 (differences and
+    products of float32 values), so the same edge seen from the neighbouring
+    triangle (Q->P, same winding) has exactly the negated coefficients, also
+    after rounding to float32: with ``fma`` evaluation the two edge values at
+    any point are exact negatives, and a point on the shared edge is inside at
+    least one of the two triangles."""
+    b, c = (axis + 1) % 3, (axis + 2) % 3
+    p = np.asarray(v, np.float32).astype(np.float64)[:, [b, c]]
+    area2 = (p[1, 0] - p[0, 0]) * (p[2, 1] - p[0, 1]) - (p[1, 1] - p[0, 1]) * (p[2, 0] - p[0, 0])
+    s = 1.0 if area2 > 0 else -1.0
+    coef = []
+    for i in range(3):
+        P, Q = p[i], p[(i + 1) % 3]
+        # s * cross(Q - P, x - P) = A x_b + B x_c + C
+        A = -s * (Q[1] - P[1])
+        B = s * (Q[0] - P[0])
+        C = s * ((Q[1] - P[1]) * P[0] - (Q[0] - P[0]) * P[1])
+        coef += [A, B, C]
+    # winding normal (e1 x e2) along the face axis: +area2 in the cyclic (b, c) frame
+    return np.asarray(coef, np.float32), (1.0 if area2 > 0 else -1.0)
+
+
+def _pack_octants(tree, node_base, slot_base, bounds=None):
     """NODE_WIDTH records of ``tree``'s eight octant copies (float32 bounds
     rounded outward), escapes absolute from ``node_base``, leaves pointing at
-    triangle slots from ``slot_base``."""
+    triangle slots from ``slot_base``. ``bounds`` (lower, upper) [M,3]
+    replaces the stored boxes (the threading still follows ``tree``'s)."""
     m = len(tree.left)
-    lower = np.asarray(tree.lower, np.float64)
-    upper = np.asarray(tree.upper, np.float64)
+    lower = np.asarray(tree.lower if bounds is None else bounds[0], np.float64)
+    upper = np.asarray(tree.upper if bounds is None else bounds[1], np.float64)
     lo32 = lower.astype(np.float32)
     hi32 = upper.astype(np.float32)
     lo32 = np.where(lo32.astype(np.float64) > lower, np.nextafter(lo32, np.float32(-np.inf)), lo32)
@@ -197,11 +259,174 @@ def _pack_octants(tree, node_base, slot_base):
     for octant, (row, escape) in enumerate(thread_octants(tree)):
         base = octant * m
         dest = base + row
-        packed[dest, 0:3] = lo32
-        packed[dest, 3:6] = hi32
+        # The box as its near and far corners for the copy's octant (only rays
+        # of that octant walk it): the lower bound first along axes the rays
+        # travel up, the upper bound first along the others.
+        negative = np.array([(octant >> axis) & 1 for axis in range(3)], bool)
+        packed[dest, 0:3] = np.where(negative, hi32, lo32)
+        packed[dest, 3:6] = np.where(negative, lo32, hi32)
         packed[dest, 6] = _f32_bits(np.where(escape >= 0, escape + base + node_base, -1))
         packed[dest, 7] = _f32_bits(leaf)
     return packed
+
+
+def _tight_bounds(tree, prim_lower, prim_upper):
+    """Node boxes of ``tree`` recomputed from the primitive boxes
+    ``prim_lower``/``prim_upper`` (every box still contains its children's)."""
+    m = len(tree.left)
+    lower = np.empty((m, 3))
+    upper = np.empty((m, 3))
+    for node in range(m - 1, -1, -1):  # children are created after their parents
+        if tree.left[node] < 0:
+            prims = tree.order[tree.begin[node]:tree.end[node]]
+            lower[node] = prim_lower[prims].min(axis=0)
+            upper[node] = prim_upper[prims].max(axis=0)
+        else:
+            lower[node] = np.minimum(lower[tree.left[node]], lower[tree.right[node]])
+            upper[node] = np.maximum(upper[tree.left[node]], upper[tree.right[node]])
+    return lower, upper
+
+
+def _point_segment_d2(px, py, ax, ay, bx, by):
+    ex, ey = bx - ax, by - ay
+    ll = ex * ex + ey * ey
+    t = np.where(ll > 0, ((px - ax) * ex + (py - ay) * ey) / np.where(ll > 0, ll, 1.0), 0.0)
+    t = np.clip(t, 0.0, 1.0)
+    dx, dy = ax + t * ex - px, ay + t * ey - py
+    return dx * dx + dy * dy
+
+
+def _segment_d2_3d(p, a, b):
+    """Squared distances from point ``p`` [3] to the segments a-b [T,3] (float64)."""
+    e = b - a
+    ll = (e * e).sum(axis=1)
+    t = np.clip(np.where(ll > 0, ((p - a) * e).sum(axis=1) / np.where(ll > 0, ll, 1.0), 0.0), 0.0, 1.0)
+    d = a + t[:, None] * e - p
+    return (d * d).sum(axis=1)
+
+
+def _point_triangle_d2(p, tri):
+    """Squared distances from point ``p`` [3] to the triangles ``tri`` [T,3,3]
+    (float64): the nearest edge, or the plane where the point projects
+    inside the triangle (degenerate triangles: their edges only)."""
+    a, b, c = tri[:, 0], tri[:, 1], tri[:, 2]
+    d2 = np.minimum(np.minimum(_segment_d2_3d(p, a, b), _segment_d2_3d(p, b, c)), _segment_d2_3d(p, c, a))
+    n = np.cross(b - a, c - a)
+    nn = (n * n).sum(axis=1)
+    ok = nn > 0
+    s = ((p - a) * n).sum(axis=1)
+    q = p - (s / np.where(ok, nn, 1.0))[:, None] * n  # projection onto the plane
+    e0 = (np.cross(b - a, q - a) * n).sum(axis=1)
+    e1 = (np.cross(c - b, q - b) * n).sum(axis=1)
+    e2 = (np.cross(a - c, q - c) * n).sum(axis=1)
+    inside = ok & (e0 >= 0) & (e1 >= 0) & (e2 >= 0)
+    return np.where(inside, np.minimum(d2, s * s / np.where(ok, nn, 1.0)), d2)
+
+
+def _box_empty(tri, center, half, chunk=1 << 20):
+    """No triangle of ``tri`` [T,3,3] meets the closed box (center, half) (float64 SAT)."""
+    from .grid import _tri_box_overlap
+
+    lo = tri.min(axis=1)
+    hi = tri.max(axis=1)
+    near = np.flatnonzero(np.all(lo <= center + half, axis=1) & np.all(hi >= center - half, axis=1))
+    for k in range(0, len(near), chunk):
+        idx = near[k:k + chunk]
+        cc = np.broadcast_to(center, (len(idx), 3))
+        hh = np.broadcast_to(half, (len(idx), 3))
+        if _tri_box_overlap(tri[idx, 0], tri[idx, 1], tri[idx, 2], cc, hh).any():
+            return False
+    return True
+
+
+def _empty_core(corners):
+    """The largest empty convex core found for a mesh (float64 triangles
+    [T,3,3], its own frame): an axis-aligned box, a sphere, or a cylinder
+    along x, y or z, all centered on the mesh's box center, that no triangle
+    meets, each shrunk by a margin far above float32 rounding; the one of
+    largest volume, or None when none has a positive size.
+
+    Candidates: the sphere of radius equal to the distance from the center to
+    the nearest triangle; for each axis and a few half-lengths, the cylinder of
+    radius equal to the nearest 2D distance from the axis to a triangle that
+    reaches into its axial range; the box scaled from the mesh's own box as far
+    as no triangle meets it (bisection with exact separating-axis tests).
+
+    Returns (round-axis mask, center, squared radius, half-extents): a point
+    p is in the core when the squared distance over the round axes (bits of the
+    mask: 7 sphere, 0 box, two bits a cylinder along the third axis) is at most
+    the squared radius and |p - center| is at most the half-extent on every
+    axis (float32, rounded inward). A segment with both ends in the core meets
+    no triangle of the mesh (the core is convex): see traverse._in_core."""
+    c3 = np.asarray(corners, np.float64)
+    lo = c3.reshape(-1, 3).min(axis=0)
+    hi = c3.reshape(-1, 3).max(axis=0)
+    center = 0.5 * (lo + hi)
+    ext = hi - lo
+    margin = 1e-3 + 1e-4 * float(np.abs(np.concatenate([lo, hi])).max())
+    best = None  # (volume, mask, r, half)
+
+    def consider(vol, mask, r, half):
+        nonlocal best
+        if r >= 0 and np.all(half > 0) and vol > 0 and (best is None or vol > best[0]):
+            best = (vol, mask, r, half)
+
+    # sphere
+    r = float(np.sqrt(_point_triangle_d2(center, c3).min())) - margin
+    if r > 0:
+        consider(4.0 / 3.0 * np.pi * r ** 3, 7, r, np.full(3, r))
+    # cylinders along x, y, z
+    for axis in range(3):
+        u, v = (axis + 1) % 3, (axis + 2) % 3
+        pu, pv = c3[:, :, u] - center[u], c3[:, :, v] - center[v]
+        d2 = np.minimum(np.minimum(_point_segment_d2(0.0, 0.0, pu[:, 0], pv[:, 0], pu[:, 1], pv[:, 1]),
+                                   _point_segment_d2(0.0, 0.0, pu[:, 1], pv[:, 1], pu[:, 2], pv[:, 2])),
+                        _point_segment_d2(0.0, 0.0, pu[:, 2], pv[:, 2], pu[:, 0], pv[:, 0]))
+        e0 = pu[:, 1] * pv[:, 2] - pv[:, 1] * pu[:, 2]  # edge functions of the axis point (twice the areas)
+        e1 = pu[:, 2] * pv[:, 0] - pv[:, 2] * pu[:, 0]
+        e2 = pu[:, 0] * pv[:, 1] - pv[:, 0] * pu[:, 1]
+        pierced = ((e0 > 0) & (e1 > 0) & (e2 > 0)) | ((e0 < 0) & (e1 < 0) & (e2 < 0))
+        d2 = np.where(pierced, 0.0, d2)
+        wmin, wmax = c3[:, :, axis].min(axis=1), c3[:, :, axis].max(axis=1)
+        for f in (0.9999, 0.999, 0.99, 0.95, 0.9, 0.8, 0.6, 0.4):
+            h = 0.5 * ext[axis] * f
+            sel = (wmax >= center[axis] - h) & (wmin <= center[axis] + h)
+            r = (np.sqrt(d2[sel].min()) if sel.any() else 0.5 * max(ext[u], ext[v])) - margin
+            half = np.full(3, r)
+            half[axis] = h - margin
+            if r > 0:
+                consider(np.pi * r * r * 2.0 * half[axis], 7 & ~(1 << axis), r, half)
+    # box: the mesh's box scaled about its center as far as it stays empty
+    half0 = 0.5 * ext
+    lo_s, hi_s = 0.0, 1.0
+    if _box_empty(c3, center, half0 * 0.999999):
+        lo_s = 0.999999
+    else:
+        for _ in range(24):
+            mid = 0.5 * (lo_s + hi_s)
+            if _box_empty(c3, center, half0 * mid):
+                lo_s = mid
+            else:
+                hi_s = mid
+    half = half0 * lo_s - margin
+    if lo_s > 0 and np.all(half > 0):
+        consider(float(np.prod(2.0 * half)), 0, 0.0, half)
+    if best is None:
+        return None
+    _, mask, r, half = best
+
+    def down32(x):
+        y = np.float32(x)
+        return np.nextafter(y, np.float32(0)) if float(y) > x else y
+
+    r2 = down32(r * r)
+    h32 = np.array([down32(x) for x in half], np.float32)
+    return int(mask), center.astype(np.float32), r2, h32
+
+
+# An instance whose box holds at least this fraction of the scene's box volume
+# (a tank or cavity around the rest) is an enclosing instance.
+ENCLOSING_FRACTION = 0.25
 
 
 def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
@@ -253,13 +478,16 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
                 g = tri_offset[i] + t
                 v = world_vertices[world_triangles[g]].astype(np.float32)
                 row = np.zeros(BOX_TRI_WIDTH, np.float32)
-                row[0:3] = v[0]
-                row[3:6] = v[1] - v[0]
-                row[6:9] = v[2] - v[0]
+                row[0:9], row[14] = _box_face_triangle(v, f // 2)
                 row[9:13] = _f32_bits([g, m1_all[g], m2_all[g], surf_all[g]])
                 box_tris.append(row)
         rec[6:18] = _f32_bits(ints)
         rec[18:20] = _f32_bits([tri_offset[i], tri_offset[i + 1]])
+        inner = 0
+        for j, other in enumerate(boxes):
+            if np.all(other[0:3] >= rec[0:3]) and np.all(other[3:6] <= rec[3:6]):
+                inner |= 1 << j
+        rec[20] = _f32_bits([inner])[0]
         first_slot = ints[0]
         for f in range(6):
             for t in faces[f]:
@@ -318,10 +546,9 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
         packed = _pack_octants(tree, node_cursor, slot_cursor)
         blas_nodes.append(packed)
         tri = corners[tree.order].astype(np.float32)
-        slots = np.empty((len(tree.order), TRI_WIDTH), np.float32)
-        slots[:, 0:3] = tri[:, 0]
-        slots[:, 3:6] = tri[:, 1] - tri[:, 0]
-        slots[:, 6:9] = tri[:, 2] - tri[:, 0]
+        slots = np.zeros((len(tree.order), TRI_WIDTH), np.float32)
+        slots[:, 0:9] = tri.reshape(len(tri), 9)
+        slots[:, 9] = _f32_bits(tree.order.astype(np.int32))
         blas_tri.append(slots)
         blas_local.append(tree.order.astype(np.int32))
         blas_root.append(node_cursor)
@@ -333,12 +560,16 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     # --- instances and TLAS ---------------------------------------------------
     inst_lower = np.empty((len(solids), 3))
     inst_upper = np.empty((len(solids), 3))
+    tight_lower = np.empty((len(solids), 3))
+    tight_upper = np.empty((len(solids), 3))
     records = np.zeros((len(solids), INSTANCE_WIDTH), np.float32)
     ints = np.zeros((len(solids), 6), np.int64)
     blas_bounds = []
+    blas_vertices = []
     for mesh in blas_meshes:
         v = np.asarray(mesh.vertices, np.float64)
         blas_bounds.append((v.min(axis=0), v.max(axis=0)))
+        blas_vertices.append(v)
     for i in range(len(solids)):
         r = np.asarray(rotations[i], np.float64)
         d = np.asarray(displacements[i], np.float64)
@@ -354,6 +585,15 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
         pad = 1e-5 * (1.0 + np.abs(world).max())
         inst_lower[i] = world.min(axis=0) - pad
         inst_upper[i] = world.max(axis=0) + pad
+        # The box of the placed vertices, with the same margin: the top-level
+        # tree is built and ordered on the boxes above (its preorder, which
+        # decides the order instances are entered in, stays that of the
+        # corner boxes), but its records hold these tighter boxes. A ray that
+        # can hit the instance's mesh passes the tighter box too, so the only
+        # instances no longer entered are ones that could not be hit.
+        wv = blas_vertices[solid_blas[i]] @ r.T + d
+        tight_lower[i] = np.maximum(wv.min(axis=0) - pad, inst_lower[i])
+        tight_upper[i] = np.minimum(wv.max(axis=0) + pad, inst_upper[i])
         records[i, 0:9] = m.reshape(-1).astype(np.float32)
         records[i, 9:12] = d.astype(np.float32)
         records[i, 12] = np.float32(1.0 if det > 0 else -1.0)
@@ -365,9 +605,30 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
     if len(keep) == 0:
         keep = np.array([box_solids[0]], np.int64)  # keep one instance so the TLAS is never empty
     inst_lower, inst_upper = inst_lower[keep], inst_upper[keep]
+    tight_lower, tight_upper = tight_lower[keep], tight_upper[keep]
     records, ints = records[keep], ints[keep]
     tlas = build_sah_tree(inst_lower, inst_upper, leaf_size=1)
-    tlas_packed = _pack_octants(tlas, 0, 0)
+    # Enclosing instances: the descent defers them (their meshes are walked
+    # after the instances they hold) and skips the mesh when the ray segment
+    # lies in its empty core (_empty_core).
+    records[:, 19] = _f32_bits([-1])[0]
+    vol = np.prod(np.maximum(inst_upper - inst_lower, 0.0), axis=1)
+    scene_vol = float(np.prod(np.maximum(inst_upper.max(axis=0) - inst_lower.min(axis=0), 0.0)))
+    cores = {}
+    for j in np.flatnonzero(vol >= ENCLOSING_FRACTION * scene_vol) if scene_vol > 0 and len(keep) > 1 else []:
+        records[j, 19] = _f32_bits([ENCLOSING])[0]
+        b = int(solid_blas[keep[j]])
+        if b not in cores:
+            mesh = blas_meshes[b]
+            cores[b] = _empty_core(np.asarray(mesh.vertices, np.float64)[np.asarray(mesh.triangles, np.int64)])
+        if cores[b] is not None:
+            mask, center, r2, half = cores[b]
+            records[j, 19] = _f32_bits([ENCLOSING | HAS_CORE | mask])[0]
+            records[j, 20:23] = center
+            records[j, 23] = r2
+            records[j, 24:27] = half
+    tight = _tight_bounds(tlas, tight_lower, tight_upper)
+    tlas_packed = _pack_octants(tlas, 0, 0, bounds=tight)
     tlas_count = len(tlas.left)
     # BLAS node indices shift by the TLAS copies.
     shift = len(tlas_packed)
@@ -394,7 +655,7 @@ def compile_scene(geometry, *, wavelengths=None, leaf_size=4):
         nodes=nodes,
         tlas_node_count=int(tlas_count),
         instances=records,
-        tri_data=np.concatenate(blas_tri),
+        tri_data=np.concatenate(blas_tri + [np.zeros((TRI_PAD, TRI_WIDTH), np.float32)]),
         tri_local=np.concatenate(blas_local),
         code_m1=code_m1,
         code_m2=code_m2,

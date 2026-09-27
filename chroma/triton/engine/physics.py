@@ -23,6 +23,7 @@ from triton.language.random import philox
 from triton.language.extra import libdevice
 
 from trichroma.engine.physics_kernels import fresnel_step, fresnel_step_chroma
+from trichroma.engine.warp import _warp_any
 
 SPEED_OF_LIGHT = tl.constexpr(299.792458)  # mm/ns (chroma/cuda/physical_constants.h)
 WEIGHT_LOWER_THRESHOLD = tl.constexpr(0.0001)
@@ -48,12 +49,34 @@ TERMINAL_16 = tl.constexpr(1 | 2 | 4 | 8 | 536870912 | 32768)
 # ---------------------------------------------------------------- randoms
 
 @triton.jit
+def _philox(seed, c0, c1, c2, c3):
+    """``triton.language.random.philox`` (32-bit, 10 rounds) with each round's
+    two 32x32-bit products formed by one widening multiply: umulhi(B, c2) and
+    B * c2 are the high and low words of the same 64-bit product, so the
+    counters are the same integers (one IMAD.WIDE.U32 instead of IMAD.HI plus
+    IMAD per product)."""
+    seed = seed.to(tl.uint64)
+    k0 = (seed & 0xffffffff).to(tl.uint32)
+    k1 = ((seed >> 32) & 0xffffffff).to(tl.uint32)
+    for _ in tl.static_range(10):
+        pb = c2.to(tl.uint64) * 0xCD9E8D57
+        pa = c0.to(tl.uint64) * 0xD2511F53
+        c0 = (pb >> 32).to(tl.uint32) ^ c1 ^ k0
+        c2 = (pa >> 32).to(tl.uint32) ^ c3 ^ k1
+        c1 = pb.to(tl.uint32)
+        c3 = pa.to(tl.uint32)
+        k0 = k0 + 0x9E3779B9
+        k1 = k1 + 0xBB67AE85
+    return c0, c1, c2, c3
+
+
+@triton.jit
 def philox_uniform(ids, seed, counter):
     """Uniform in (0,1) from Philox(seed; id_lo, id_hi, counter, 0)."""
     low = ids.to(tl.uint64).to(tl.uint32)
     high = (ids.to(tl.uint64) >> 32).to(tl.uint32)
-    x, _, _, _ = philox(seed, low, high, counter.to(tl.uint32), tl.zeros(ids.shape, tl.uint32))
-    return ((x >> 9).to(tl.float32) + 0.5) * 1.1920928955078125e-7
+    x, _, _, _ = _philox(seed, low, high, counter.to(tl.uint32), tl.zeros(ids.shape, tl.uint32))
+    return _unit(x)
 
 
 # Production draws: every event of a photon (one loop iteration of Chroma's
@@ -72,9 +95,13 @@ B_ROULETTE = tl.constexpr(7)  # Russian roulette
 B_DIFFUSE = tl.constexpr(8)  # diffuse rejection loop, one block per trial
 
 
+
+
 @triton.jit
 def _unit(x):
-    return ((x >> 9).to(tl.float32) + 0.5) * 1.1920928955078125e-7
+    """(x >> 9 + 0.5) * 2**-23 as one fma: with n = x >> 9 < 2**23 both forms
+    are exact ((2n + 1) * 2**-24 has at most 24 significant bits)."""
+    return tl.fma((x >> 9).to(tl.float32), 1.1920928955078125e-7, 5.9604644775390625e-08)
 
 
 @triton.jit
@@ -83,7 +110,7 @@ def uniforms4(ids, seed, key, block):
     low = ids.to(tl.uint64).to(tl.uint32)
     high = (ids.to(tl.uint64) >> 32).to(tl.uint32)
     c3 = (tl.zeros(ids.shape, tl.int32) + block).to(tl.uint32)
-    a, b, c, d = philox(seed, low, high, key.to(tl.uint32), c3)
+    a, b, c, d = _philox(seed, low, high, key.to(tl.uint32), c3)
     return _unit(a), _unit(b), _unit(c), _unit(d)
 
 
@@ -101,28 +128,55 @@ def draw(cursor, mask, ids, seed, tape_ptr, tape_off, TAPE: tl.constexpr):
 
 @triton.jit
 def interp_uniform(table, row, x, start, step, count: tl.constexpr, mask):
-    """Chroma ``interp_property`` on a uniform grid (clamped at both ends)."""
+    """Chroma ``interp_property`` on a uniform grid (clamped at both ends).
+
+    The clamped end values are the interval's own ``left``/``right`` loads:
+    ``x < start`` gives ``(x - start) / step <= 0``, hence ``jl == 0`` and
+    ``left == table[0]``; above the last grid point ``jl`` is set to
+    ``count - 2``, so ``right == table[count - 1]`` (the interpolated value
+    is not used there). Every other lane computes exactly as before.
+
+    Lanes outside ``mask`` read row 0 instead of nothing (the loads need no
+    predicate, zero fill and select); their value is never used."""
     f = (x - start) / step
     jl = tl.minimum(tl.maximum(f.to(tl.int32), 0), count - 2)
-    left = tl.load(table + row * count + jl, mask=mask, other=0.)
-    right = tl.load(table + row * count + jl + 1, mask=mask, other=0.)
+    above = x > start + (count - 1) * step
+    jl = tl.where(above, count - 2, jl)
+    at = table + tl.where(mask, row, 0) * count + jl
+    left = tl.load(at)
+    right = tl.load(at + 1)
     value = left + (x - (start + jl.to(tl.float32) * step)) * (right - left) / step
-    value = tl.where(x < start, tl.load(table + row * count, mask=mask, other=0.), value)
-    last = tl.load(table + row * count + count - 1, mask=mask, other=0.)
-    return tl.where(x > start + (count - 1) * step, last, value)
+    value = tl.where(x < start, left, value)
+    return tl.where(above, right, value)
 
 
 @triton.jit
 def sample_uniform_cdf(table, row, u, start, step, count: tl.constexpr, mask):
-    """Chroma ``sample_cdf`` on a uniform grid (binary search, linear inverse)."""
+    """Chroma ``sample_cdf`` on a uniform grid (binary search, linear inverse).
+
+    The search runs a fixed ITERS = ceil(log2(count - 1)) iterations (the
+    interval ``upper - lower`` shrinks from ``count - 1`` to at most
+    ``ceil(s / 2)`` per iteration, so every lane has converged by then; a
+    converged or masked lane is left unchanged), with no warp vote per
+    iteration. The probes and the result are those of the open-ended loop."""
+    SPAN: tl.constexpr = count - 1
+    ITERS: tl.constexpr = ((SPAN > 1) + (SPAN > 2) + (SPAN > 4) + (SPAN > 8) + (SPAN > 16) + (SPAN > 32)
+                           + (SPAN > 64) + (SPAN > 128) + (SPAN > 256) + (SPAN > 512) + (SPAN > 1024)
+                           + (SPAN > 2048) + (SPAN > 4096) + (SPAN > 8192) + (SPAN > 16384) + (SPAN > 32768)
+                           + (SPAN > 65536) + (SPAN > 131072) + (SPAN > 262144) + (SPAN > 524288)
+                           + (SPAN > 1048576) + (SPAN > 2097152) + (SPAN > 4194304) + (SPAN > 8388608)
+                           + (SPAN > 16777216) + (SPAN > 33554432) + (SPAN > 67108864) + (SPAN > 134217728)
+                           + (SPAN > 268435456) + (SPAN > 536870912) + (SPAN > 1073741824))
     lower = tl.zeros(u.shape, tl.int32)
     upper = tl.full(u.shape, count - 1, tl.int32)
-    while tl.sum((mask & (lower < upper - 1)).to(tl.int32), axis=0) > 0:
-        half = (lower + upper) // 2
+    for _ in range(ITERS):
+        half = (lower + upper) >> 1  # lower + upper >= 0: the same as // 2
         value = tl.load(table + row * count + half, mask=mask, other=1.)
         width = mask & (lower < upper - 1)
         upper = tl.where(width & (u < value), half, upper)
         lower = tl.where(width & (u >= value), half, lower)
+    # (masked loads: unpredicated ones let LLVM sink the expression below into
+    # another block, where it contracts differently: +-1 ulp on some lanes)
     left = tl.load(table + row * count + lower, mask=mask, other=0.)
     right = tl.load(table + row * count + upper, mask=mask, other=1.)
     return start + step * lower.to(tl.float32) + step * (u - left) / (right - left)
@@ -131,11 +185,115 @@ def sample_uniform_cdf(table, row, u, start, step, count: tl.constexpr, mask):
 # ------------------------------------------------------------- geometry math
 
 @triton.jit
+def sincos(a):
+    """``(tl.sin(a), tl.cos(a))`` bit for bit, for |a| < 105615 (and NaN).
+
+    The instructions of libdevice's ``__nv_sinf``/``__nv_cosf`` (FTZ build,
+    as Triton links them) on their fast path: the three-part Cody-Waite
+    reduction by pi/2, which the two share, and the sine and cosine
+    polynomials of the reduced argument (quadrant q selects which one each
+    returns, and the sign). Libdevice leaves that path only for
+    |a| >= 105615 (Payne-Hanek reduction, or NaN for infinities); every
+    caller here passes an angle within [-2 pi, 2 pi], where the result is
+    identical (checked exhaustively against tl.sin/tl.cos on every float32
+    in that range) without the reduction's slow path, its local-memory
+    array and the per-function branches."""
+    return tl.inline_asm_elementwise(
+        asm="""
+        {
+            .reg .f32 j, qf, t, x2, us, ps, rs, pc, rc, s, c, ns, nc;
+            .reg .b32 q, q1, b;
+            .reg .pred odd, negs, negc;
+            mul.rn.f32 j, $2, 0f3F22F983;
+            cvt.rni.ftz.s32.f32 q, j;
+            cvt.rn.f32.s32 qf, q;
+            fma.rn.ftz.f32 t, qf, 0fBFC90FDA, $2;
+            fma.rn.ftz.f32 t, qf, 0fB3A22168, t;
+            fma.rn.ftz.f32 t, qf, 0fA7C234C5, t;
+            mul.rn.ftz.f32 x2, t, t;
+            fma.rn.ftz.f32 us, x2, t, 0f00000000;
+            fma.rn.ftz.f32 ps, 0fB94D4153, x2, 0f3C0885E4;
+            fma.rn.ftz.f32 ps, ps, x2, 0fBE2AAAA8;
+            fma.rn.ftz.f32 rs, ps, us, t;
+            fma.rn.ftz.f32 pc, 0f37CBAC00, x2, 0fBAB607ED;
+            fma.rn.ftz.f32 pc, pc, x2, 0f3D2AAABB;
+            fma.rn.ftz.f32 pc, pc, x2, 0fBEFFFFFF;
+            fma.rn.ftz.f32 rc, pc, x2, 0f3F800000;
+            and.b32 b, q, 1;
+            setp.ne.b32 odd, b, 0;
+            selp.f32 s, rc, rs, odd;
+            selp.f32 c, rs, rc, odd;
+            and.b32 b, q, 2;
+            setp.ne.b32 negs, b, 0;
+            add.s32 q1, q, 1;
+            and.b32 b, q1, 2;
+            setp.ne.b32 negc, b, 0;
+            fma.rn.ftz.f32 ns, s, 0fBF800000, 0f00000000;
+            fma.rn.ftz.f32 nc, c, 0fBF800000, 0f00000000;
+            selp.f32 $0, ns, s, negs;
+            selp.f32 $1, nc, c, negc;
+        }
+        """,
+        constraints="=f,=f,f",
+        args=[a],
+        dtype=(tl.float32, tl.float32),
+        is_pure=True,
+        pack=1,
+    )
+
+
+@triton.jit
+def log_unit(u):
+    """``tl.log(u)`` bit for bit for positive normal finite ``u`` (every
+    Philox uniform: ``u`` in [2**-24, 1 - 2**-24]).
+
+    The instructions of libdevice's ``__nv_logf`` (FTZ build) without its
+    subnormal pre-scaling and its zero/negative/infinity/NaN fix-ups, which
+    such an argument never takes (checked exhaustively against tl.log on
+    every float32 in [2**-126, 1])."""
+    return tl.inline_asm_elementwise(
+        asm="""
+        {
+            .reg .f32 m, ef, i, f, p, r;
+            .reg .b32 ix, e, mi;
+            mov.b32 ix, $1;
+            add.s32 e, ix, -1059760811;
+            and.b32 e, e, -8388608;
+            sub.s32 mi, ix, e;
+            mov.b32 m, mi;
+            cvt.rn.f32.s32 ef, e;
+            fma.rn.ftz.f32 i, ef, 0f34000000, 0f00000000;
+            add.rn.f32 f, m, 0fBF800000;
+            fma.rn.ftz.f32 p, 0fBE055027, f, 0f3E1039F6;
+            fma.rn.ftz.f32 p, p, f, 0fBDF8CDCC;
+            fma.rn.ftz.f32 p, p, f, 0f3E0F2955;
+            fma.rn.ftz.f32 p, p, f, 0fBE2AD8B9;
+            fma.rn.ftz.f32 p, p, f, 0f3E4CED0B;
+            fma.rn.ftz.f32 p, p, f, 0fBE7FFF22;
+            fma.rn.ftz.f32 p, p, f, 0f3EAAAA78;
+            fma.rn.ftz.f32 p, p, f, 0fBF000000;
+            mul.rn.f32 p, f, p;
+            fma.rn.ftz.f32 r, p, f, f;
+            fma.rn.ftz.f32 $0, i, 0f3F317218, r;
+        }
+        """,
+        constraints="=f,f",
+        args=[u],
+        dtype=tl.float32,
+        is_pure=True,
+        pack=1,
+    )
+
+
+@triton.jit
 def uniform_sphere(u_theta, u_z):
     """Chroma ``uniform_sphere``: theta from the first draw, z from the second."""
     theta = 2.0 * PI * u_theta
     u = -1.0 + 2.0 * u_z
     c = tl.sqrt(1.0 - u * u)
+    # (libdevice sin/cos here: with :func:`sincos` the compiler contracts the
+    # callers' dot/cross products and norms in a different order, which moves
+    # a few results by an ulp; see REPORT.md)
     return c * tl.cos(theta), c * tl.sin(theta), u
 
 
@@ -148,8 +306,14 @@ def normalize(x, y, z):
 @triton.jit
 def pick_new_direction(ax, ay, az, theta, phi):
     """Chroma ``pick_new_direction`` (SNOMAN rayscatter)."""
-    st, ct = tl.sin(theta), tl.cos(theta)
-    sp, cp = tl.sin(phi), tl.cos(phi)
+    st, ct = sincos(theta)
+    sp, cp = sincos(phi)
+    return _new_direction(ax, ay, az, st, ct, sp, cp)
+
+
+@triton.jit
+def _new_direction(ax, ay, az, st, ct, sp, cp):
+    """:func:`pick_new_direction` given the sines and cosines of theta and phi."""
     sin_axis_theta = tl.sqrt(1.0 - az * az)
     degenerate = (sin_axis_theta != sin_axis_theta) | (sin_axis_theta < 0.00001)
     cap = tl.where(degenerate, 1.0, ax / sin_axis_theta)
@@ -162,13 +326,17 @@ def pick_new_direction(ax, ay, az, theta, phi):
 @triton.jit
 def rayleigh(dx, dy, dz, px, py, pz, u_cos, u_phi):
     """Chroma ``rayleigh_scatter`` (two draws, polarization-axis frame)."""
-    cos_theta = 2.0 * tl.cos((libdevice.acos(1.0 - 2.0 * u_cos) - 2.0 * PI) / 3.0)
+    _, c3 = sincos((libdevice.acos(1.0 - 2.0 * u_cos) - 2.0 * PI) / 3.0)  # argument in [-2 pi/3, -pi/3]
+    cos_theta = 2.0 * c3
     cos_theta = tl.minimum(tl.maximum(cos_theta, -1.0), 1.0)
     theta = libdevice.acos(cos_theta)
     phi = 2.0 * PI * u_phi
-    ndx, ndy, ndz = pick_new_direction(px, py, pz, theta, phi)
+    st, ct = sincos(theta)  # theta in [0, pi]
+    sp, cp = sincos(phi)  # phi in (0, 2 pi)
+    ndx, ndy, ndz = _new_direction(px, py, pz, st, ct, sp, cp)
     edge = 1.0 - tl.abs(cos_theta) < 1e-6
-    ex, ey, ez = pick_new_direction(px, py, pz, PI / 2.0, phi)
+    # theta = pi/2: the compile-time sin/cos constants, as before
+    ex, ey, ez = _new_direction(px, py, pz, tl.sin(PI / 2.0), tl.cos(PI / 2.0), sp, cp)
     npx = tl.where(edge, ex, px - cos_theta * ndx)
     npy = tl.where(edge, ey, py - cos_theta * ndy)
     npz = tl.where(edge, ez, pz - cos_theta * ndz)
@@ -184,8 +352,8 @@ def roulette(alive, weight, flags, ids, seed, key, w_rr):
     with probability ``weight / w_rr`` at weight ``w_rr``, else end with
     ROULETTE_KILL. The expected weight of every future tally is unchanged."""
     cand = alive & (weight < w_rr) & (weight > 0.)
-    n_cand = tl.sum(cand.to(tl.int32), axis=0)
-    if n_cand > 0:
+    n_cand = _warp_any(cand)
+    if n_cand != 0:
         u, _, _, _ = uniforms4(ids, seed, key, B_ROULETTE)
         survive = cand & (u * w_rr < weight)
         weight = tl.where(survive, w_rr, weight)
@@ -198,7 +366,7 @@ def bulk_process(absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, 
                  u_cos, u_phi, ids, seed, key,
                  comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
                  wl_start, wl_step, time_start, time_step,
-                 NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr):
+                 NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr, HAS_REEMIT: tl.constexpr = True):
     """Chroma's absorption (with multi-component re-emission) and Rayleigh
     branches of ``propagate_to_boundary`` after the photon has moved.
 
@@ -206,14 +374,18 @@ def bulk_process(absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, 
     computed before each ``if``: a call in a nested loop test makes Triton
     lower the ``if`` to unstructured branches.)
     """
-    n_absorbed = tl.sum(absorbed.to(tl.int32), axis=0)
-    if n_absorbed > 0:
-        c_begin = tl.load(comp_offsets + inc, mask=absorbed, other=0)
-        ncomp = tl.load(comp_offsets + inc + 1, mask=absorbed, other=0) - c_begin
+    n_absorbed = _warp_any(absorbed)
+    if not HAS_REEMIT:
+        # No material has re-emission components: absorption ends the photon.
+        flags = tl.where(absorbed, flags | BULK_ABSORB, flags)
+    elif n_absorbed != 0:
+        inc_a = tl.where(absorbed, inc, 0)  # (unused outside absorbed)
+        c_begin = tl.load(comp_offsets + inc_a)
+        ncomp = tl.load(comp_offsets + inc_a + 1) - c_begin
         has_comp = absorbed & (ncomp > 0)
         reemit_i = tl.zeros(ids.shape, tl.int32)
-        n_comp = tl.sum(has_comp.to(tl.int32), axis=0)
-        if n_comp > 0:
+        n_comp = _warp_any(has_comp)
+        if n_comp != 0:
             u_comp, u_re, u_w, u_t = uniforms4(ids, seed, key, B_BULK_REEMIT)
             chosen = c_begin
             found = tl.zeros(ids.shape, tl.int1)
@@ -228,8 +400,8 @@ def bulk_process(absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, 
             reemit_p = interp_uniform(comp_prob, chosen, wl, wl_start, wl_step, NW, has_comp)
             bulk_reemit = has_comp & (u_re < reemit_p)
             reemit_i = bulk_reemit.to(tl.int32)
-            n_reemit = tl.sum(reemit_i, axis=0)
-            if n_reemit > 0:
+            n_reemit = _warp_any(bulk_reemit)
+            if n_reemit != 0:
                 new_wl = sample_uniform_cdf(comp_wcdf, chosen, u_w, wl_start, wl_step, NW, bulk_reemit)
                 dt = sample_uniform_cdf(comp_tcdf, chosen, u_t, time_start, time_step, NT, bulk_reemit)
                 s0, s1, s2, s3 = uniforms4(ids, seed, key, B_BULK_DIR)
@@ -242,8 +414,8 @@ def bulk_process(absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, 
                 px, py, pz = tl.where(bulk_reemit, rpx, px), tl.where(bulk_reemit, rpy, py), tl.where(bulk_reemit, rpz, pz)
                 flags = tl.where(bulk_reemit, flags | BULK_REEMIT, flags)
         flags = tl.where(absorbed & (reemit_i == 0), flags | BULK_ABSORB, flags)
-    n_scattered = tl.sum(scattered.to(tl.int32), axis=0)
-    if n_scattered > 0:
+    n_scattered = _warp_any(scattered)
+    if n_scattered != 0:
         sdx, sdy, sdz, spx, spy, spz = rayleigh(dx, dy, dz, px, py, pz, u_cos, u_phi)
         dx, dy, dz = tl.where(scattered, sdx, dx), tl.where(scattered, sdy, dy), tl.where(scattered, sdz, dz)
         px, py, pz = tl.where(scattered, spx, px), tl.where(scattered, spy, py), tl.where(scattered, spz, pz)
@@ -263,7 +435,8 @@ def launch_normalize(valid, step, norm_step, dx, dy, dz, px, py, pz, renorm_ptr,
     for r in range(n_renorm):
         due = due | (step == tl.load(renorm_ptr + r))
     due = valid & due & (norm_step != step)
-    if tl.sum(due.to(tl.int32), axis=0) > 0:
+    n_due = _warp_any(due)
+    if n_due != 0:
         ndx, ndy, ndz = normalize(dx, dy, dz)
         npx, npy, npz = normalize(px, py, pz)
         dx, dy, dz = tl.where(due, ndx, dx), tl.where(due, ndy, dy), tl.where(due, ndz, dz)
@@ -313,7 +486,9 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
                   s_present, s_model, s_detect, s_absorb, s_reemit, s_diffuse, s_specular, s_cdf,
                   seed, wl_start, wl_step, time_start, time_step,
                   NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr,
-                  USE_WEIGHTS: tl.constexpr, FIXES: tl.constexpr, ROULETTE: tl.constexpr, w_rr):
+                  USE_WEIGHTS: tl.constexpr, FIXES: tl.constexpr, ROULETTE: tl.constexpr, w_rr,
+                  HAS_WLS: tl.constexpr = True, HAS_REEMIT: tl.constexpr = True,
+                  DRAWS: tl.constexpr = False, u_abs=None, u_sca=None, u_cos=None, u_phi=None):
     """One Chroma loop iteration after the NaN check, for lanes in ``live``,
     given their nearest boundary (``dist``, triangle ``tri`` (-1 none, -2
     wire), unit normal, inner/outer material and surface index). ``key`` is
@@ -337,9 +512,10 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
     slen = interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, hit)
 
     # ---- propagate_to_boundary -----------------------------------------------
-    u_abs, u_sca, u_cos, u_phi = uniforms4(ids, seed, key, B_TRANSPORT)
-    da = -alen * tl.log(u_abs)
-    ds = -slen * tl.log(u_sca)
+    if not DRAWS:  # else the caller drew uniforms4(ids, seed, key, B_TRANSPORT)
+        u_abs, u_sca, u_cos, u_phi = uniforms4(ids, seed, key, B_TRANSPORT)
+    da = -alen * log_unit(u_abs)
+    ds = -slen * log_unit(u_sca)
     if USE_WEIGHTS:
         weighted = hit & (weight > WEIGHT_LOWER_THRESHOLD)
         da = tl.where(weighted, 1e30, da)
@@ -362,7 +538,7 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
     wl, t, dx, dy, dz, px, py, pz, flags, last = bulk_process(
         absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last, u_cos, u_phi, ids, seed, key,
         comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
-        wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP)
+        wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, HAS_REEMIT)
 
     # ---- propagate_at_surface ----------------------------------------------------
     # Branches that no lane of the warp takes are skipped; masks leave the
@@ -371,9 +547,9 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
     safe_s = tl.maximum(sidx, 0)
     surf = boundary & (sidx != -1)
     surf_pass = tl.zeros(hit.shape, tl.int32)
-    n_surf = tl.sum(surf.to(tl.int32), axis=0)
-    if n_surf > 0:
-        model = tl.load(s_model + safe_s, mask=surf, other=0)
+    n_surf = _warp_any(surf)
+    if n_surf != 0:
+        model = tl.load(s_model + tl.where(surf, safe_s, 0))  # (unused outside surf)
         absorb = interp_uniform(s_absorb, safe_s, wl, wl_start, wl_step, NW, surf)
         detect = interp_uniform(s_detect, safe_s, wl, wl_start, wl_step, NW, surf)
         diffuse = interp_uniform(s_diffuse, safe_s, wl, wl_start, wl_step, NW, surf)
@@ -402,8 +578,8 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
         w_specular_i = tl.zeros(hit.shape, tl.int32)
         w_diffuse_i = tl.zeros(hit.shape, tl.int32)
         w_transmit_i = tl.zeros(hit.shape, tl.int32)
-        n_wls = tl.sum(wls.to(tl.int32), axis=0)
-        if n_wls > 0:
+        n_wls = _warp_any(wls) * HAS_WLS
+        if n_wls != 0:
             reemit = interp_uniform(s_reemit, safe_s, wl, wl_start, wl_step, NW, wls)
             u3, u_w, _, _ = uniforms4(ids, seed, key, B_WLS)
             w_absorbed = wls & (u_s < absorb)
@@ -418,8 +594,8 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
             w_diffuse_i = w_diffuse.to(tl.int32)
             w_transmit_i = w_transmit.to(tl.int32)
             # WLS re-emission: new wavelength, isotropic direction, random polarization.
-            n_reemit = tl.sum(w_reemit.to(tl.int32), axis=0)
-            if n_reemit > 0:
+            n_reemit = _warp_any(w_reemit)
+            if n_reemit != 0:
                 new_wl = sample_uniform_cdf(s_cdf, safe_s, u_w, wl_start, wl_step, NW, w_reemit)
                 e0, e1, e2, e3 = uniforms4(ids, seed, key, B_WLS_DIR)
                 edx, edy, edz = uniform_sphere(e0, e1)
@@ -435,8 +611,8 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
 
         # Diffuse reflector: rejection sampling about the incident-side normal.
         diff = d_diffuse | w_diffuse
-        n_diff = tl.sum(diff.to(tl.int32), axis=0)
-        if n_diff > 0:
+        n_diff = _warp_any(diff)
+        if n_diff != 0:
             pending = diff
             trial = n_diff * 0
             n_pending = n_diff
@@ -449,7 +625,7 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
                 ndotv = tl.where(flip, -ndotv, ndotv)
                 dx, dy, dz = tl.where(pending, cx, dx), tl.where(pending, cy, dy), tl.where(pending, cz, dz)
                 pending = pending & ~(aa < ndotv)
-                n_pending = tl.sum(pending.to(tl.int32), axis=0)
+                n_pending = _warp_any(pending)
                 trial += 1
             q0, q1, _, _ = uniforms4(ids, seed, key, B_DIFFUSE_POL)
             sx, sy, sz = uniform_sphere(q0, q1)
@@ -472,8 +648,8 @@ def boundary_step(live, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, wei
 
     # ---- propagate_at_boundary (PASS) ------------------------------------------------
     passed = boundary & (~surf | (surf_pass != 0))
-    n_passed = tl.sum(passed.to(tl.int32), axis=0)
-    if n_passed > 0:
+    n_passed = _warp_any(passed)
+    if n_passed != 0:
         if FIXES:
             fdx, fdy, fdz, fpx, fpy, fpz, reflected, _, _, _ = fresnel_step(
                 dx, dy, dz, px, py, pz, nx, ny, nz, tl.where(passed, n1, 1.), tl.where(passed, n2, 1.), u_pol, u_refl)
@@ -615,7 +791,7 @@ def bulk_attempt(active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, we
                  comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs, rindex, absorption, scattering,
                  seed, max_steps, wl_start, wl_step, time_start, time_step,
                  NW: tl.constexpr, NT: tl.constexpr, MAX_COMP: tl.constexpr, USE_WEIGHTS: tl.constexpr,
-                 FIXES: tl.constexpr, ROULETTE: tl.constexpr, w_rr):
+                 FIXES: tl.constexpr, ROULETTE: tl.constexpr, w_rr, HAS_REEMIT: tl.constexpr = True):
     """One bulk collision attempt inside the certified box ``[l, u]`` of
     material ``inc`` for lanes in ``active`` (direction and position finite).
 
@@ -631,8 +807,8 @@ def bulk_attempt(active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, we
     else:
         terminal = TERMINAL_16
     u_abs, u_sca, u_cos, u_phi = uniforms4(ids, seed, step, B_TRANSPORT)
-    da = -alen * tl.log(u_abs)
-    ds = -slen * tl.log(u_sca)
+    da = -alen * log_unit(u_abs)
+    ds = -slen * log_unit(u_sca)
     if USE_WEIGHTS:
         weighted = active & (weight > WEIGHT_LOWER_THRESHOLD)
         da = tl.where(weighted, 1e30, da)
@@ -659,13 +835,13 @@ def bulk_attempt(active, x, y, z, dx, dy, dz, px, py, pz, wl, t, last, flags, we
     wl, t, dx, dy, dz, px, py, pz, flags, last = bulk_process(
         absorbed, scattered, inc, alen, wl, t, dx, dy, dz, px, py, pz, flags, last, u_cos, u_phi, ids, seed, key,
         comp_offsets, comp_prob, comp_wcdf, comp_tcdf, comp_abs,
-        wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP)
+        wl_start, wl_step, time_start, time_step, NW, NT, MAX_COMP, HAS_REEMIT)
     if ROULETTE:
         weight, flags = roulette(commit & ((flags & terminal) == 0), weight, flags, ids, seed, key, w_rr)
     active = commit & ((flags & terminal) == 0) & (step < max_steps)
     changed = active & (wl != wl_before)
-    n_changed = tl.sum(changed.to(tl.int32), axis=0)
-    if n_changed > 0:
+    n_changed = _warp_any(changed)
+    if n_changed != 0:
         n1 = tl.where(changed, interp_uniform(rindex, inc, wl, wl_start, wl_step, NW, changed), n1)
         alen = tl.where(changed, interp_uniform(absorption, inc, wl, wl_start, wl_step, NW, changed), alen)
         slen = tl.where(changed, interp_uniform(scattering, inc, wl, wl_start, wl_step, NW, changed), slen)
