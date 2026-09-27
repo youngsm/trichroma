@@ -11,6 +11,15 @@ Information about the historical development of Chroma can be found at the [bitb
 This repository contains a modified version of Chroma that includes support for wavelength shifters, scintillators, and dichroic filters. 
 This version of Chroma has also been been updated for Python3, Geant4.10.05.p01, and Root 6.18.04, among other things.
 
+## Backends
+
+`chroma.sim.Simulation` runs on one of two backends, chosen by `CHROMA_BACKEND` when `chroma.sim` is imported:
+
+- `cuda`: the original PyCUDA implementation (`pip install -e '.[cuda]'`).
+- `triton`: [TriChroma](https://github.com/youngsm/trichroma), a Triton implementation that needs no PyCUDA (`pip install trichroma`).
+
+Unset, it is `cuda` when PyCUDA is installed and `triton` otherwise. The rest of the API is the same for both, so both backends can be installed side by side and compared on the same geometry.
+
 ## Container overview
 
 The `installation` directory contains a collection of `Dockerfile`s to build an ubuntu-derived image containing Chroma. This may be a useful reference for other systems. Note that properly linking to boost_python and boost_numpy is nontrivial on systems with both python2 and python3.

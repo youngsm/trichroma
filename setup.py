@@ -15,8 +15,14 @@ setup(
                'bin/chroma-geo', 'bin/chroma-bvh',
                'bin/chroma-server'],
     setup_requires = [],
-    install_requires = ['uncertainties','pyzmq', 'pycuda','pytools==2022.1.2',
-                        'numpy>=1.6', 'pygame', 'nose', 'sphinx'],
+    install_requires = ['numpy>=1.6'],
+    extras_require = {
+        # The original PyCUDA backend (CHROMA_BACKEND=cuda).
+        'cuda': ['pycuda', 'pytools==2022.1.2'],
+        # The event viewer (chroma.camera), chroma-server and the histogram helpers.
+        'viz': ['pygame', 'pyzmq', 'uncertainties', 'matplotlib'],
+        'test': ['pytest'],
+    },
     #test_suite = 'nose.collector',
     
 )
