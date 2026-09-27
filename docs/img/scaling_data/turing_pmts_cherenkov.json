@@ -1,0 +1,57 @@
+{
+ "detector": "pmts",
+ "description": "pmt array",
+ "gpu": "NVIDIA GeForce RTX 2080 Ti",
+ "spectrum": "cherenkov",
+ "wavelength": 420.0,
+ "rows": [
+  {
+   "n": 10000,
+   "seconds": 0.0037584304809570312,
+   "photons_per_s": 2660685.1053032223,
+   "steps_per_photon": 6.0239996910095215
+  },
+  {
+   "n": 30000,
+   "seconds": 0.005778074264526367,
+   "photons_per_s": 5192041.262636682,
+   "steps_per_photon": 6.006033420562744
+  },
+  {
+   "n": 100000,
+   "seconds": 0.009337663650512695,
+   "photons_per_s": 10709316.992212435,
+   "steps_per_photon": 6.0526299476623535
+  },
+  {
+   "n": 300000,
+   "seconds": 0.014942169189453125,
+   "photons_per_s": 20077406.1781976,
+   "steps_per_photon": 6.08558988571167
+  },
+  {
+   "n": 1000000,
+   "seconds": 0.04213428497314453,
+   "photons_per_s": 23733641.15796383,
+   "steps_per_photon": 6.078254222869873
+  },
+  {
+   "n": 3000000,
+   "seconds": 0.12146520614624023,
+   "photons_per_s": 24698430.893766366,
+   "steps_per_photon": 6.075347900390625
+  },
+  {
+   "n": 10000000,
+   "seconds": 0.40085554122924805,
+   "photons_per_s": 24946642.79639091,
+   "steps_per_photon": 6.073838233947754
+  },
+  {
+   "n": 30000000,
+   "seconds": 1.2072396278381348,
+   "photons_per_s": 24850078.897528008,
+   "steps_per_photon": 6.075684547424316
+  }
+ ]
+}

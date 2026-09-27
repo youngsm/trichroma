@@ -28,6 +28,43 @@ An exact mode (`CHROMA_TRITON_TAPE=replay:<dir>`) replays random-number tapes
 recorded from CUDA Chroma and reproduces its outputs bit for bit, bugs
 included.
 
+## Throughput
+
+![Transport throughput versus photons per launch](docs/img/throughput_scaling.png)
+
+The transport engine alone, for three kinds of detector:
+- **LAr TPC:** chroma-lar's reflect3wires (162 PMTs, analytic TPC boxes, three
+  wire planes), a point source at the LUT voxel (-450, 60, -120) mm, 128 nm,
+  ~17 steps per photon.
+- **30k-PMT scintillator detector:** 30,210 instanced 20-inch PMT meshes (18M
+  triangles) around a liquid-scintillator volume, a point source at the
+  centre. At 420 nm a photon takes ~5 steps. With a Cherenkov spectrum it
+  takes ~6, because the scintillator absorbs the UV part and re-emits it.
+- **LXe TPC:** a 4.2M-triangle CAD mesh (chroma-lxe), 178 nm, ~1.6 steps per
+  photon.
+
+Each point is an isotropic point source drawn on the GPU and run to
+completion by `engine.propagate`: unweighted, `max_steps=1000`, default
+settings. The time is the best of several launches after a warm-up launch.
+Photons per second:
+
+| Detector | A100, 10^6 photons | A100, 10^8 | RTX 2080 Ti, 10^6 | RTX 2080 Ti, 3·10^7 |
+|---|---|---|---|---|
+| LAr TPC | 108M | 176M | 53M | 68M |
+| 30k-PMT detector, 420 nm | 57M | 71M | 29M | 30M |
+| 30k-PMT detector, Cherenkov spectrum | 48M | 59M | 24M | 25M |
+| LXe TPC | 121M | 175M | 80M | 83M |
+
+Small launches cannot fill the GPU. Each warp keeps up to 128 photons in
+flight, so an A100 holds ~280k at once, and below a few million photons the
+last photons of a launch dominate its time. `simulate()` groups small events
+into launches of `photons_per_batch` photons. The default of 10^6 is safe on
+any GPU; on a large one, ~10^7 is close to full speed. The RTX 2080 Ti's
+11 GB holds up to ~3·10^7 photons per launch.
+`benchmarks/throughput_scaling.py` and `benchmarks/plot_scaling.py`
+reproduce the figure for any detector; the measured points are in
+`docs/img/scaling_data/`.
+
 ## Install
 
 Linux with a CUDA GPU; the validated environment is Python 3.10, PyTorch
@@ -98,9 +135,10 @@ The second records fixtures with CUDA Chroma and checks that the Triton
 replay matches every output word (the LAr fixtures also need chroma-lar).
 The original Chroma test suite is `tests/cuda_backend` (run it by name, with
 PyCUDA; many of its tests failed before TriChroma).
-`benchmarks/` has the throughput benchmark behind the table above
-(`simulate_throughput.py`, either backend), an engine profiler and a
-statistical CUDA/Triton comparison; they build chroma-lar detectors.
+`benchmarks/` has the throughput benchmark behind the first table
+(`simulate_throughput.py`, either backend), the scaling benchmark and plot
+behind the figure (`throughput_scaling.py`, `plot_scaling.py`; any detector),
+an engine profiler and a statistical CUDA/Triton comparison.
 
 ## Layout
 
