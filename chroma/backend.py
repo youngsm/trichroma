@@ -16,6 +16,8 @@ Unset, it is ``cuda`` when PyCUDA is installed and ``triton`` otherwise.
 * ``canonical``: original arithmetic, XORWOW streams and launch schedule, with
   surviving photons re-queued in ascending order (a legal original schedule).
 * ``record:<dir>``: CUDA backend only; record the actual schedule to ``<dir>``.
+* ``record-sorted:<dir>``: the same, with surviving photons re-queued in
+  ascending order as in ``canonical``.
 * ``replay:<dir>``: Triton backend only; replay a recorded schedule.
 """
 
@@ -48,6 +50,7 @@ class TapeMode:
 
     mode: str = "off"  # off | canonical | record | replay
     directory: str = None
+    sorted: bool = False  # record-sorted: re-queue survivors in ascending order
 
     @property
     def enabled(self):
@@ -64,8 +67,9 @@ def tape_mode(environ=None):
         return TapeMode("canonical")
     kind, sep, directory = value.partition(":")
     kind = kind.strip().lower()
-    if kind in ("record", "replay") and sep and directory.strip():
-        return TapeMode(kind, directory.strip())
+    if kind in ("record", "record-sorted", "replay") and sep and directory.strip():
+        return TapeMode(kind.partition("-")[0], directory.strip(), sorted=kind == "record-sorted")
     raise ValueError(
-        "CHROMA_TRITON_TAPE must be off, canonical, record:<dir> or replay:<dir>, not %r" % value
+        "CHROMA_TRITON_TAPE must be off, canonical, record:<dir>, record-sorted:<dir> or "
+        "replay:<dir>, not %r" % value
     )
