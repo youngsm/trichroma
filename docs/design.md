@@ -39,7 +39,7 @@ difference contributes to speed.
 | `CHROMA_TRITON_FUSED` | `1` (default), `0` | Fused register-resident transport kernel; `0` selects the wavefront scheduler |
 | `CHROMA_TRITON_GRID` | `1` (default), `0` | Certified empty-space grid (bulk shortcut of the wavefront scheduler; built only when that scheduler is selected) |
 | `CHROMA_TRITON_PIPELINE` | `1` (default), `0` | `simulate` propagates batch k+1 while the caller consumes batch k; `0` restores W's order of reading input and yielding events (results are identical either way) |
-| `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production corrects it (specular polarization, literal Fresnel formulas, NaN-abort bit 1<<15, W's wire algorithm, W's t > 1e-6 at box faces), with the production RNG, geometry and arithmetic: a statistical like-for-like comparison with CUDA Chroma. It does not restore W's specular-direction formula or 16-bit history truncation ([exact vs production](exact_vs_production.md)) |
+| `CHROMA_TRITON_FIXES` | `1` (default), `0` | `0` keeps W's behaviour where production corrects it (specular polarization, literal Fresnel formulas, NaN-abort bit 1<<15, W's wire algorithm, W's t > 1e-6 at box faces, the DAQ's reading past short CDFs), with the production RNG, geometry and arithmetic: a statistical like-for-like comparison with CUDA Chroma. It does not restore W's specular-direction formula or 16-bit history truncation ([exact vs production](exact_vs_production.md)) |
 | `CHROMA_TRITON_STRICT` | `0` (default), `1` | `1` turns off the optimizations that can change a result at the float32 rounding level (today: entering an enclosing instance after the rest of the walk), so every result is bitwise that of the plain traversal; about 6% slower on detectors with a tank or cavity mesh |
 | `CHROMA_TRITON_LEGACY_WIRES` | unset, `0`, `1` | Override the wire algorithm alone (default: legacy iff `CHROMA_TRITON_FIXES=0`) |
 | `CHROMA_TRITON_ROULETTE` | weight, e.g. `0.05` | Opt-in, weighted mode only: Russian roulette below that weight (unbiased for every tally; not W's weighted-mode semantics) |
@@ -142,6 +142,15 @@ Production-mode deviations from W, all deliberate and documented:
   to the normal and rounds directions within 2.4e-4 rad of normal incidence.
 * The DAQ clamps the time and charge CDFs at their ends and adds nothing for
   a negative charge sample, as W does.
+* Short DAQ CDFs. Chroma's `Detector._pdf_to_cdf` (every
+  `set_time_dist*`/`set_charge_dist*`; the default 2-point tables are
+  complete) dropped the leading 0 of y, and W's DAQ reads one element past
+  its end: a 0 in fresh device memory, which puts every time and charge at
+  the last bin edge, and later whatever the memory last held, so DAQ words
+  depended on what ran before in the process. Production restores the
+  leading 0 (chroma-lite now builds complete tables; detectors built or
+  pickled earlier still carry short ones); `CHROMA_TRITON_FIXES=0` appends
+  the 0 of fresh memory instead.
 
 Flight time uses the phase velocity `c/n` of the incident material and
 surface re-emission is instantaneous, as in W.

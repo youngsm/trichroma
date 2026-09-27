@@ -40,6 +40,30 @@ def _warm_up_triton():
         pass
 
 
+def daq_cdf(x, y, fixes=True):
+    """A DAQ time or charge CDF ``(x, y)`` with one y per x.
+
+    Chroma's ``Detector._pdf_to_cdf`` built y one entry short of x: it
+    computed ``[0.0] + cumsum``, a NumPy sum rather than a list, so the leading
+    0 was lost, and the DAQ reads one element past the end of y (in a fresh
+    allocation that element is 0, so every draw clamps to the last edge and
+    there is no smearing; later it is whatever memory held before).
+    chroma-lite now builds complete tables; detectors built or pickled earlier
+    still carry short ones. With ``fixes`` the leading 0 is restored. Without
+    them y gets a trailing 0: the original code's reading of fresh memory, now
+    deterministic.
+
+    Exact mode refuses short tables instead (``tape.scene.check_daq_limits``):
+    what the recorded run read past the end is unknown."""
+    x = np.asarray(x, np.float64)
+    y = np.asarray(y, np.float64)
+    if len(y) == len(x) - 1:
+        y = np.concatenate([[0.0], y]) if fixes else np.concatenate([y, [0.0]])
+    if len(y) != len(x):
+        raise ValueError("DAQ CDF with %d x values and %d y values" % (len(x), len(y)))
+    return x, y
+
+
 def _to_device(array, device, dtype=None):
     array = np.ascontiguousarray(array if dtype is None else np.asarray(array, dtype=dtype))
     if not array.flags.writeable:  # torch.from_numpy warns on read-only arrays
@@ -191,10 +215,13 @@ class ProductionEngine(object):
         self.solid_offsets = _to_device(scene.solid_tri_offset, dev, np.int64)
         self.solid_id_to_channel_index = _to_device(scene.solid_id_to_channel_index, dev, np.int32)
         if hasattr(detector, "time_cdf"):
-            self.tcdf_x = _to_device(detector.time_cdf[0], dev, f32)
-            self.tcdf_y = _to_device(detector.time_cdf[1], dev, f32)
-            self.qcdf_x = _to_device(detector.charge_cdf[0], dev, f32)
-            self.qcdf_y = _to_device(detector.charge_cdf[1], dev, f32)
+            fixes = os.environ.get("CHROMA_TRITON_FIXES", "1") not in ("", "0")  # (self.fixes below)
+            tx, ty = daq_cdf(*detector.time_cdf, fixes=fixes)
+            qx, qy = daq_cdf(*detector.charge_cdf, fixes=fixes)
+            self.tcdf_x = _to_device(tx, dev, f32)
+            self.tcdf_y = _to_device(ty, dev, f32)
+            self.qcdf_x = _to_device(qx, dev, f32)
+            self.qcdf_y = _to_device(qy, dev, f32)
             self.charge_unit = float(np.float32(detector.charge_cdf[0][-1] / 2**16))
             self.nchannels = int(detector.num_channels())
         self._workspace = None

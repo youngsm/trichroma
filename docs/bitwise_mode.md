@@ -223,9 +223,9 @@ The recorder or the replay raises instead of guessing when W's behaviour is
 undefined or unrecorded:
 
 * DAQ tables whose `cdf_y` is one entry shorter than `cdf_x`
-  (`Detector._pdf_to_cdf`, i.e. every `set_time_dist*`/`set_charge_dist*`):
-  `run_daq` reads one float past the allocation. The default 2-point
-  distributions are fine.
+  (`Detector._pdf_to_cdf` before chroma-lite fixed it, i.e. every
+  `set_time_dist*`/`set_charge_dist*`): `run_daq` reads one float past the
+  allocation. The default 2-point distributions are fine.
 * Material/surface indices >= 128 (sign-extended by `convert`), a BVH whose
   root is a leaf, a traversal that needs more than 1000 stack entries,
   dichroic/angular lookups at the last tabulated angle (`iidx+1` out of the
