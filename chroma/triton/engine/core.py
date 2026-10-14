@@ -231,7 +231,7 @@ class ProductionEngine(object):
         # production engine fixes it (specular polarization, Fresnel NaNs, the
         # NaN-abort bit 1<<15, FP32 wire intersection) while keeping the Philox
         # RNG: a statistical like-for-like comparison with CUDA Chroma
-        # (docs/exact_vs_production.md lists what it does not restore).
+        # (docs/reference/differences.md lists what it does not restore).
         # legacy-wires selects the legacy wire algorithm alone.
         self.fixes = not opts.legacy
         self.legacy_wires = opts.legacy_wires

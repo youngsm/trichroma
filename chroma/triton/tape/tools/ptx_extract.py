@@ -3,7 +3,7 @@
 Development tool used to generate the long straight-line blocks of
 :mod:`trichroma.engine.exact` from the original kernel's PTX after all
 ptxas contraction decisions were made explicit (see
-``docs/design.md``). Loads inside the segment become inputs,
+``docs/reference/exact_mode.md``, appendix C). Loads inside the segment become inputs,
 stores are dropped, registers read before being written become inputs, and
 the requested registers become outputs.
 """

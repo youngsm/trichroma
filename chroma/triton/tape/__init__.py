@@ -18,7 +18,7 @@
   original headers (unit ground truth for ``tests/bitwise/test_exact.py``).
 * :mod:`trichroma.tape.verify` -- ``python -m trichroma.tape.verify``.
 
-Reference: ``docs/bitwise_mode.md``.
+Reference: ``docs/reference/exact_mode.md``.
 
 Importing this package does not import PyCUDA, torch or Triton.
 """

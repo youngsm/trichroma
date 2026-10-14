@@ -1,8 +1,8 @@
 # Triton upgrade for Chroma
 
 > This document records the earlier Triton work that preceded the drop-in
-> `chroma.sim.Simulation` backend (see [the design](design.md) for the
-> current engine). Its modules (`chroma/triton/*.py`) are at commit
+> `chroma.sim.Simulation` backend (see [the engine reference](../reference/engine.md) for
+> the current engine). Its modules (`chroma/triton/*.py`) are at commit
 > [`c951290`](https://github.com/youngsm/trichroma/tree/c95129023174ba0a44064889a93d72291a855fe2/src/trichroma/chroma/triton);
 > its benchmark scripts, reports and the `chroma_lar.triton_scene` module
 > lived in the `chroma-lar` copy, at commit

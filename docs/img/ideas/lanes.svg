@@ -1,0 +1,141 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='760' height='410' viewBox='0 0 760 410'><defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='#6e7781'/></marker><pattern id='hatch' width='6' height='6' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'><line x1='0' y1='0' x2='0' y2='6' stroke='#d0d7de' stroke-width='2'/></pattern></defs><rect width='100%' height='100%' fill='white' rx='8'/><text x='20.0' y='26.0' font-family='Helvetica, Arial, sans-serif' font-size='14' fill='#1f2328' text-anchor='start' font-weight='bold'>CUDA Chroma: one step per launch, then the rest of the steps in one launch</text>
+<rect x='118.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='132.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='156.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='166.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='180.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='190.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='204.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='228.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='238.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='252.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='262.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='276.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='286.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='300.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='40.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='57.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='74.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='91.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='108.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='125.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='142.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='310.0' y='159.0' width='13.0' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='324.0' y='38.0' width='9.0' height='136.0' rx='0' fill='url(#hatch)' stroke='none' stroke-width='1' opacity='1'/>
+<text x='118.0' y='190.0' font-family='Helvetica, Arial, sans-serif' font-size='11' fill='#6e7781' text-anchor='start' font-weight='normal'>hatched: relaunch, reload every photon,</text>
+<text x='118.0' y='204.0' font-family='Helvetica, Arial, sans-serif' font-size='11' fill='#6e7781' text-anchor='start' font-weight='normal'>re-queue survivors, ask the host how many</text>
+<rect x='338.0' y='40.0' width='71.8' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='409.8' y='40.0' width='299.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='338.0' y='57.0' width='107.6' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='445.6' y='57.0' width='263.1' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='338.0' y='74.0' width='35.9' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='373.9' y='74.0' width='334.9' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='338.0' y='91.0' width='251.2' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='589.2' y='91.0' width='119.6' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='338.0' y='108.0' width='358.8' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='696.8' y='108.0' width='12.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='338.0' y='125.0' width='370.8' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='338.0' y='142.0' width='35.9' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='373.9' y='142.0' width='334.9' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='338.0' y='159.0' width='35.9' height='13.0' rx='1.5' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='373.9' y='159.0' width='334.9' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<text x='342.0' y='190.0' font-family='Helvetica, Arial, sans-serif' font-size='11' fill='#6e7781' text-anchor='start' font-weight='normal'>when few remain: idle threads (dashed) wait</text>
+<text x='342.0' y='204.0' font-family='Helvetica, Arial, sans-serif' font-size='11' fill='#6e7781' text-anchor='start' font-weight='normal'>for the warp's longest photon</text>
+<text x='22.0' y='112.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='start' font-weight='normal'>32 threads</text>
+<text x='22.0' y='127.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='start' font-weight='normal'>of a warp</text>
+<text x='20.0' y='236.0' font-family='Helvetica, Arial, sans-serif' font-size='14' fill='#1f2328' text-anchor='start' font-weight='bold'>TriChroma: a thread that finishes a photon takes the next one at once</text>
+<rect x='118.5' y='250.0' width='22.9' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.4' y='250.0' width='82.7' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='226.1' y='250.0' width='130.6' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='357.7' y='250.0' width='58.8' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='417.5' y='250.0' width='132.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.5' y='267.0' width='286.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='405.5' y='267.0' width='22.9' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='429.5' y='267.0' width='34.9' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='465.3' y='267.0' width='84.2' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.5' y='284.0' width='130.6' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='250.1' y='284.0' width='58.8' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='309.9' y='284.0' width='58.8' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='369.7' y='284.0' width='179.8' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.5' y='301.0' width='34.9' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='154.4' y='301.0' width='286.0' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='441.4' y='301.0' width='22.9' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='465.3' y='301.0' width='58.8' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='525.1' y='301.0' width='24.4' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.5' y='318.0' width='22.9' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='142.4' y='318.0' width='286.0' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='429.5' y='318.0' width='120.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.5' y='335.0' width='286.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='405.5' y='335.0' width='58.8' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='465.3' y='335.0' width='84.2' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.5' y='352.0' width='58.8' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='178.3' y='352.0' width='34.9' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='214.2' y='352.0' width='34.9' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='250.1' y='352.0' width='58.8' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='309.9' y='352.0' width='58.8' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='369.7' y='352.0' width='179.8' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='118.5' y='369.0' width='286.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='405.5' y='369.0' width='144.0' height='13.0' rx='1.5' fill='#56B4E9' stroke='none' stroke-width='1' opacity='1'/>
+<text x='22.0' y='322.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='start' font-weight='normal'>32 threads</text>
+<text x='22.0' y='337.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='start' font-weight='normal'>of a warp</text>
+<text x='118.0' y='400.0' font-family='Helvetica, Arial, sans-serif' font-size='11' fill='#6e7781' text-anchor='start' font-weight='normal'>each colour change is a new photon: no pauses, no waiting for other threads</text>
+<line x1='118.0' y1='400.0' x2='740.0' y2='400.0' stroke='#d0d7de' stroke-width='1' marker-end='url(#arrow)'/>
+<text x='740.0' y='392.0' font-family='Helvetica, Arial, sans-serif' font-size='11' fill='#6e7781' text-anchor='end' font-weight='normal'>time</text></svg>
