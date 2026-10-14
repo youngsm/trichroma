@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trichroma"
+version = "0.6.0"
+description = "Chroma's optical photon simulation on Triton (and on CUDA, with the cuda extra)"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "torch",
+    "triton",
+    # Triton 3.1 imports setuptools at runtime without declaring it, and uv
+    # environments do not include it.
+    "setuptools",
+]
+
+[project.optional-dependencies]
+# The original PyCUDA backend (CHROMA_BACKEND=cuda).
+cuda = ["pycuda", "pytools==2022.1.2"]
+# The event viewer (chroma.camera), chroma-server and the histogram helpers.
+viz = ["pygame", "pyzmq", "uncertainties", "matplotlib"]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/youngsm/trichroma"
+
+[tool.setuptools]
+script-files = ["bin/chroma-sim", "bin/chroma-cam", "bin/chroma-geo", "bin/chroma-bvh", "bin/chroma-server"]
+
+[tool.setuptools.packages.find]
+include = ["chroma", "chroma.*"]
+
+[tool.setuptools.package-data]
+chroma = ["cuda/*.cu", "cuda/*.h"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "gpu: needs a CUDA GPU",
+]
