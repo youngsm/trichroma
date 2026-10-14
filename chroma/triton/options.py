@@ -6,7 +6,7 @@
 Physics and exactness (all off by default):
 
 * ``legacy``: keep CUDA Chroma's behaviour where production corrects it
-  (docs/design.md lists what), with the production RNG, geometry and
+  (docs/guide.md lists what), with the production RNG, geometry and
   arithmetic: a statistical like-for-like comparison with CUDA Chroma.
 * ``strict``: turn off the optimizations that can change a result at the
   float32 rounding level.

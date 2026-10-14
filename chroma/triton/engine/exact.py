@@ -6,8 +6,8 @@ friends) compiled by PyCUDA with CUDA 12.4 ``nvcc --use_fast_math
 ``propagate`` kernel's final machine arithmetic, including its known defects
 (16-bit history, NaN-producing Fresnel at normal incidence and at the
 critical angle, unnormalized paths, out-of-table interpolation reads, FP32
-wires). See ``docs/design.md`` ("Bitwise legacy mode") for the
-tape contract and the draw order.
+wires). See ``docs/reference/exact_mode.md`` for the
+recording format and the draw order.
 
 How exactness is guaranteed
 ---------------------------

@@ -1,6 +1,7 @@
 # Weighted-mode validation of the production engine
 
-The scripts behind [docs/exact_vs_production.md](../../docs/exact_vs_production.md).
+The scripts behind the measurements in
+[docs/reference/differences.md](../../docs/reference/differences.md).
 They need chroma-lar (for the reflect3wires detector) on `PYTHONPATH`, and
 PyCUDA for the CUDA Chroma runs.
 
