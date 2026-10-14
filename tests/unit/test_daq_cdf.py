@@ -5,7 +5,7 @@ import pytest
 
 from chroma.detector import Detector
 from chroma.geometry import Material
-from trichroma.engine.core import daq_cdf
+from chroma.triton.engine.core import daq_cdf
 
 
 def _short_cdf(n=50):

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from chroma.geometry import AngularProps, DichroicProps, Material, Surface
-from trichroma.engine.optics import (
+from chroma.triton.engine.optics import (
     OpticalFeature,
     SURFACE_ANGULAR,
     SURFACE_COMPLEX,

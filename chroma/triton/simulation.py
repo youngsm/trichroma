@@ -4,9 +4,9 @@ The constructor and :meth:`Simulation.simulate` follow the installed Chroma
 working tree (``chroma/sim_cuda.py``): the same arguments and defaults, the
 same batching, ``evidx`` rewriting and event wrapping, and the same ``Event``
 fields and dtypes. Propagation, random numbers and the DAQ response belong
-to a :class:`trichroma.engine.api.TransportEngine`:
+to a :class:`chroma.triton.engine.api.TransportEngine`:
 
-:class:`trichroma.engine.core.ProductionEngine`, in production mode by
+:class:`chroma.triton.engine.core.ProductionEngine`, in production mode by
 default and in its exact (bitwise legacy) mode when
 ``CHROMA_TRITON_TAPE=replay:<dir>`` names a tape recorded by the CUDA backend.
 
@@ -38,8 +38,8 @@ import numpy as np
 from chroma import event
 from chroma import itertoolset
 from chroma.backend import tape_mode
-from trichroma.engine.api import SURFACE_DETECT, DevicePhotons, to_device
-from trichroma.options import options
+from chroma.triton.engine.api import SURFACE_DETECT, DevicePhotons, to_device
+from chroma.triton.options import options
 
 
 def pick_seed():
@@ -251,7 +251,7 @@ class Simulation(object):
             # GPUDaq refuses a detector without channels.
             assert detector.num_channels() > 0, "Geometry has no detectors, DAQ can't be initialized."
 
-        from trichroma.engine.core import ProductionEngine
+        from chroma.triton.engine.core import ProductionEngine
 
         self.tape = tape_mode()
         if self.tape.enabled:

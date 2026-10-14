@@ -4,7 +4,7 @@
 :mod:`chroma.sim`:
 
 * ``cuda``: the original PyCUDA implementation.
-* ``triton``: the Triton implementation, :mod:`trichroma.simulation`, which
+* ``triton``: the Triton implementation, :mod:`chroma.triton.simulation`, which
   does not import PyCUDA.
 
 Unset, it is ``cuda`` when PyCUDA is installed and ``triton`` otherwise.

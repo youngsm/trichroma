@@ -1,11 +1,11 @@
 """CUDA probe kernels compiled from the ORIGINAL headers (unit ground truth).
 
-``python -m trichroma.tape.probes generate --out probes.npz
+``python -m chroma.triton.tape.probes generate --out probes.npz
 [--headers /path/to/original/chroma/cuda] [--count N]`` (CUDA environment,
 PyCUDA) compiles small kernels that call the original device functions with
 the original ``cuda_options`` and runs them on random and adversarial inputs.
-``src/trichroma/tests/bitwise/test_exact.py`` evaluates the same inputs with
-:mod:`trichroma.engine.exact` and requires identical bits.
+``chroma/triton/tests/bitwise/test_exact.py`` evaluates the same inputs with
+:mod:`chroma.triton.engine.exact` and requires identical bits.
 
 Probes consume draws from ordinary ``curandStateXORWOW`` states (random
 words); the draws each probe consumed are recorded (Weyl-counter delta) and
@@ -412,7 +412,7 @@ def generate(out, headers, count=2048, seed=20260925):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="python -m trichroma.tape.probes")
+    parser = argparse.ArgumentParser(prog="python -m chroma.triton.tape.probes")
     sub = parser.add_subparsers(dest="command", required=True)
     g = sub.add_parser("generate")
     g.add_argument("--out", required=True)

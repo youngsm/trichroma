@@ -18,9 +18,9 @@ reproduce the installed CUDA Chroma (W) bit for bit:
 * ``acquire``: ``run_daq`` with the recorded DAQ draws.
 
 There is no empty-space grid, bulk shortcut or CUDA-graph tail in this mode.
-The arithmetic lives in :mod:`trichroma.engine.exact`; the tape format in
-:mod:`trichroma.tape.format`. Every case W leaves undefined or the tape
-does not determine fails closed (:class:`trichroma.tape.format.TapeError`
+The arithmetic lives in :mod:`chroma.triton.engine.exact`; the tape format in
+:mod:`chroma.triton.tape.format`. Every case W leaves undefined or the tape
+does not determine fails closed (:class:`chroma.triton.tape.format.TapeError`
 or ``NotImplementedError``): different Simulation parameters, inputs,
 detector or batch boundaries; draws exhausted or left over; a launch schedule
 that the replay does not reproduce; traversal stack overflow; lookups past
@@ -34,9 +34,9 @@ import torch
 import triton
 import triton.language as tl
 
-from trichroma.engine import exact as X
-from trichroma.engine import physics as P
-from trichroma.engine.api import DaqChannels
+from chroma.triton.engine import exact as X
+from chroma.triton.engine import physics as P
+from chroma.triton.engine.api import DaqChannels
 
 BLOCK = 32  # one photon per thread, one warp per program (as the production rounds)
 NUM_WARPS = 1  # must equal BLOCK // 32: the traversal stack is in global memory
@@ -69,7 +69,7 @@ def bvh_stack_bound(nodes):
 
 
 class ExactScene(object):
-    """The recorded scene words (:mod:`trichroma.tape.scene` keys) on the
+    """The recorded scene words (:mod:`chroma.triton.tape.scene` keys) on the
     device, per-wavelength tables padded with the word W reads one past their
     end (``pad_*``)."""
 
@@ -648,7 +648,7 @@ class _Schedule(object):
     """
 
     def __init__(self, batch, n, max_steps):
-        from trichroma.tape.format import TapeError
+        from chroma.triton.tape.format import TapeError
 
         starts = np.asarray(batch["launch_starts"], np.int64)
         nsteps = np.asarray(batch["launch_nsteps"], np.int64)
@@ -670,7 +670,7 @@ class _Schedule(object):
         self.checked = set()
 
     def check_round(self, step, count):
-        from trichroma.tape.format import TapeError
+        from chroma.triton.tape.format import TapeError
 
         if step >= self.end:
             raise TapeError("batch %d: %d photons are alive at step %d, after the last recorded launch"
@@ -683,7 +683,7 @@ class _Schedule(object):
             self.checked.add(step)
 
     def check_end(self):
-        from trichroma.tape.format import TapeError
+        from chroma.triton.tape.format import TapeError
 
         missing = sorted(set(self.expected) - self.checked)
         if missing:
@@ -697,7 +697,7 @@ class _Schedule(object):
 
 
 class ExactMode(object):
-    """Replay of a native tape by :class:`trichroma.engine.core.ProductionEngine`.
+    """Replay of a native tape by :class:`chroma.triton.engine.core.ProductionEngine`.
 
     Built by the engine constructor for ``tape=TapeMode('replay', dir)``. It
     owns the recorded scene, the tape reader and the exact kernels; the
@@ -706,8 +706,8 @@ class ExactMode(object):
 
     def __init__(self, engine, detector, tape, *, seed=None, nthreads_per_block=None, max_blocks=None,
                  photon_tracking=None, use_packed=None):
-        from trichroma.tape import format as tapefmt
-        from trichroma.tape.scene import check_legacy_limits, compare_scene_relabeled, scene_words
+        from chroma.triton.tape import format as tapefmt
+        from chroma.triton.tape.scene import check_legacy_limits, compare_scene_relabeled, scene_words
 
         if tape.mode != "replay":
             raise NotImplementedError(
@@ -774,7 +774,7 @@ class ExactMode(object):
         return ws
 
     def _check_inputs(self, batch, photons):
-        from trichroma.tape.format import PHOTON_FIELD_NAMES, TapeError
+        from chroma.triton.tape.format import PHOTON_FIELD_NAMES, TapeError
 
         n = len(photons)
         if n != batch.nphotons:
@@ -793,7 +793,7 @@ class ExactMode(object):
     # ---------------------------------------------------------- transport
 
     def propagate(self, photons, *, max_steps, use_weights=False, track=False):
-        from trichroma.tape.format import TapeError
+        from chroma.triton.tape.format import TapeError
 
         clock = [time.perf_counter()]
         batch = self.replay.next_batch(None, max_steps=int(max_steps), use_weights=bool(use_weights))
@@ -899,8 +899,8 @@ class ExactMode(object):
     # ---------------------------------------------------------------- DAQ
 
     def acquire(self, photons, start, count):
-        from trichroma.tape.scene import check_daq_limits
-        from trichroma.tape.format import TapeError
+        from chroma.triton.tape.scene import check_daq_limits
+        from chroma.triton.tape.format import TapeError
 
         batch = self.batch
         if batch is None:

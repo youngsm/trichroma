@@ -1,7 +1,7 @@
 """Extract a segment of explicit-contraction PTX as a Triton inline-asm block.
 
 Development tool used to generate the long straight-line blocks of
-:mod:`trichroma.engine.exact` from the original kernel's PTX after all
+:mod:`chroma.triton.engine.exact` from the original kernel's PTX after all
 ptxas contraction decisions were made explicit (see
 ``docs/reference/exact_mode.md``, appendix C). Loads inside the segment become inputs,
 stores are dropped, registers read before being written become inputs, and

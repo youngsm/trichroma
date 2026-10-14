@@ -7,7 +7,7 @@ import math
 import numpy as np
 import numpy.testing as npt
 
-from trichroma.engine.physics_reference import (
+from chroma.triton.engine.physics_reference import (
     BULK_ABSORB,
     BULK_NONE,
     BULK_SCATTER,
@@ -243,7 +243,7 @@ def test_chroma_cross_preserves_positive_zero_on_exact_cancellation():
 
     if not torch.cuda.is_available():
         pytest.skip("CUDA is required")
-    from trichroma.engine.physics_kernels import cross_chroma_fast
+    from chroma.triton.engine.physics_kernels import cross_chroma_fast
 
     globals().update(tl=tl, cross_chroma_fast=cross_chroma_fast)
 
@@ -273,7 +273,7 @@ def test_triton_photon_source_is_deterministic_tile_invariant_and_isotropic():
     pytest.importorskip("triton")
     if not torch.cuda.is_available():
         pytest.skip("CUDA is required")
-    from trichroma.engine.physics_kernels import generate_photon_bomb
+    from chroma.triton.engine.physics_kernels import generate_photon_bomb
 
     n = 262_144
     kwargs = dict(
@@ -322,7 +322,7 @@ def test_triton_optical_primitives_match_cpu_references():
     triton = pytest.importorskip("triton")
     if not torch.cuda.is_available():
         pytest.skip("CUDA is required")
-    from trichroma.engine.physics_kernels import (
+    from chroma.triton.engine.physics_kernels import (
         bulk_collision_kernel,
         fresnel_step_kernel,
         rayleigh_scatter_kernel,

@@ -23,8 +23,8 @@ import triton.language as tl
 from triton.language.random import philox
 from triton.language.extra import libdevice
 
-from trichroma.engine.physics_kernels import fresnel_step, fresnel_step_chroma
-from trichroma.engine.warp import _warp_any
+from chroma.triton.engine.physics_kernels import fresnel_step, fresnel_step_chroma
+from chroma.triton.engine.warp import _warp_any
 
 SPEED_OF_LIGHT = tl.constexpr(299.792458)  # mm/ns (chroma/cuda/physical_constants.h)
 WEIGHT_LOWER_THRESHOLD = tl.constexpr(0.0001)

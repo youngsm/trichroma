@@ -13,7 +13,7 @@ result files:
 
 Both backends see the same photons. They use different random streams and
 the Triton production engine applies documented numerical fixes, so only
-statistical agreement is expected. For bitwise checks see trichroma.tape.
+statistical agreement is expected. For bitwise checks see chroma.triton.tape.
 """
 
 import argparse
@@ -200,7 +200,7 @@ def run(args):
 
 
 def compare(args):
-    from trichroma.utils import ks_test as _ks, two_proportion_z as _z
+    from chroma.triton.utils import ks_test as _ks, two_proportion_z as _z
 
     a, b = np.load(args.a), np.load(args.b)
     n1, n2 = len(a["flags"]), len(b["flags"])

@@ -17,7 +17,7 @@ Subcommands
 
 Example::
 
-    python -m trichroma.tape.verify all --fixture synthetic \\
+    python -m chroma.triton.tape.verify all --fixture synthetic \\
         --cuda-python /path/to/cuda/env/bin/python \\
         --triton-python /path/to/triton/env/bin/python --work /lscratch/$USER/tape-check
 """
@@ -31,7 +31,7 @@ import time
 
 import numpy as np
 
-from trichroma.tape import format as tapefmt
+from chroma.triton.tape import format as tapefmt
 
 
 # ----------------------------------------------------------------- run fixture
@@ -77,7 +77,7 @@ def run_fixture_arrays(fixture, run_name, scale=1.0, detector=None, simulation_c
     Returns (arrays, info): every Event output in the ``run`` layout and timings.
     """
     from chroma.backend import backend_name, tape_mode
-    from trichroma.tape import fixtures
+    from chroma.triton.tape import fixtures
 
     if simulation_class is None:
         from chroma.sim import Simulation as simulation_class
@@ -192,7 +192,7 @@ def replay_fixture(fixture, run_name, tape_dir, scale=1.0, detector=None, simula
     try:
         if simulation_class is None:
             from chroma.sim import Simulation as simulation_class
-        if not simulation_class.__module__.startswith("trichroma."):
+        if not simulation_class.__module__.startswith("chroma.triton."):
             raise SystemExit("verify replay runs the Triton backend: set CHROMA_BACKEND=triton")
         arrays, info = run_fixture_arrays(fixture, run_name, scale, detector, simulation_class)
     finally:
@@ -293,7 +293,7 @@ def _load(path):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="python -m trichroma.tape.verify", description=__doc__,
+    parser = argparse.ArgumentParser(prog="python -m chroma.triton.tape.verify", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("run", help="run a fixture in this process")
@@ -350,7 +350,7 @@ def main(argv=None):
         print("BITWISE EQUAL" if ok else "DIFFERENT")
         return 0 if ok else 1
     if args.command == "tape":
-        from trichroma.tape.reference import replay_tape
+        from chroma.triton.tape.reference import replay_tape
 
         report = replay_tape(args.tape)
         text = json.dumps(report, indent=1, default=str)
@@ -365,7 +365,7 @@ def main(argv=None):
 
 
 def _all(args):
-    from trichroma.tape import fixtures
+    from chroma.triton.tape import fixtures
 
     os.makedirs(args.work, exist_ok=True)
     if args.transparency and not args.sort_queues:
@@ -385,7 +385,7 @@ def _all(args):
         cuda_out = os.path.join(args.work, tag + "_cuda.npz")
         env = dict(base_env, CHROMA_BACKEND="cuda",
                    CHROMA_TRITON_TAPE=("record-sorted:" if args.sort_queues else "record:") + tape_dir)
-        cmd = [args.cuda_python, "-m", "trichroma.tape.verify", "run", "--fixture", args.fixture,
+        cmd = [args.cuda_python, "-m", "chroma.triton.tape.verify", "run", "--fixture", args.fixture,
                "--run", run, "--output", cuda_out, "--scale", str(args.scale)]
         subprocess.run(cmd, env=env, check=True)
         entry = {"tape": tape_dir}
@@ -395,7 +395,7 @@ def _all(args):
             env.pop("CHROMA_TRITON_TAPE", None)
             if args.sort_queues:
                 env["CHROMA_TRITON_TAPE"] = "canonical"
-            subprocess.run([args.cuda_python, "-m", "trichroma.tape.verify", "run", "--fixture",
+            subprocess.run([args.cuda_python, "-m", "chroma.triton.tape.verify", "run", "--fixture",
                             args.fixture, "--run", run, "--output", plain_out, "--scale", str(args.scale)],
                            env=env, check=True)
             ok, report = compare_outputs(_load(plain_out), _load(cuda_out))
@@ -403,14 +403,14 @@ def _all(args):
         env = dict(base_env, CHROMA_BACKEND="triton")
         env.pop("CHROMA_TRITON_TAPE", None)
         ref_report = os.path.join(args.work, tag + "_reference.json")
-        subprocess.run([args.triton_python, "-m", "trichroma.tape.verify", "tape", "--tape", tape_dir,
+        subprocess.run([args.triton_python, "-m", "chroma.triton.tape.verify", "tape", "--tape", tape_dir,
                         "--report", ref_report], env=env, check=False)
         with open(ref_report) as f:
             entry["reference_replay"] = json.load(f)
         if not args.reference_only:
             triton_out = os.path.join(args.work, tag + "_triton.npz")
             env = dict(base_env, CHROMA_BACKEND="triton", CHROMA_TRITON_TAPE="replay:" + tape_dir)
-            result = subprocess.run([args.triton_python, "-m", "trichroma.tape.verify", "run", "--fixture",
+            result = subprocess.run([args.triton_python, "-m", "chroma.triton.tape.verify", "run", "--fixture",
                                      args.fixture, "--run", run, "--output", triton_out, "--scale",
                                      str(args.scale)], env=env)
             if result.returncode == 0:

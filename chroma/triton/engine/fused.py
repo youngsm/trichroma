@@ -44,10 +44,10 @@ same photons (bit for bit).
 import triton
 import triton.language as tl
 
-from trichroma.engine import physics as P
-from trichroma.engine import traverse as TR
-from trichroma.engine.traverse import _all_wires, batch_traversal, merge_hit, top_level_query
-from trichroma.engine.warp import _lane_rank, _ring, _warp_any, _warp_count
+from chroma.triton.engine import physics as P
+from chroma.triton.engine import traverse as TR
+from chroma.triton.engine.traverse import _all_wires, batch_traversal, merge_hit, top_level_query
+from chroma.triton.engine.warp import _lane_rank, _ring, _warp_any, _warp_count
 
 # Step-queue entry fields: the photon fields are TR.F_X .. TR.F_LWIRE (0-17,
 # with TR.F_IDLO); then the bulk step's boundary distance and material, and

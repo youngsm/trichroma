@@ -143,9 +143,9 @@ def _detector(z_walls="detect", wire_length=2 * HALF):
 
 
 def _engine(n, seed):
-    """The same photons through trichroma.simulation: (counts, bulk absorbed)."""
+    """The same photons through chroma.triton.simulation: (counts, bulk absorbed)."""
     from chroma.event import Photons
-    from trichroma.simulation import Simulation
+    from chroma.triton.simulation import Simulation
 
     pos, d, pol = _source(n, seed)
     sim = Simulation(_detector(), seed=seed)
@@ -163,7 +163,7 @@ def _first_boundary_of_rays_ending_inside_a_wire(n=20_000, seed=3):
     wires run through that wall), from 5 mm away and outside the wire slab.
     Returns each ray's first boundary: -2 for a wire, else a triangle."""
     from chroma.event import Photons
-    from trichroma.simulation import Simulation
+    from chroma.triton.simulation import Simulation
 
     rng = np.random.default_rng(seed)
     rho, phi = 0.9 * RADIUS * np.sqrt(rng.random(n)), rng.uniform(0, 2 * np.pi, n)

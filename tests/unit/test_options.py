@@ -2,7 +2,7 @@
 
 import pytest
 
-from trichroma.options import Options, options
+from chroma.triton.options import Options, options
 
 
 def test_defaults():

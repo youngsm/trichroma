@@ -1,6 +1,6 @@
-"""Contract between :mod:`trichroma.simulation` and the transport engines.
+"""Contract between :mod:`chroma.triton.simulation` and the transport engines.
 
-The production engine (:mod:`trichroma.engine.core`, including its exact
+The production engine (:mod:`chroma.triton.engine.core`, including its exact
 mode for tape replay) implements :class:`TransportEngine`. The
 simulation layer owns batching, event
 bookkeeping, hit extraction and host conversion; engines own geometry

@@ -5,7 +5,7 @@ With the Triton backend, ``Simulation.simulate`` takes events whose
 host memory::
 
     from chroma.event import Event
-    from trichroma import sources
+    from chroma.triton import sources
 
     photons = sources.photon_bombs(200_000, centres, voxel_size=30, wavelength=450)
     events = (Event(photons_beg=photons[i * 200_000:(i + 1) * 200_000])

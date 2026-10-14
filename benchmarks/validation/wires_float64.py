@@ -7,7 +7,7 @@ usage: wires_float64.py GEOMETRY.npz [SAMPLE]  (GEOMETRY.npz from geometry_rays.
 import sys
 import numpy as np
 from chroma_lar.geometry.config_loader import build_detector_from_config
-from trichroma.engine.scene import _wire_records
+from chroma.triton.engine.scene import _wire_records
 
 z = np.load(sys.argv[1])
 sample = int(sys.argv[2]) if len(sys.argv) > 2 else 20000

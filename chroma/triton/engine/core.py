@@ -12,11 +12,11 @@ import torch
 import triton
 import triton.language as tl
 
-from trichroma.engine.api import DaqChannels, DevicePhotons, TERMINAL
-from trichroma.engine import physics as P
-from trichroma.engine.scene import WIRE_WIDTH, compile_scene
-from trichroma.engine.traverse import nearest_hit_kernel, wire_kernel
-from trichroma.options import options
+from chroma.triton.engine.api import DaqChannels, DevicePhotons, TERMINAL
+from chroma.triton.engine import physics as P
+from chroma.triton.engine.scene import WIRE_WIDTH, compile_scene
+from chroma.triton.engine.traverse import nearest_hit_kernel, wire_kernel
+from chroma.triton.options import options
 
 BLOCK = 32  # one ray/photon per thread: launch with num_warps=1
 DAQ_COUNTER = tl.constexpr(0x7FFFFF00)  # Philox draw counters reserved for the DAQ
@@ -33,7 +33,7 @@ def _warm_up_triton():
         from triton.compiler.compiler import triton_key
 
         triton_key()
-        from trichroma.engine.fused import fused_kernel
+        from chroma.triton.engine.fused import fused_kernel
 
         fused_kernel.cache_key
     except Exception:
@@ -134,7 +134,7 @@ def _daq_kernel(t_ptr, flags_ptr, last_ptr, w_ptr, ids_ptr, start, count,
 class ProductionEngine(object):
     """General Triton transport engine for any Chroma Geometry/Detector."""
 
-    #: exact (bitwise legacy) mode: trichroma.engine.exact_mode.ExactMode, or None
+    #: exact (bitwise legacy) mode: chroma.triton.engine.exact_mode.ExactMode, or None
     exact = None
 
     def __init__(self, detector, *, seed, device, leaf_size=4, tape=None, simulation=None):
@@ -148,7 +148,7 @@ class ProductionEngine(object):
             # CHROMA_TRITON_TAPE=replay:<dir>: the same round scheduler with W's arithmetic,
             # BVH and recorded draws (engine/exact_mode.py); ``simulation`` holds the
             # Simulation parameters the tape must match.
-            from trichroma.engine.exact_mode import ExactMode
+            from chroma.triton.engine.exact_mode import ExactMode
 
             self._workspace = None  # device queues of _buffers(), used by the exact rounds
             self.exact = ExactMode(self, detector, tape, seed=seed, **(simulation or {}))
@@ -304,7 +304,7 @@ class ProductionEngine(object):
 
     def enable_grid(self, geometry, **options):
         """Build and upload the certified empty-space grid (bulk shortcut)."""
-        from trichroma.engine.grid import build_grid
+        from chroma.triton.engine.grid import build_grid
 
         grid = build_grid(self, geometry, **options)
         self.grid = grid
@@ -492,7 +492,7 @@ class ProductionEngine(object):
         TERMINAL bit, in order) and its length are built on the device, where
         the kernel reads them.
         """
-        from trichroma.engine.fused import fused_kernel
+        from chroma.triton.engine.fused import fused_kernel
 
         photons, steps, cursor, norm, renorm = args
         if max_steps <= 0:
@@ -506,8 +506,8 @@ class ProductionEngine(object):
         ws["bulk_count"][0].copy_(slot[-1:])
         ws["head"].zero_()
         programs = max(1, min(self.sm_count * self.fused_warps_per_sm, triton.cdiv(n, BLOCK)))
-        from trichroma.engine.fused import Q_FIELDS
-        from trichroma.engine.traverse import RING_FIELDS
+        from chroma.triton.engine.fused import Q_FIELDS
+        from chroma.triton.engine.traverse import RING_FIELDS
 
         cap = max(int(self.fused_ring), 2 * BLOCK)
         words = programs * (2 * Q_FIELDS.value + RING_FIELDS.value) * cap

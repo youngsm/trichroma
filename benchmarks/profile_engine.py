@@ -29,8 +29,8 @@ def bomb(count, position, wavelength, seed):
 def main():
     import torch
     from chroma_lar.geometry.config_loader import build_detector_from_config
-    from trichroma.engine.api import DevicePhotons
-    from trichroma.engine.core import ProductionEngine
+    from chroma.triton.engine.api import DevicePhotons
+    from chroma.triton.engine.core import ProductionEngine
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--photons", type=int, default=1_000_000)

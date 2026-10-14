@@ -1,9 +1,9 @@
-"""trichroma.utils: bitwise and statistical comparison of simulation results."""
+"""chroma.triton.utils: bitwise and statistical comparison of simulation results."""
 
 import numpy as np
 
 from chroma.event import Event, Photons
-from trichroma.utils import compare_events, compare_photons, compare_statistics
+from chroma.triton.utils import compare_events, compare_photons, compare_statistics
 
 
 def _photons(n, seed=1):

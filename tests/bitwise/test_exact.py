@@ -1,7 +1,7 @@
-"""Bitwise tests of trichroma.engine.exact against CUDA probe kernels.
+"""Bitwise tests of chroma.triton.engine.exact against CUDA probe kernels.
 
 The ground truth (``tests/bitwise/data/legacy_exact_probes.npz``) was produced by
-``python -m trichroma.tape.probes generate`` in the CUDA environment:
+``python -m chroma.triton.tape.probes generate`` in the CUDA environment:
 small kernels compiled with the original ``cuda_options`` from the ORIGINAL
 Chroma headers, run on random and adversarial inputs (special values,
 normal/grazing incidence, the critical angle, parallel rays, rays through
@@ -24,8 +24,8 @@ import triton.language as tl  # noqa: E402
 if not torch.cuda.is_available():  # pragma: no cover
     pytest.skip("CUDA device required", allow_module_level=True)
 
-from trichroma.engine import exact as X  # noqa: E402
-from trichroma.tape.probes import xorwow_draws  # noqa: E402
+from chroma.triton.engine import exact as X  # noqa: E402
+from chroma.triton.tape.probes import xorwow_draws  # noqa: E402
 
 DATA = os.environ.get("CHROMA_LEGACY_PROBES",
                       os.path.join(os.path.dirname(__file__), "data", "legacy_exact_probes.npz"))

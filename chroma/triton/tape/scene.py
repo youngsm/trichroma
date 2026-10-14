@@ -17,7 +17,7 @@ including their quirks:
 * ``charge_unit = float32(charge_cdf[0][-1] / 2**16)``.
 
 The CUDA recorder exports the same keys read back from device memory
-(:func:`trichroma.tape.record_cuda.export_device_scene`); the verifier
+(:func:`chroma.triton.tape.record_cuda.export_device_scene`); the verifier
 requires both to be byte-identical. ``nodes`` is the geometry's BVH exactly
 as ``geometry.bvh`` holds it (split between device and mapped host memory in
 CUDA; the split does not change any value).

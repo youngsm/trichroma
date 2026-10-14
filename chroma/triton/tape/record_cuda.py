@@ -3,7 +3,7 @@
 Installed by :mod:`chroma.sim_cuda` when ``CHROMA_TRITON_TAPE`` is set:
 
 * ``record:<dir>`` -- record a native RNG tape (see
-  :mod:`trichroma.tape.format`) of every batch simulated through
+  :mod:`chroma.triton.tape.format`) of every batch simulated through
   ``chroma.sim.Simulation``.
 * ``canonical`` -- sort each launch's surviving-photon queue before the next
   launch. The original appends survivors with warp-aggregated atomics in
@@ -40,7 +40,7 @@ import pycuda.compiler
 
 from chroma import gpu
 from chroma.gpu.tools import cuda_options
-from trichroma.tape import format as tapefmt
+from chroma.triton.tape import format as tapefmt
 
 WEYL = 362437
 WEYL_INVERSE = pow(WEYL, -1, 2 ** 32)
@@ -124,19 +124,17 @@ def _read(pointer, count, dtype):
 
 def _source_hashes():
     import chroma
-    import trichroma
 
+    root = os.path.dirname(os.path.abspath(chroma.__file__))
     out = {}
-    for package in (chroma, trichroma):
-        root = os.path.dirname(os.path.abspath(package.__file__))
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if d not in ("__pycache__", "_build_ext")]
-            for name in sorted(filenames):
-                if name.endswith((".py", ".h", ".cu")):
-                    path = os.path.join(dirpath, name)
-                    with open(path, "rb") as f:
-                        out[os.path.relpath(path, os.path.dirname(root))] = hashlib.sha256(f.read()).hexdigest()
-    return os.path.dirname(os.path.abspath(chroma.__file__)), out
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in ("__pycache__", "_build_ext")]
+        for name in sorted(filenames):
+            if name.endswith((".py", ".h", ".cu")):
+                path = os.path.join(dirpath, name)
+                with open(path, "rb") as f:
+                    out[os.path.relpath(path, os.path.dirname(root))] = hashlib.sha256(f.read()).hexdigest()
+    return root, out
 
 
 def _environment():

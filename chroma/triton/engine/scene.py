@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from chroma.geometry import standard_wavelengths
-from trichroma.engine.optics import compile_optical_tables
+from chroma.triton.engine.optics import compile_optical_tables
 
 from .bvh_build import build_sah_tree, build_threaded_bvh, thread_octants
 
@@ -105,7 +105,7 @@ class CompiledScene:
     wires: np.ndarray  # float32 [W, WIRE_WIDTH]
     solid_tri_offset: np.ndarray  # int64 [nsolids+1]
     solid_id_to_channel_index: np.ndarray  # int32 [nsolids]
-    optics: object  # trichroma.engine.optics.OpticalTableIR
+    optics: object  # chroma.triton.engine.optics.OpticalTableIR
     materials: list
     surfaces: list
     triangle_count: int

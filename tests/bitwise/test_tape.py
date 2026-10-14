@@ -3,8 +3,8 @@
 ``tests/bitwise/data/legacy_tape_tiny`` and ``legacy_tape_tiny_packed`` were recorded
 from the unmodified CUDA backend through ``chroma.sim.Simulation``
 (``CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:<dir> python -m
-trichroma.tape.verify run --fixture synthetic --run tiny`` /
-``tiny_packed``) and compacted with ``trichroma.tape.format.compact``:
+chroma.triton.tape.verify run --fixture synthetic --run tiny`` /
+``tiny_packed``) and compacted with ``chroma.triton.tape.format.compact``:
 72 photons each; ``tiny`` with photon tracking, use_weights, 30 launches and
 the DAQ; ``tiny_packed`` with use_packed and the DAQ reading W's initial
 times (no hit extraction).
@@ -19,8 +19,8 @@ import os
 import numpy as np
 import pytest
 
-from trichroma.tape import format as tapefmt
-from trichroma.tape.scene import (check_daq_limits, check_legacy_limits, compare_scene_relabeled,
+from chroma.triton.tape import format as tapefmt
+from chroma.triton.tape.scene import (check_daq_limits, check_legacy_limits, compare_scene_relabeled,
                                         relabel_scene)
 
 TINY = os.path.join(os.path.dirname(__file__), "data", "legacy_tape_tiny")
@@ -94,7 +94,7 @@ def tiny():
 
 def _permuted(words, mperm, sperm):
     """The same scene with materials/surfaces renumbered (new label = perm[old])."""
-    from trichroma.tape import scene as sc
+    from chroma.triton.tape import scene as sc
 
     out = dict(words)
     minv = np.argsort(mperm)
@@ -158,7 +158,7 @@ def test_replay_bitwise(directory):
     directory = os.environ.get("CHROMA_LEGACY_TAPE", directory)
     if not os.path.exists(os.path.join(directory, "manifest.json")):
         pytest.skip("tape %s not found" % directory)
-    from trichroma.tape.reference import replay_tape
+    from chroma.triton.tape.reference import replay_tape
 
     report = replay_tape(directory)
     for batch in report["batches"]:
@@ -170,20 +170,20 @@ def test_replay_bitwise(directory):
 
 @pytest.mark.parametrize("run, directory", [("tiny", TINY), ("tiny_packed", TINY_PACKED)])
 def test_public_api_replay(run, directory):
-    """trichroma.simulation Simulation -> ProductionEngine(tape=...) -> every output equals the tape's."""
+    """chroma.triton.simulation Simulation -> ProductionEngine(tape=...) -> every output equals the tape's."""
     torch = pytest.importorskip("torch")
     pytest.importorskip("triton")
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
     if not os.path.exists(os.path.join(directory, "manifest.json")):
         pytest.skip("tape %s not found" % directory)
-    from trichroma.simulation import Simulation
-    from trichroma.tape.verify import replay_fixture
+    from chroma.triton.simulation import Simulation
+    from chroma.triton.tape.verify import replay_fixture
 
     ok, report, info = replay_fixture("synthetic", run, directory, simulation_class=Simulation)
     assert ok, report
     assert set(report) >= {"photons_end", "channels_t"}, report
-    assert info["simulation"] == "trichroma.simulation.Simulation"
+    assert info["simulation"] == "chroma.triton.simulation.Simulation"
 
 
 def test_exact_mode_fails_closed(tiny):
@@ -192,7 +192,7 @@ def test_exact_mode_fails_closed(tiny):
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
     from chroma.backend import TapeMode
-    from trichroma.engine.core import ProductionEngine
+    from chroma.triton.engine.core import ProductionEngine
 
     with pytest.raises(tapefmt.TapeError):  # a different seed than recorded
         ProductionEngine(None, seed=1, device="cuda", tape=TapeMode("replay", TINY),

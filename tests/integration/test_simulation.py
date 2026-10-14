@@ -149,7 +149,7 @@ def _digest(ev, fields=FIELDS):
 
 
 def _run(detector, events, seed=4242, photons_per_batch=5000, use_weights=False, fields=FIELDS):
-    from trichroma.simulation import Simulation
+    from chroma.triton.simulation import Simulation
 
     sim = Simulation(detector, seed=seed)
     return [_digest(ev, fields) for ev in sim.simulate(events, keep_photons_end=True, keep_hits=True,
@@ -187,8 +187,8 @@ def test_seed_above_int32_is_deterministic(detector, sources):
 
 
 def test_trichroma_sources_simulate(detector):
-    from trichroma import sources
-    from trichroma.simulation import Simulation
+    from chroma.triton import sources
+    from chroma.triton.simulation import Simulation
 
     photons = sources.photon_bombs(2000, np.array([[0.0, 0.0, 0.0], [30.0, 0.0, 0.0]]), voxel_size=20,
                                    wavelength=(300.0, 500.0))
@@ -202,7 +202,7 @@ def test_trichroma_sources_simulate(detector):
 def test_negative_charge_samples_add_nothing(sources):
     """As in Chroma, a charge sample that rounds below zero adds nothing to its
     channel (the unit is cdf_x[-1] / 2**16: most samples here are negative)."""
-    from trichroma.simulation import Simulation
+    from chroma.triton.simulation import Simulation
 
     detector = _detector()
     detector.charge_cdf = (np.linspace(-3.0, 1.0, 41), np.linspace(0.0, 1.0, 41))

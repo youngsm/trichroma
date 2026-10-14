@@ -13,7 +13,7 @@ def _numpy(photons):
 
 def test_photon_bomb_distributions():
     import torch
-    from trichroma.sources import photon_bomb
+    from chroma.triton.sources import photon_bomb
 
     generator = torch.Generator(device="cuda")
     generator.manual_seed(1)
@@ -36,7 +36,7 @@ def test_photon_bomb_distributions():
 
 
 def test_photon_bombs_voxel_after_voxel_and_wavelength_range():
-    from trichroma.sources import photon_bombs
+    from chroma.triton.sources import photon_bombs
 
     centres = np.array([[0.0, 0.0, 0.0], [100.0, 0.0, 0.0], [0.0, -200.0, 50.0]])
     photons = photon_bombs(20_000, centres, voxel_size=10, wavelength=(300.0, 500.0))

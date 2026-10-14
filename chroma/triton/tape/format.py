@@ -3,7 +3,7 @@
 A tape records one CUDA Chroma run made through ``chroma.sim.Simulation``
 (``CHROMA_BACKEND=cuda``, ``CHROMA_TRITON_TAPE=record:<dir>``) so that another
 implementation can replay it bit for bit. The CUDA kernels run unmodified;
-see :mod:`trichroma.tape.record_cuda` for how the draws are obtained.
+see :mod:`chroma.triton.tape.record_cuda` for how the draws are obtained.
 
 Directory layout
 ----------------
@@ -14,7 +14,7 @@ Directory layout
     parameters, array SHA-256).
 ``sim<S>_scene.npz``
     The exact words the CUDA backend uploaded for simulation ``S``
-    (see :func:`trichroma.tape.scene.scene_words` for the key list).
+    (see :func:`chroma.triton.tape.scene.scene_words` for the key list).
 ``sim<S>_batch<B>.npz``
     One ``_simulate_batch`` call. ``N`` photons, ``E`` events, ``L``
     propagate launches (host-loop iterations), ``C`` kernel chunks.
@@ -58,7 +58,7 @@ Outputs:
     lists that ``GPUPhotons.propagate(track=True)`` returned.
 
 Draw order inside ``propagate`` is documented in
-:mod:`trichroma.engine.exact`.
+:mod:`chroma.triton.engine.exact`.
 """
 
 import hashlib
@@ -302,9 +302,9 @@ class TapeBatch(object):
         return self._torch("daq_offsets", device)
 
     def device_inputs(self, device="cuda", ids_start=0):
-        """Recorded inputs as :class:`trichroma.engine.api.DevicePhotons`."""
+        """Recorded inputs as :class:`chroma.triton.engine.api.DevicePhotons`."""
         import torch
-        from trichroma.engine.api import DevicePhotons
+        from chroma.triton.engine.api import DevicePhotons
 
         f = self.inputs()
         count = self.nphotons

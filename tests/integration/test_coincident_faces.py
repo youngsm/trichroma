@@ -58,7 +58,7 @@ def _geometry():
 
 def _escaped(seed=5):
     from chroma.event import Photons
-    from trichroma.simulation import Simulation
+    from chroma.triton.simulation import Simulation
 
     rng = np.random.default_rng(seed)
     r, phi = 40.0 * np.sqrt(rng.random(N)), rng.uniform(0, 2 * np.pi, N)

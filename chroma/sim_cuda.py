@@ -301,5 +301,5 @@ class Simulation(object):
 # schedule). The kernels and this module's code paths are unchanged otherwise.
 from chroma.backend import tape_mode as _tape_mode
 if _tape_mode().enabled:
-    from trichroma.tape.record_cuda import install as _install_tape
+    from chroma.triton.tape.record_cuda import install as _install_tape
     Simulation = _install_tape(Simulation, _tape_mode())

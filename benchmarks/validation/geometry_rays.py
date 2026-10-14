@@ -10,9 +10,9 @@ import torch
 import triton
 from chroma.sim import Simulation
 from chroma_lar.geometry.config_loader import build_detector_from_config
-from trichroma.engine.api import DevicePhotons, TERMINAL
-from trichroma.engine import exact_mode as XM
-from trichroma.tape.format import Tape
+from chroma.triton.engine.api import DevicePhotons, TERMINAL
+from chroma.triton.engine import exact_mode as XM
+from chroma.triton.tape.format import Tape
 
 tape_dir, nph, out = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 dev = torch.device("cuda")

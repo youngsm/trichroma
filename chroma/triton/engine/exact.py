@@ -604,7 +604,7 @@ def interp_property(table, x, start, step, n, mask):
     ``table`` points to fp[0]; the original reads fp[jl+1] with jl = n-1
     when x lands on (or rounds to) the last grid point, one element past the
     table. Tables are uploaded with that padding word (see
-    :mod:`trichroma.tape.scene`), so the read is reproduced.
+    :mod:`chroma.triton.tape.scene`), so the read is reproduced.
     """
     table = table + _zero_index(x)
     below = flt(x, start)
@@ -1421,7 +1421,7 @@ def daq_charge_float(q_int, charge_unit):
 
 import hashlib as _hashlib
 
-from trichroma.engine._complex_ptx import ASM as _COMPLEX_ASM_TEXT, CONSTRAINTS as _COMPLEX_CONS_TEXT
+from chroma.triton.engine._complex_ptx import ASM as _COMPLEX_ASM_TEXT, CONSTRAINTS as _COMPLEX_CONS_TEXT
 
 _COMPLEX_ASM = tl.constexpr(_COMPLEX_ASM_TEXT)
 _COMPLEX_CONS = tl.constexpr(_COMPLEX_CONS_TEXT)
@@ -1431,7 +1431,7 @@ _COMPLEX_CONS = tl.constexpr(_COMPLEX_CONS_TEXT)
 #: kernels compiled from the old one; the import-time check keeps it honest.
 _COMPLEX_ASM_SHA256 = "32e9f2dbe801ea9cbda2e52f8e03709eb2d8cc2cbec44f20c035a5b1d8969646"
 if _hashlib.sha256(_COMPLEX_ASM_TEXT.encode()).hexdigest() != _COMPLEX_ASM_SHA256:
-    raise ImportError("trichroma.engine._complex_ptx changed: update _COMPLEX_ASM_SHA256 and the digest "
+    raise ImportError("chroma.triton.engine._complex_ptx changed: update _COMPLEX_ASM_SHA256 and the digest "
                       "in complex_probabilities' docstring together")
 
 

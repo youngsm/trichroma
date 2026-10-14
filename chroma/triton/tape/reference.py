@@ -1,6 +1,6 @@
 """Reference loop: replay a native RNG tape on the host-driven launch schedule.
 
-The production engine's exact mode (:mod:`trichroma.engine.exact_mode`)
+The production engine's exact mode (:mod:`chroma.triton.engine.exact_mode`)
 replays tapes with its device-queue scheduler. This module drives the *same*
 exact kernels the way W's host loop does -- launch by launch, the active rows
 compacted on the host after every step -- which makes it an independent check
@@ -19,9 +19,9 @@ import numpy as np
 import torch
 import triton
 
-from trichroma.engine import exact_mode as M
-from trichroma.engine.exact_mode import ExactScene, bvh_stack_bound  # noqa: F401 (re-exported)
-from trichroma.tape import format as tapefmt
+from chroma.triton.engine import exact_mode as M
+from chroma.triton.engine.exact_mode import ExactScene, bvh_stack_bound  # noqa: F401 (re-exported)
+from chroma.triton.tape import format as tapefmt
 
 DeviceScene = ExactScene  # historical name
 BLOCK = M.BLOCK
@@ -179,7 +179,7 @@ def daq(scene, fields, batch, device="cuda"):
     """
     if not hasattr(scene, "nchannels"):
         return {}, 0
-    from trichroma.tape.scene import check_daq_limits
+    from chroma.triton.tape.scene import check_daq_limits
 
     check_daq_limits(scene.words)
     bounds = batch.event_bounds

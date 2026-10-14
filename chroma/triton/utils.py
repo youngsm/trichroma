@@ -14,7 +14,7 @@
 Each returns a result that is true when the runs agree and prints as a short
 report::
 
-    from trichroma.utils import compare_events
+    from chroma.triton.utils import compare_events
     result = compare_events(events_a, events_b)
     print(result)
     assert result
@@ -114,7 +114,7 @@ def compare_events(a, b):
     """Bitwise comparison of two runs' events (one ``Event`` or a list of them):
     final photons, flat hits (as multisets: CUDA Chroma returns them in
     arbitrary order) and DAQ channels, whichever both runs kept."""
-    from trichroma.tape import verify
+    from chroma.triton.tape import verify
 
     events_a = list(a) if isinstance(a, (list, tuple)) else [a]
     events_b = list(b) if isinstance(b, (list, tuple)) else [b]

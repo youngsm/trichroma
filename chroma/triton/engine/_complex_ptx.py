@@ -1,6 +1,6 @@
 """Generated: the thin-film (SURFACE_COMPLEX) probability block of W's propagate kernel.
 
-Extracted by ``src/trichroma/tape/tools/ptx_extract.py`` from the
+Extracted by ``chroma/triton/tape/tools/ptx_extract.py`` from the
 explicit-contraction PTX of the integrated original ``propagate`` kernel
 (every ptxas FMA contraction written as ``fma.rn``; all other mul/add/sub
 ``.rn``), photon.h lines 686-783 (PTX from label ``$L__BB14_312`` through

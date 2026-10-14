@@ -32,7 +32,7 @@ def load_detector(spec):
 def point_source(n, position, wavelength, device):
     """Isotropic directions; polarization uniform in the plane perpendicular to the direction."""
     import torch
-    from trichroma.engine.api import DevicePhotons
+    from chroma.triton.engine.api import DevicePhotons
 
     gen = torch.Generator(device=device)
     gen.manual_seed(3)
