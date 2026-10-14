@@ -15,6 +15,14 @@ def test_distribution_is_trichroma():
     assert 'extra == "cuda"' in requires
 
 
+def test_torch_and_triton_are_bounded_to_the_validated_stack():
+    from packaging.requirements import Requirement
+
+    specs = {r.name: r.specifier for r in map(Requirement, metadata.distribution("trichroma").requires or [])}
+    assert "2.5.1" in specs["torch"] and "2.6.0" not in specs["torch"]
+    assert "3.1.0" in specs["triton"] and "3.2.0" not in specs["triton"]
+
+
 def test_chroma_and_engine_come_from_the_same_tree():
     import chroma
     import chroma.triton

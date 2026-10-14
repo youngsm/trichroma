@@ -12,8 +12,10 @@ requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "scipy",
-    "torch",
-    "triton",
+    # The validated stack: the engine's kernels are tested on Triton 3.1, and
+    # newer PyTorch wheels (CUDA 13) need drivers that many clusters lack.
+    "torch>=2.5,<2.6",
+    "triton>=3.1,<3.2",
     # Triton 3.1 imports setuptools at runtime without declaring it, and uv
     # environments do not include it.
     "setuptools",
