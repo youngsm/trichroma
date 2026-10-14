@@ -3,10 +3,17 @@ import os
 if 'PYGAME_HIDE_SUPPORT_PROMPT' not in os.environ:
     os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
-try:
-    from chroma.camera import Camera, EventViewer, view, build
-except ImportError:
-    pass # Allow chroma usage when pygame not present
+_VIEWER = ("Camera", "EventViewer", "view", "build")
+
+
+def __getattr__(name):
+    # The viewer needs PyCUDA and pygame: import it only when it is used.
+    if name in _VIEWER:
+        from chroma import camera
+        return getattr(camera, name)
+    raise AttributeError("module 'chroma' has no attribute %r" % name)
+
+
 from chroma import geometry
 from chroma import event
 from chroma.backend import backend_name as _backend_name
