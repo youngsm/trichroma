@@ -730,7 +730,7 @@ EOF
 
 - [ ] **Step 4: Hand edits**
 
-`README.md` — replace the `## Install` and the first paragraph of `## Use` with:
+`README.md` - replace the `## Install` and the first paragraph of `## Use` with:
 
 ````markdown
 ## Install
@@ -771,7 +771,7 @@ analytic wire planes. Chroma's own README and documentation, including the
 whitepaper, are in [docs/chroma](docs/chroma/README.md).
 ```
 
-`docs/guide.md` — replace the intro paragraph and `## Choosing the backend` body:
+`docs/guide.md` - replace the intro paragraph and `## Choosing the backend` body:
 
 ```markdown
 TriChroma is Chroma with a second implementation of `chroma.sim.Simulation`,
