@@ -13,12 +13,7 @@ This version of Chroma has also been been updated for Python3, Geant4.10.05.p01,
 
 ## Backends
 
-`chroma.sim.Simulation` runs on one of two backends, chosen by `CHROMA_BACKEND` when `chroma.sim` is imported:
-
-- `cuda`: the original PyCUDA implementation (`pip install -e '.[cuda]'`).
-- `triton`: [TriChroma](https://github.com/youngsm/trichroma), a Triton implementation that needs no PyCUDA (`pip install trichroma`).
-
-Unset, it is `cuda` when PyCUDA is installed and `triton` otherwise. The rest of the API is the same for both, so both backends can be installed side by side and compared on the same geometry.
+`chroma.sim.Simulation` runs on TriChroma's Triton engine by default; `CHROMA_BACKEND=cuda` selects the original PyCUDA implementation. See the [repository README](../../README.md) for installation and the [user guide](../guide.md) for the backends.
 
 ## Container overview
 

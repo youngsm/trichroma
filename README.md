@@ -19,6 +19,8 @@ uv pip install 'git+https://github.com/youngsm/trichroma.git'
 For the original PyCUDA backend add the `cuda` extra, `pip install 'trichroma[cuda] @ git+https://github.com/youngsm/trichroma.git'`; it compiles PyCUDA and needs the CUDA toolkit.
 The tested versions are pinned in `requirements-triton.txt` (Python 3.10, PyTorch 2.5, Triton 3.1).
 
+If an environment has the older `Chroma` (chroma-lite) or `trichroma` packages, uninstall both first: they install the same `chroma/` directory, and uninstalling one later deletes the other's files.
+
 ## Use
 
 Nothing changes in your scripts:
@@ -45,6 +47,7 @@ The first run on a new detector compiles GPU kernels, which takes a minute or so
 - [Reference](docs/reference/): every difference from CUDA Chroma, the bit-exact replay mode, and the engine's internals.
 
 Run the tests with `python -m pytest`; tests that need a GPU are skipped without one.
+The original CUDA test suite is opt-in: `CHROMA_CUDA_SUITE=1 CHROMA_BACKEND=cuda python -m pytest tests/cuda_backend`, with the `cuda` extra.
 
 ## Chroma
 

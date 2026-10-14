@@ -33,3 +33,13 @@ def test_verify_module_runs_as_main():
                             capture_output=True, text=True, env=env)
     assert result.returncode == 0, result.stderr
     assert "python -m chroma.triton.tape.verify" in result.stdout
+
+
+def test_old_cuda_suite_is_opt_in_even_with_pycuda(tmp_path):
+    (tmp_path / "pycuda").mkdir()
+    (tmp_path / "pycuda" / "__init__.py").write_text("")
+    env = {k: v for k, v in os.environ.items() if k != "CHROMA_CUDA_SUITE"}
+    env["PYTHONPATH"] = str(tmp_path) + os.pathsep + env.get("PYTHONPATH", "")
+    result = subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q", "tests/cuda_backend"],
+                            capture_output=True, text=True, env=env, cwd=ROOT)
+    assert result.returncode == 5, result.stdout[-2000:]  # 5: no tests collected
