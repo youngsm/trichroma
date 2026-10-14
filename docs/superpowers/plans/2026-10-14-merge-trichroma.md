@@ -29,7 +29,7 @@
   export APPTAINER_TMPDIR=/sdf/data/neutrino/youngsam/tmp/apptainer
   ```
 - GPU jobs: `srun --account=neutrino:cider-nu --partition=ampere|turing --gpus=1 --cpus-per-gpu=4 --mem=32G --time=2:00:00`.
-- Pushing, merging to `master`, and GitHub renames happen only after the user says yes at that step.
+- Pushing the feature branch `merge-trichroma` is pre-approved. Merging into the default branch, renaming `master` to `main`, and the GitHub repository renames happen only after the user says yes at that step.
 
 ## Review Focus
 
@@ -909,25 +909,40 @@ Expected:
 
 For the baseline, run step 1's pytest command in the standalone repository at `6da1da3` (`/sdf/data/neutrino/youngsam/trichroma-src`, with its own `uv venv` and `pip install -e . 'git+https://github.com/youngsm/chroma-lite.git'`) on one GPU if any merged-branch test fails, to tell regressions from pre-existing failures. Report any regression to the user before continuing.
 
-### Task 9: Push the branch (user approval)
+### Task 9: Push the branch (pre-approved)
 
-- [ ] **Step 1: Ask the user**
+chroma-lar's plan needs the branch on GitHub to resolve `git+https://github.com/youngsm/chroma-lite.git@merge-trichroma` and to build its container. The user pre-approved this push; push only if Task 8 passed, otherwise report first.
 
-Show `git log --oneline master..merge-trichroma` and the Task 8 summary, and ask whether to push `merge-trichroma` to `origin` (chroma-lite on GitHub). chroma-lar's plan needs it on GitHub to resolve `git+https://github.com/youngsm/chroma-lite.git@merge-trichroma` and to build its container.
-
-- [ ] **Step 2: Push (only after yes)**
+- [ ] **Step 1: Push**
 
 ```bash
 git -C /sdf/data/neutrino/youngsam/trichroma-merge push -u origin merge-trichroma
 ```
 
-### Task 10: Merge to master and rename the repositories (user approval, after chroma-lar validation)
+### Task 10: Rename master to main, merge, rename the repositories (user approval, after chroma-lar validation)
 
 Run only after chroma-lar's plan has validated against `merge-trichroma` and the user confirms each step.
 
-- [ ] **Step 1: Merge to master (after yes)**
+- [ ] **Step 0: Rename the default branch `master` to `main` (after yes)**
 
-Open a PR from `merge-trichroma` to `master` on `youngsm/chroma-lite` (body without Claude attribution), or, if the user prefers, merge locally with `git merge --no-ff` and push `master`.
+```bash
+gh api -X POST repos/youngsm/chroma-lite/branches/master/rename -f new_name=main
+gh api repos/youngsm/chroma-lite --jq .default_branch
+cd /sdf/data/neutrino/youngsam/trichroma-merge
+git branch -m master main
+git fetch origin
+git branch -u origin/main main
+git remote set-head origin -a
+```
+Expected: `main`. Then search the user's repos on this machine for `chroma-lite` references pinned to `@master` or `refs/heads/master` and list them for the user:
+
+```bash
+grep -rn "chroma-lite[^ ]*master" /sdf/data/neutrino/youngsam/chroma-lar-trichroma /sdf/group/neutrino/youngsam/sim/chroma-lar --include=Dockerfile --include=Singularity --include=*.py --include=*.toml --include=*.txt 2>/dev/null
+```
+
+- [ ] **Step 1: Merge to main (after yes)**
+
+Open a PR from `merge-trichroma` to `main` on `youngsm/chroma-lite` (body without Claude attribution), or, if the user prefers, merge locally with `git merge --no-ff` and push `main`.
 
 - [ ] **Step 2: Rename the old TriChroma repository and archive it (after yes)**
 

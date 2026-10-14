@@ -98,15 +98,17 @@ archived standalone repository keeps the original ones.
 
 ## Repository renames on GitHub
 
-Done last, after the branch is merged to `master` and the user confirms:
+Done last, after the branch is merged to the default branch and the user confirms:
 
 1. Rename `youngsm/trichroma` to `youngsm/trichroma-standalone`, point its
    README to the new home, and archive it.
 2. Rename `youngsm/chroma-lite` to `youngsm/trichroma` and update its
    description. GitHub redirects `chroma-lite` URLs (git, pip, API). The repo
    remains a fork of `BenLand100/chroma`.
-3. The default branch stays `master`, so pinned `@master` references keep
-   working.
+3. The default branch `master` is renamed `main`. GitHub retargets open pull
+   requests and redirects web links, but git references to `@master` (old
+   container recipes, pinned pip URLs) stop resolving, and local clones need
+   `git branch -m master main`.
 
 Afterwards, local clones of the old TriChroma repository (under
 `/sdf/group/neutrino/youngsam/sim/triton_chroma/`) must point their `origin`
