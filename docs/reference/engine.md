@@ -7,21 +7,20 @@ scales](../how_it_scales.md) explains the same ideas without code.
 
 | Location | Contents |
 |---|---|
-| `src/trichroma/simulation.py` | the `Simulation` class: batching, events, hits, DAQ, pipelining |
-| `src/trichroma/engine/core.py` | `ProductionEngine`: owns the compiled scene and runs the kernels |
-| `src/trichroma/engine/scene.py`, `bvh_build.py` | scene compiler and tree builder |
-| `src/trichroma/engine/fused.py`, `traverse.py`, `physics.py` | transport kernel, geometry search, physics |
-| `src/trichroma/engine/exact.py`, `exact_mode.py` | [exact mode](exact_mode.md) |
-| `src/trichroma/options.py` | the `CHROMA_TRITON` options |
-| `src/trichroma/sources.py` | photon sources generated on the GPU |
-| `src/trichroma/tape/` | exact mode's recording format, CUDA-side recorder and checks |
-| `src/trichroma/utils.py` | bitwise and statistical comparison of two runs |
+| `chroma/triton/simulation.py` | the `Simulation` class: batching, events, hits, DAQ, pipelining |
+| `chroma/triton/engine/core.py` | `ProductionEngine`: owns the compiled scene and runs the kernels |
+| `chroma/triton/engine/scene.py`, `bvh_build.py` | scene compiler and tree builder |
+| `chroma/triton/engine/fused.py`, `traverse.py`, `physics.py` | transport kernel, geometry search, physics |
+| `chroma/triton/engine/exact.py`, `exact_mode.py` | [exact mode](exact_mode.md) |
+| `chroma/triton/options.py` | the `CHROMA_TRITON` options |
+| `chroma/triton/sources.py` | photon sources generated on the GPU |
+| `chroma/triton/tape/` | exact mode's recording format, CUDA-side recorder and checks |
+| `chroma/triton/utils.py` | bitwise and statistical comparison of two runs |
 | `tests/` | `unit/`, `integration/`, `bitwise/` (recordings) |
 | `benchmarks/` | throughput, scaling, profiling, backend comparison, `validation/` |
 
-The `chroma` package itself, including the backend switch
-(`chroma.backend`) and the CUDA backend (`chroma.sim_cuda`), lives in
-chroma-lite.
+The rest of the `chroma` package is Chroma's, including the backend switch
+(`chroma.backend`) and the CUDA backend (`chroma.sim_cuda`).
 
 ## From `simulate()` to the GPU
 
@@ -132,7 +131,7 @@ results are the same either way.
 
 - `python -m pytest` runs the unit, integration and bitwise tests; tests that
   need a GPU are skipped without one.
-- `python -m trichroma.tape.verify` checks exact mode against CUDA Chroma
+- `python -m chroma.triton.tape.verify` checks exact mode against CUDA Chroma
   ([exact mode](exact_mode.md#checking-equality)).
 - `benchmarks/simulate_throughput.py`: `simulate()` throughput on either
   backend.

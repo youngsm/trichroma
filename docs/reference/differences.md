@@ -6,7 +6,7 @@ The list comes from a line-by-line comparison of the two code paths.
 [Correctness](../correctness.md) has the short version.
 
 Terms used below:
-- **CUDA Chroma** is chroma-lite's PyCUDA backend. TriChroma's
+- **CUDA Chroma** is Chroma's original PyCUDA backend (`CHROMA_BACKEND=cuda`). TriChroma's
   [exact mode](exact_mode.md) reproduces it bit for bit, so the CUDA Chroma
   column also describes exact mode.
 - **TriChroma** is the default engine.

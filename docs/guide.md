@@ -1,20 +1,19 @@
 # User guide
 
-TriChroma is a second implementation of `chroma.sim.Simulation`. Chroma
-itself (geometry, materials, detectors, events) still comes from chroma-lite;
-TriChroma is only the part that runs on the GPU. This guide covers what you
-need to use it day to day.
+TriChroma is Chroma with a second implementation of `chroma.sim.Simulation`,
+written in Triton, in the package `chroma.triton`. Geometry, materials,
+detectors and events are Chroma's. This guide covers what you need to use it
+day to day.
 
 ## Choosing the backend
 
 `chroma.sim.Simulation` is one of two implementations:
 
-- **CUDA Chroma**, Chroma's original PyCUDA code;
-- **TriChroma**, this package.
+- **TriChroma** (`chroma.triton`), the default;
+- **CUDA Chroma**, Chroma's original PyCUDA code (install the `cuda` extra).
 
-Set `CHROMA_BACKEND=triton` or `CHROMA_BACKEND=cuda` to choose one. Without
-it, the CUDA backend is used when PyCUDA is installed, and TriChroma
-otherwise. The choice is fixed when `chroma.sim` is first imported.
+Set `CHROMA_BACKEND=cuda` or `CHROMA_BACKEND=triton` to choose. The choice is
+fixed when `chroma.sim` is first imported.
 
 Select the GPU as usual, with `CUDA_VISIBLE_DEVICES` or
 `Simulation(detector, cuda_device=1)`.
@@ -105,12 +104,12 @@ A GPU runs at full speed only with millions of photons in flight. Three
 habits make the difference:
 
 - **Make photons on the GPU.** Generating photons with NumPy can take longer
-  than simulating them. `trichroma.sources` generates them on the GPU, where
+  than simulating them. `chroma.triton.sources` generates them on the GPU, where
   `simulate()` reads them directly:
 
   ```python
   from chroma.event import Event
-  from trichroma import sources
+  from chroma.triton import sources
 
   photons = sources.photon_bombs(200_000, voxel_centres, voxel_size=30, wavelength=450)
   events = (Event(photons_beg=photons[i * 200_000:(i + 1) * 200_000])
@@ -132,7 +131,7 @@ running, so the GPU is rarely idle.
 
 ## Comparing runs
 
-`trichroma.utils` has two comparisons:
+`chroma.triton.utils` has two comparisons:
 
 - `compare_events(a, b)` compares bit for bit. Use it between two TriChroma
   runs, for example before and after a change to your code.
@@ -144,7 +143,7 @@ running, so the GPU is rarely idle.
 Run each backend in its own process and save what you need:
 
 ```python
-from trichroma.utils import compare_statistics, event_statistics_arrays
+from chroma.triton.utils import compare_statistics, event_statistics_arrays
 
 arrays = event_statistics_arrays(events)          # in each run; save with np.savez
 result = compare_statistics(cuda_arrays, triton_arrays)

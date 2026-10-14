@@ -71,7 +71,7 @@ photons that arrive after 200 ns.
 ## Checking for yourself
 
 - `python -m pytest` runs the unit, integration and exact-mode tests.
-- `python -m trichroma.tape.verify all` records CUDA Chroma runs and
+- `python -m chroma.triton.tape.verify all` records CUDA Chroma runs and
   compares the replay bit for bit ([exact mode](reference/exact_mode.md#checking-equality)).
 - `benchmarks/validation/` contains the statistical study above.
 

@@ -30,7 +30,7 @@ CHROMA_BACKEND=cuda   CHROMA_TRITON_TAPE=record:/path/to/tape python my_script.p
 CHROMA_BACKEND=triton CHROMA_TRITON_TAPE=replay:/path/to/tape python my_script.py
 ```
 
-Then `trichroma.utils.compare_events` compares the two runs' events bit for
+Then `chroma.triton.utils.compare_events` compares the two runs' events bit for
 bit. Recording leaves CUDA Chroma's output unchanged.
 
 `CHROMA_TRITON_TAPE` takes these values:
@@ -47,19 +47,19 @@ a sorted run is still a genuine CUDA Chroma run.
 
 ## Checking equality
 
-`python -m trichroma.tape.verify` automates the whole check:
+`python -m chroma.triton.tape.verify` automates the whole check:
 
 ```bash
 # everything: record with CUDA Chroma, replay in TriChroma, compare every output
-python -m trichroma.tape.verify all --fixture synthetic --work /scratch/tapes \
+python -m chroma.triton.tape.verify all --fixture synthetic --work /scratch/tapes \
     --cuda-python <python with PyCUDA> --triton-python <python with TriChroma> --transparency
 
 # or step by step
 CHROMA_BACKEND=cuda CHROMA_TRITON_TAPE=record:/scratch/t \
-    python -m trichroma.tape.verify run --fixture reflect3wires --run visible --output cuda.npz
-CHROMA_BACKEND=triton python -m trichroma.tape.verify replay --fixture reflect3wires --run visible \
+    python -m chroma.triton.tape.verify run --fixture reflect3wires --run visible --output cuda.npz
+CHROMA_BACKEND=triton python -m chroma.triton.tape.verify replay --fixture reflect3wires --run visible \
     --tape /scratch/t --report replay.json
-python -m trichroma.tape.verify tape --tape /scratch/t --report report.json   # no detector needed
+python -m chroma.triton.tape.verify tape --tape /scratch/t --report report.json   # no detector needed
 ```
 
 - `verify replay` compares every event output with the outputs in the
@@ -99,7 +99,7 @@ Replaying 100,000 photons takes 0.3 s on the LAr TPC (CUDA Chroma's own run
 takes 2.2-2.5 s). The first replay in a process adds about 0.5 s to load
 kernels, and compiling them the first time takes about 40 s. Recording costs
 about 0.3 s per 100,000-photon batch plus 2 s per `Simulation`; such a batch
-takes 51 MB on disk (36 MB after `trichroma.tape.compact`).
+takes 51 MB on disk (36 MB after `chroma.triton.tape.compact`).
 
 ## How the replay works
 
@@ -110,7 +110,7 @@ takes 51 MB on disk (36 MB after `trichroma.tape.compact`).
   Chroma's kernels are compiled with fast math, where the compiler fuses
   multiplications and additions depending on the whole kernel. Each of those
   fusions was read from the compiled machine code and written explicitly into
-  `src/trichroma/engine/exact.py`, which therefore produces the same bits
+  `chroma/triton/engine/exact.py`, which therefore produces the same bits
   inside any Triton kernel (appendix C).
 - **Geometry** is CUDA Chroma's: its BVH, its triangle test and its float32
   wire code, taken from the recorded scene.
@@ -179,7 +179,7 @@ as float32 bit patterns):
 | `channels_t`, `channels_q`, `channels_flags`, `channels_hit` | [E, channels] | DAQ output |
 | `track_*` | | `photon_tracks` |
 
-`trichroma.tape.format` reads recordings (NumPy only):
+`chroma.triton.tape.format` reads recordings (NumPy only):
 
 ```python
 tape = Tape(dir)                 # checks format, version and array hashes
@@ -219,7 +219,7 @@ thin-film arithmetic, and the DAQ's integer charge and time arithmetic.
 
 ## Appendix C: the exact-arithmetic library
 
-`src/trichroma/engine/exact.py` provides Triton functions whose results equal
+`chroma/triton/engine/exact.py` provides Triton functions whose results equal
 CUDA Chroma's machine arithmetic bit for bit, and which take their random
 numbers as arguments.
 
@@ -232,7 +232,7 @@ Recompiling that explicit PTX reproduces the original machine code. The
 functions use the same explicit operations through
 `tl.inline_asm_elementwise`. The complex surface model's thin-film block is
 included as extracted PTX (`_complex_ptx.py`, made by
-`src/trichroma/tape/tools/ptx_extract.py`).
+`chroma/triton/tape/tools/ptx_extract.py`).
 
 **Pitfalls** for anyone changing it:
 - Triton's kernel cache is keyed on source text, not on the values of
@@ -244,5 +244,5 @@ included as extracted PTX (`_complex_ptx.py`, made by
   inside the full kernel, so unit probes are compared against the full
   kernel's lowering where the two differ.
 
-`python -m trichroma.tape.probes generate` regenerates the reference values
+`python -m chroma.triton.tape.probes generate` regenerates the reference values
 used by `tests/bitwise/test_exact.py`.

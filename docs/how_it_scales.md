@@ -108,7 +108,7 @@ expected cost of a random ray is lowest.
 
 ![Batches one at a time versus a pipeline](img/ideas/pipeline.svg)
 
-- **Make photons on the GPU** (`trichroma.sources`). Generating millions of
+- **Make photons on the GPU** (`chroma.triton.sources`). Generating millions of
   photons with NumPy can take longer than simulating them.
 - **Overlap.** The next batch propagates while your code reads the current
   one.
