@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trichroma"
+version = "0.1.0"
+description = "A Triton backend for Chroma's optical photon simulation: chroma.sim.Simulation without PyCUDA"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+requires-python = ">=3.9"
+# Chroma itself (the `chroma` package: geometry, detector, event, loader) comes
+# from chroma-lite, which is not on PyPI: install it first, see the README.
+# Validated with PyTorch 2.5 and Triton 3.1.
+dependencies = [
+    "numpy",
+    "scipy",
+    "torch",
+    "triton",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/youngsm/trichroma"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit", "tests/integration", "tests/bitwise"]
+pythonpath = ["src"]
+markers = [
+    "gpu: needs a CUDA GPU",
+]

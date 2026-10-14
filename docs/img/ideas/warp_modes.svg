@@ -1,0 +1,118 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='760' height='300' viewBox='0 0 760 300'><defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='#6e7781'/></marker><pattern id='hatch' width='6' height='6' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'><line x1='0' y1='0' x2='0' y2='6' stroke='#d0d7de' stroke-width='2'/></pattern></defs><rect width='100%' height='100%' fill='white' rx='8'/><text x='20.0' y='26.0' font-family='Helvetica, Arial, sans-serif' font-size='14' fill='#1f2328' text-anchor='start' font-weight='bold'>Each thread does what its own photon needs</text>
+<rect x='24.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='24.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='24.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='24.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='24.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='24.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='24.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='24.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='80.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='80.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='80.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='80.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='80.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='80.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='80.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='80.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='136.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='136.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='136.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='136.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='136.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='136.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='136.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='136.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='192.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='192.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='192.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='192.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='192.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='192.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='192.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='192.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='248.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='248.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='248.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='248.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='248.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='248.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='248.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='248.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='304.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='304.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='304.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='304.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='304.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='304.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='304.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='none' stroke='#d0d7de' stroke-width='1' opacity='1' stroke-dasharray='3,2'/>
+<rect x='304.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<text x='49.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>step</text>
+<text x='105.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>desc.</text>
+<text x='161.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>leaf</text>
+<text x='217.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>step</text>
+<text x='273.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>desc.</text>
+<text x='329.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>leaf</text>
+<text x='24.0' y='214.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='start' font-weight='normal'>the warp takes turns; ~42% of thread slots do work</text>
+<text x='398.0' y='26.0' font-family='Helvetica, Arial, sans-serif' font-size='14' fill='#1f2328' text-anchor='start' font-weight='bold'>The warp picks one kind and gathers 32 of it</text>
+<rect x='410.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='410.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='410.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='410.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='410.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='410.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='410.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='410.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='466.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='522.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='578.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='634.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='44.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='61.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='78.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='95.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='112.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='129.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='146.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<rect x='690.0' y='163.0' width='50.0' height='13.0' rx='1.5' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<text x='435.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>step</text>
+<text x='491.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>step</text>
+<text x='547.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>desc.</text>
+<text x='603.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>leaf</text>
+<text x='659.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>leaf</text>
+<text x='715.0' y='194.0' font-family='Helvetica, Arial, sans-serif' font-size='10' fill='#6e7781' text-anchor='middle' font-weight='normal'>step</text>
+<text x='410.0' y='214.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='start' font-weight='normal'>photons wait in small queues until their kind runs</text>
+<rect x='24.0' y='250.0' width='14.0' height='14.0' rx='2' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<text x='44.0' y='261.5' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#1f2328' text-anchor='start' font-weight='normal'>step (physics, top-level tree)</text>
+<rect x='274.0' y='250.0' width='14.0' height='14.0' rx='2' fill='#E69F00' stroke='none' stroke-width='1' opacity='1'/>
+<text x='294.0' y='261.5' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#1f2328' text-anchor='start' font-weight='normal'>descend into a mesh</text>
+<rect x='524.0' y='250.0' width='14.0' height='14.0' rx='2' fill='#009E73' stroke='none' stroke-width='1' opacity='1'/>
+<text x='544.0' y='261.5' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#1f2328' text-anchor='start' font-weight='normal'>test triangles</text></svg>
