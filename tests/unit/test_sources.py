@@ -45,5 +45,6 @@ def test_photon_bombs_voxel_after_voxel_and_wavelength_range():
         pos = photons[i * 20_000:(i + 1) * 20_000].pos.cpu().numpy()
         assert (np.abs(pos - centre) <= 5 + 1e-3).all()
     wavelengths = photons.wavelengths.cpu().numpy()
-    assert wavelengths.min() >= 300 and wavelengths.max() < 500
+    # u < 1 can round up to the upper bound in float32 (u = 1 - 2**-24 gives 500.0)
+    assert wavelengths.min() >= 300 and wavelengths.max() <= 500
     assert abs(wavelengths.mean() - 400) < 2
