@@ -1,6 +1,6 @@
 """The original Chroma test suite (CUDA backend). Run it explicitly with
 ``python -m pytest tests/cuda_backend`` where PyCUDA is installed
-(``pip install .[cuda]``); it is skipped otherwise.
+(``pip install '.[cuda]'``); it is skipped otherwise.
 
 Its state predates TriChroma: on the validated environment (PyCUDA 2025.1,
 CUDA 12.4) 17 tests pass, 31 fail and 5 modules do not import (nose-style
