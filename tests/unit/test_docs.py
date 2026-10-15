@@ -5,8 +5,7 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CURRENT = [ROOT / "README.md"] + [p for p in sorted((ROOT / "docs").rglob("*.md"))
-                                   if "history" not in p.relative_to(ROOT).parts
-                                   and "superpowers" not in p.relative_to(ROOT).parts]
+                                   if "history" not in p.relative_to(ROOT).parts]
 
 STALE = [
     "install Chroma (the chroma-lite distribution) first",
