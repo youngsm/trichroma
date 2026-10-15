@@ -3,11 +3,11 @@
 ``CHROMA_BACKEND`` chooses the implementation at import time of
 :mod:`chroma.sim`:
 
-* ``cuda``: the original PyCUDA implementation.
-* ``triton``: the Triton implementation, :mod:`trichroma.simulation`, which
+* ``cuda``: the original PyCUDA implementation (the ``cuda`` extra).
+* ``triton``: the Triton implementation, :mod:`chroma.triton.simulation`, which
   does not import PyCUDA.
 
-Unset, it is ``cuda`` when PyCUDA is installed and ``triton`` otherwise.
+Unset, it is ``triton``.
 
 ``CHROMA_TRITON_TAPE`` selects the bitwise legacy mode of the Triton backend
 (and the matching schedule hook of the CUDA backend):
@@ -22,7 +22,6 @@ Unset, it is ``cuda`` when PyCUDA is installed and ``triton`` otherwise.
 """
 
 import functools
-import importlib.util
 import os
 from dataclasses import dataclass
 
@@ -31,8 +30,8 @@ BACKENDS = ("cuda", "triton")
 
 @functools.lru_cache(maxsize=None)
 def default_backend():
-    """``cuda`` when PyCUDA is installed, ``triton`` otherwise."""
-    return "cuda" if importlib.util.find_spec("pycuda") is not None else "triton"
+    """The backend used when ``CHROMA_BACKEND`` is unset: ``triton``."""
+    return "triton"
 
 
 def backend_name(environ=None):

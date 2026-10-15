@@ -1,0 +1,570 @@
+"""Vectorized builder for threaded (escape-link) bounding-volume hierarchies.
+
+The layout is designed for stackless traversal in Triton: nodes are stored in
+depth-first preorder, the first child of an inner node is the next node, and
+every node stores the index of the node that follows its subtree
+(``escape``, or -1 at the end). A ray that misses a node, or finishes a leaf,
+jumps to ``escape``; a ray that hits an inner node steps to ``index + 1``.
+
+Construction is a top-down linear BVH over 63-bit Morton codes of primitive
+centroids, split level by level at the highest differing code bit (median
+split for identical codes). Bounds are rounded outward to float32.
+"""
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+@dataclass(frozen=True)
+class ThreadedBVH:
+    """Preorder threaded BVH.
+
+    ``lower``/``upper``: float32 [M,3] conservative node bounds.
+    ``escape``: int32 [M], next node after the subtree, -1 at the end.
+    ``leaf_first``: int32 [M], first slot in ``order`` for leaves, -1 inner.
+    ``leaf_count``: int32 [M], primitives in a leaf, 0 for inner nodes.
+    ``order``: int32 [N], primitive index of every leaf slot.
+    """
+
+    lower: np.ndarray
+    upper: np.ndarray
+    escape: np.ndarray
+    leaf_first: np.ndarray
+    leaf_count: np.ndarray
+    order: np.ndarray
+
+    @property
+    def node_count(self):
+        return len(self.escape)
+
+
+def _spread_bits_21(value):
+    """Insert two zero bits between each of the low 21 bits (uint64)."""
+    x = value.astype(np.uint64) & np.uint64(0x1FFFFF)
+    x = (x | (x << np.uint64(32))) & np.uint64(0x1F00000000FFFF)
+    x = (x | (x << np.uint64(16))) & np.uint64(0x1F0000FF0000FF)
+    x = (x | (x << np.uint64(8))) & np.uint64(0x100F00F00F00F00F)
+    x = (x | (x << np.uint64(4))) & np.uint64(0x10C30C30C30C30C3)
+    x = (x | (x << np.uint64(2))) & np.uint64(0x1249249249249249)
+    return x
+
+
+def morton_codes(centroids, lower, upper):
+    """63-bit Morton codes of ``centroids`` inside the box [lower, upper]."""
+    extent = np.maximum(upper - lower, 1e-30)
+    scaled = np.clip((centroids - lower) / extent, 0.0, 1.0) * float((1 << 21) - 1)
+    q = scaled.astype(np.uint64)
+    return (_spread_bits_21(q[:, 0]) << np.uint64(2)) | (_spread_bits_21(q[:, 1]) << np.uint64(1)) | _spread_bits_21(q[:, 2])
+
+
+def _round_down_f32(value):
+    v32 = value.astype(np.float32)
+    return np.where(v32.astype(np.float64) > value, np.nextafter(v32, np.float32(-np.inf)), v32).astype(np.float32)
+
+
+def _round_up_f32(value):
+    v32 = value.astype(np.float32)
+    return np.where(v32.astype(np.float64) < value, np.nextafter(v32, np.float32(np.inf)), v32).astype(np.float32)
+
+
+def _highest_bit(x):
+    """Index of the highest set bit of nonzero uint64 values."""
+    x = x.astype(np.uint64)
+    result = np.zeros(x.shape, dtype=np.int64)
+    for shift in (32, 16, 8, 4, 2, 1):
+        mask = (x >> np.uint64(shift)) != 0
+        result += np.where(mask, shift, 0)
+        x = np.where(mask, x >> np.uint64(shift), x)
+    return result
+
+
+def build_threaded_bvh(box_lower, box_upper, *, leaf_size=4):
+    """Build a threaded BVH over primitives with float64 bounds [N,3]."""
+    box_lower = np.asarray(box_lower, dtype=np.float64)
+    box_upper = np.asarray(box_upper, dtype=np.float64)
+    count = len(box_lower)
+    if count == 0:
+        raise ValueError("cannot build a BVH over zero primitives")
+    if leaf_size < 1 or leaf_size > 15:
+        raise ValueError("leaf_size must be in [1, 15]")
+    centroids = 0.5 * (box_lower + box_upper)
+    codes = morton_codes(centroids, centroids.min(axis=0), centroids.max(axis=0))
+    order = np.argsort(codes, kind="stable").astype(np.int64)
+    codes = codes[order]
+
+    # Level-synchronous top-down split. Node arrays are in creation (BFS) order.
+    begin = [np.array([0], np.int64)]
+    end = [np.array([count], np.int64)]
+    left_child = []
+    levels = []
+    first_id = 0
+    cur_begin, cur_end = begin[0], end[0]
+    while True:
+        n = len(cur_begin)
+        ids = np.arange(first_id, first_id + n)
+        levels.append(ids)
+        size = cur_end - cur_begin
+        split_mask = size > leaf_size
+        lc = np.full(n, -1, np.int64)
+        if split_mask.any():
+            sb, se = cur_begin[split_mask], cur_end[split_mask]
+            a, b = codes[sb], codes[se - 1]
+            same = a == b
+            split = (sb + se) // 2
+            diff = ~same
+            if diff.any():
+                bit = _highest_bit(a[diff] ^ b[diff]).astype(np.uint64)
+                prefix = ((a[diff] >> (bit + np.uint64(1))) << (bit + np.uint64(1))) | (np.uint64(1) << bit)
+                split[diff] = np.searchsorted(codes, prefix, side="left")
+            split = np.clip(split, sb + 1, se - 1)
+            child_begin = np.stack([sb, split], axis=1).reshape(-1)
+            child_end = np.stack([split, se], axis=1).reshape(-1)
+            next_first = first_id + n
+            lc[split_mask] = next_first + 2 * np.arange(int(split_mask.sum()))
+            left_child.append(lc)
+            begin.append(child_begin)
+            end.append(child_end)
+            first_id = next_first
+            cur_begin, cur_end = child_begin, child_end
+        else:
+            left_child.append(lc)
+            break
+    node_begin = np.concatenate(begin)
+    node_end = np.concatenate(end)
+    left = np.concatenate(left_child)
+    total = len(node_begin)
+    is_leaf = left < 0
+
+    # Bounds: leaves reduce their primitive boxes; inner nodes their children.
+    lower = np.empty((total, 3))
+    upper = np.empty((total, 3))
+    sorted_lower = box_lower[order]
+    sorted_upper = box_upper[order]
+    leaf_ids = np.flatnonzero(is_leaf)
+    starts = node_begin[leaf_ids]
+    ord_leaf = np.argsort(starts)
+    starts_sorted = starts[ord_leaf]
+    lower[leaf_ids[ord_leaf]] = np.minimum.reduceat(sorted_lower, starts_sorted, axis=0)
+    upper[leaf_ids[ord_leaf]] = np.maximum.reduceat(sorted_upper, starts_sorted, axis=0)
+    for ids in reversed(levels):
+        inner = ids[~is_leaf[ids]]
+        if len(inner):
+            l, r = left[inner], left[inner] + 1
+            lower[inner] = np.minimum(lower[l], lower[r])
+            upper[inner] = np.maximum(upper[l], upper[r])
+
+    # Subtree sizes (bottom-up) and preorder indices (top-down).
+    subtree = np.ones(total, np.int64)
+    for ids in reversed(levels):
+        inner = ids[~is_leaf[ids]]
+        if len(inner):
+            subtree[inner] = 1 + subtree[left[inner]] + subtree[left[inner] + 1]
+    pre = np.zeros(total, np.int64)
+    for ids in levels:
+        inner = ids[~is_leaf[ids]]
+        if len(inner):
+            pre[left[inner]] = pre[inner] + 1
+            pre[left[inner] + 1] = pre[inner] + 1 + subtree[left[inner]]
+    escape = pre + subtree
+    escape[escape >= total] = -1
+
+    out_lower = np.empty((total, 3), np.float32)
+    out_upper = np.empty((total, 3), np.float32)
+    out_escape = np.empty(total, np.int32)
+    out_first = np.full(total, -1, np.int32)
+    out_count = np.zeros(total, np.int32)
+    out_lower[pre] = _round_down_f32(lower)
+    out_upper[pre] = _round_up_f32(upper)
+    out_escape[pre] = escape
+    out_first[pre[is_leaf]] = node_begin[is_leaf]
+    out_count[pre[is_leaf]] = (node_end - node_begin)[is_leaf]
+    return ThreadedBVH(out_lower, out_upper, out_escape, out_first, out_count, order.astype(np.int32))
+
+
+def validate_threaded_bvh(bvh, box_lower, box_upper):
+    """Structural checks used by tests: containment, coverage and threading."""
+    n = bvh.node_count
+    assert bvh.escape.shape == (n,)
+    covered = np.zeros(len(bvh.order), np.int32)
+    for node in np.flatnonzero(bvh.leaf_first >= 0):
+        first, cnt = bvh.leaf_first[node], bvh.leaf_count[node]
+        prims = bvh.order[first:first + cnt]
+        covered[first:first + cnt] += 1
+        assert np.all(box_lower[prims] >= bvh.lower[node] - 1e-6 * (1 + np.abs(bvh.lower[node])))
+        assert np.all(box_upper[prims] <= bvh.upper[node] + 1e-6 * (1 + np.abs(bvh.upper[node])))
+    assert np.all(covered == 1), "every primitive must appear in exactly one leaf"
+    assert sorted(bvh.order.tolist()) == list(range(len(bvh.order)))
+    # Walking with "always descend" must visit every node exactly once in order.
+    node, visited = 0, 0
+    while node != -1 and visited <= n:
+        visited += 1
+        node = node + 1 if bvh.leaf_first[node] < 0 else bvh.escape[node]
+    assert visited == n, (visited, n)
+    return True
+
+
+# ------------------------------------------------------------------------------
+# Binned-SAH trees threaded in eight direction-octant orders.
+#
+# A stackless (escape-link) traversal visits children in storage order. With
+# one order for every ray, a ray often descends the far child first, finds a
+# far hit and must still visit the near side. Storing one threaded copy per
+# ray-direction octant, each ordered near child first along the axis that
+# separates the children, restores front-to-back traversal: the first hits are
+# the nearest and prune the rest.
+
+
+@dataclass(frozen=True)
+class BinaryBVH:
+    """Binary BVH: node bounds, children (-1 for leaves), leaf ranges in ``order``."""
+
+    lower: np.ndarray  # float64 [M,3]
+    upper: np.ndarray
+    left: np.ndarray  # int64 [M]
+    right: np.ndarray
+    begin: np.ndarray  # int64 [M] leaf range [begin, end) in order
+    end: np.ndarray
+    order: np.ndarray  # int64 [N] primitive of every leaf slot
+
+
+def _half_area(lo, hi):
+    d = np.maximum(hi - lo, 0.0)
+    return d[..., 0] * d[..., 1] + d[..., 1] * d[..., 2] + d[..., 0] * d[..., 2]
+
+
+def _build_sah_tree_reference(box_lower, box_upper, *, leaf_size=4, bins=16):
+    """Top-down binned surface-area-heuristic BVH over primitive boxes [N,3]
+    (depth-first reference of :func:`build_sah_tree`; one node at a time)."""
+    lo = np.asarray(box_lower, np.float64)
+    hi = np.asarray(box_upper, np.float64)
+    n = len(lo)
+    if n == 0:
+        raise ValueError("cannot build a BVH over zero primitives")
+    cen = 0.5 * (lo + hi)
+    order = np.arange(n, dtype=np.int64)
+    lower, upper, left, right, begin, end = [], [], [], [], [], []
+
+    def new_node(b, e):
+        lower.append(None)
+        upper.append(None)
+        left.append(-1)
+        right.append(-1)
+        begin.append(b)
+        end.append(e)
+        return len(begin) - 1
+
+    stack = [new_node(0, n)]
+    while stack:
+        node = stack.pop()
+        b, e = begin[node], end[node]
+        prims = order[b:e]
+        plo, phi = lo[prims], hi[prims]
+        lower[node] = plo.min(axis=0)
+        upper[node] = phi.max(axis=0)
+        count = e - b
+        if count <= leaf_size:
+            continue
+        c = cen[prims]
+        cmin, cmax = c.min(axis=0), c.max(axis=0)
+        extent = cmax - cmin
+        best_cost, best_axis, best_bin, best_k = np.inf, -1, -1, None
+        for axis in range(3):
+            if extent[axis] <= 0.0:
+                continue
+            k = np.minimum(((c[:, axis] - cmin[axis]) * (bins / extent[axis])).astype(np.int64), bins - 1)
+            counts = np.bincount(k, minlength=bins)
+            blo = np.full((bins, 3), np.inf)
+            bhi = np.full((bins, 3), -np.inf)
+            np.minimum.at(blo, k, plo)
+            np.maximum.at(bhi, k, phi)
+            lcnt = np.cumsum(counts)[:-1]
+            rcnt = np.cumsum(counts[::-1])[::-1][1:]
+            llo = np.minimum.accumulate(blo, axis=0)[:-1]
+            lhi = np.maximum.accumulate(bhi, axis=0)[:-1]
+            rlo = np.minimum.accumulate(blo[::-1], axis=0)[::-1][1:]
+            rhi = np.maximum.accumulate(bhi[::-1], axis=0)[::-1][1:]
+            with np.errstate(invalid="ignore"):
+                cost = np.where((lcnt > 0) & (rcnt > 0),
+                                _half_area(llo, lhi) * lcnt + _half_area(rlo, rhi) * rcnt, np.inf)
+            i = int(np.argmin(cost))
+            if cost[i] < best_cost:
+                best_cost, best_axis, best_bin, best_k = cost[i], axis, i, k
+        if best_axis < 0:
+            mid = b + count // 2  # coincident centroids: split the list
+        else:
+            to_left = best_k <= best_bin
+            order[b:e] = np.concatenate([prims[to_left], prims[~to_left]])
+            mid = b + int(to_left.sum())
+        l_node = new_node(b, mid)
+        r_node = new_node(mid, e)
+        left[node], right[node] = l_node, r_node
+        stack.append(r_node)
+        stack.append(l_node)
+    return BinaryBVH(np.array(lower), np.array(upper), np.array(left, np.int64), np.array(right, np.int64),
+                     np.array(begin, np.int64), np.array(end, np.int64), order)
+
+
+def _thread_octants_reference(tree):
+    """Reference of :func:`thread_octants` (one node at a time). Eight threaded layouts of ``tree`` (one per ray-direction octant, bit a
+    set when direction component a is negative), each in preorder with the
+    near child first along the axis separating the children's centers.
+
+    Returns a list of (row, escape) pairs: ``row[node]`` is the node's index in
+    that layout and ``escape[node]`` the layout index after its subtree (-1 at
+    the end).
+    """
+    m = len(tree.left)
+    size = np.ones(m, np.int64)
+    for node in range(m - 1, -1, -1):  # children are created after parents
+        if tree.left[node] >= 0:
+            size[node] = 1 + size[tree.left[node]] + size[tree.right[node]]
+    center = 0.5 * (tree.lower + tree.upper)
+    inner = np.flatnonzero(tree.left >= 0)
+    sep = center[tree.right[inner]] - center[tree.left[inner]]
+    axis = np.full(m, -1, np.int64)
+    axis[inner] = np.argmax(np.abs(sep), axis=1)
+    right_is_upper = np.zeros(m, bool)
+    right_is_upper[inner] = sep[np.arange(len(inner)), axis[inner]] >= 0.0
+    layouts = []
+    for octant in range(8):
+        row = np.empty(m, np.int64)
+        index = 0
+        stack = [0]
+        while stack:
+            node = stack.pop()
+            row[node] = index
+            index += 1
+            l_node = tree.left[node]
+            if l_node >= 0:
+                negative = (octant >> axis[node]) & 1
+                # Positive direction: the lower child first; negative: the upper.
+                left_first = right_is_upper[node] != bool(negative)
+                first, second = (l_node, tree.right[node]) if left_first else (tree.right[node], l_node)
+                stack.append(second)
+                stack.append(first)
+        escape = row + size
+        escape[escape >= m] = -1
+        layouts.append((row, escape))
+    return layouts
+
+
+def build_sah_tree(box_lower, box_upper, *, leaf_size=4, bins=16):
+    """Top-down binned surface-area-heuristic BVH over primitive boxes [N,3].
+
+    Level-synchronous and vectorized over the nodes of each level; it makes
+    exactly the decisions of the depth-first :func:`_build_sah_tree_reference`
+    (the same float64 arithmetic per node, the same stable partitions) and
+    numbers the nodes as it does (the k-th inner node in preorder creates
+    nodes 2k+1 and 2k+2), so the two return identical trees.
+    """
+    lo = np.asarray(box_lower, np.float64)
+    hi = np.asarray(box_upper, np.float64)
+    n = len(lo)
+    if n == 0:
+        raise ValueError("cannot build a BVH over zero primitives")
+    if not (np.isfinite(lo).all() and np.isfinite(hi).all()):
+        # NaN/inf bounds: the reference's element-by-element min/max and
+        # comparisons are the definition; keep its result exactly.
+        return _build_sah_tree_reference(lo, hi, leaf_size=leaf_size, bins=bins)
+    cen = 0.5 * (lo + hi)
+    order = np.arange(n, dtype=np.int64)
+    # Per level (BFS), nodes sorted by segment start: begin, end, bounds, split flag.
+    lv_b, lv_e, lv_lo, lv_hi, lv_split = [], [], [], [], []
+    seg_b = np.zeros(1, np.int64)
+    seg_e = np.full(1, n, np.int64)
+    while len(seg_b):
+        cnt = seg_e - seg_b
+        nseg = len(seg_b)
+        # prims of this level's segments, in segment order
+        seg_of = np.repeat(np.arange(nseg), cnt)
+        pos = np.repeat(seg_b - np.concatenate([[0], np.cumsum(cnt)[:-1]]), cnt) + np.arange(int(cnt.sum()))
+        prims = order[pos]
+        starts = np.concatenate([[0], np.cumsum(cnt)[:-1]])
+        plo = lo[prims]
+        phi = hi[prims]
+        nlo = np.minimum.reduceat(plo, starts, axis=0)
+        nhi = np.maximum.reduceat(phi, starts, axis=0)
+        # Only the sign of a zero bound can depend on how the reduction is
+        # carried out; recompute those nodes as the reference does, so that the
+        # packed bounds are bitwise the same.
+        for j in np.flatnonzero(((nlo == 0.0) | (nhi == 0.0)).any(axis=1)):
+            seg = order[seg_b[j]:seg_e[j]]
+            nlo[j] = lo[seg].min(axis=0)
+            nhi[j] = hi[seg].max(axis=0)
+        split = cnt > leaf_size
+        lv_b.append(seg_b)
+        lv_e.append(seg_e)
+        lv_lo.append(nlo)
+        lv_hi.append(nhi)
+        lv_split.append(split)
+        if not split.any():
+            break
+        # --- binned SAH for the splitting segments
+        sidx = np.flatnonzero(split)
+        ns = len(sidx)
+        local = np.full(nseg, -1, np.int64)
+        local[sidx] = np.arange(ns)
+        pm = split[seg_of]  # prims of splitting segments
+        sp_seg = local[seg_of[pm]]  # local split index of each prim
+        sp_prims = prims[pm]
+        c = cen[sp_prims]
+        sp_starts = np.concatenate([[0], np.cumsum(cnt[sidx])[:-1]])
+        cmin = np.minimum.reduceat(c, sp_starts, axis=0)
+        cmax = np.maximum.reduceat(c, sp_starts, axis=0)
+        extent = cmax - cmin
+        ks = np.empty((3, len(sp_prims)), np.int64)
+        cost = np.full((ns, 3, bins - 1), np.inf)
+        slo = lo[sp_prims]
+        shi = hi[sp_prims]
+        for axis in range(3):
+            ok_axis = extent[:, axis] > 0.0
+            with np.errstate(divide="ignore", invalid="ignore"):
+                scale = bins / extent[:, axis]
+                kf = (c[:, axis] - cmin[sp_seg, axis]) * scale[sp_seg]
+            kf = np.where(ok_axis[sp_seg], kf, 0.0)
+            k = np.minimum(kf.astype(np.int64), bins - 1)
+            ks[axis] = k
+            key = sp_seg * bins + k
+            counts = np.bincount(key, minlength=ns * bins).reshape(ns, bins)
+            blo = np.empty((ns, bins, 3))
+            bhi = np.empty((ns, bins, 3))
+            for d in range(3):
+                t = np.full(ns * bins, np.inf)
+                np.minimum.at(t, key, slo[:, d])
+                blo[:, :, d] = t.reshape(ns, bins)
+                t = np.full(ns * bins, -np.inf)
+                np.maximum.at(t, key, shi[:, d])
+                bhi[:, :, d] = t.reshape(ns, bins)
+            lcnt = np.cumsum(counts, axis=1)[:, :-1]
+            rcnt = np.cumsum(counts[:, ::-1], axis=1)[:, ::-1][:, 1:]
+            llo = np.minimum.accumulate(blo, axis=1)[:, :-1]
+            lhi = np.maximum.accumulate(bhi, axis=1)[:, :-1]
+            rlo = np.minimum.accumulate(blo[:, ::-1], axis=1)[:, ::-1][:, 1:]
+            rhi = np.maximum.accumulate(bhi[:, ::-1], axis=1)[:, ::-1][:, 1:]
+            with np.errstate(invalid="ignore"):
+                cst = np.where((lcnt > 0) & (rcnt > 0),
+                               _half_area(llo, lhi) * lcnt + _half_area(rlo, rhi) * rcnt, np.inf)
+            cst[~ok_axis] = np.inf
+            cost[:, axis, :] = cst
+        flat = cost.reshape(ns, 3 * (bins - 1))
+        best = np.argmin(flat, axis=1)
+        best_cost = flat[np.arange(ns), best]
+        use_sah = best_cost < np.inf
+        best_axis = np.where(use_sah, best // (bins - 1), -1)
+        best_bin = best % (bins - 1)
+        # stable partition of the SAH-split segments
+        b_s = seg_b[sidx]
+        e_s = seg_e[sidx]
+        mid = b_s + (e_s - b_s) // 2  # median split (coincident centroids), no reordering
+        ax_p = best_axis[sp_seg]
+        sah_p = ax_p >= 0
+        kk = ks[np.maximum(ax_p, 0), np.arange(len(sp_prims))]
+        to_left = sah_p & (kk <= best_bin[sp_seg])
+        nleft = np.bincount(sp_seg, weights=to_left, minlength=ns).astype(np.int64)
+        mid = np.where(use_sah, b_s + nleft, mid)
+        # rank of each prim among the left (right) prims of its segment
+        cl = np.cumsum(to_left) - to_left
+        cr = np.cumsum(~to_left) - (~to_left)
+        seg_first = sp_starts[sp_seg]
+        rank_l = cl - cl[seg_first] if len(cl) else cl
+        rank_r = cr - cr[seg_first] if len(cr) else cr
+        dest = np.where(to_left, b_s[sp_seg] + rank_l, mid[sp_seg] + rank_r)
+        moved = sah_p
+        order[dest[moved]] = sp_prims[moved]
+        # children (left, right) in segment order
+        seg_b = np.stack([b_s, mid], axis=1).reshape(-1)
+        seg_e = np.stack([mid, e_s], axis=1).reshape(-1)
+
+    # --- node numbering of the depth-first reference: the k-th inner node in
+    # preorder creates nodes 2k+1 (left) and 2k+2 (right); the root is 0.
+    L = len(lv_b)
+    inner_cnt = [None] * L  # inner nodes in each node's subtree
+    for d in range(L - 1, -1, -1):
+        s = lv_split[d].astype(np.int64)
+        ic = s.copy()
+        if d + 1 < L and s.any():
+            ch = inner_cnt[d + 1].reshape(-1, 2)
+            ic[lv_split[d]] += ch[:, 0] + ch[:, 1]
+        inner_cnt[d] = ic
+    ids = [np.zeros(1, np.int64)]
+    rank = [np.zeros(1, np.int64)]  # preorder rank among inner nodes (valid for inner nodes)
+    for d in range(L - 1):
+        sp = lv_split[d]
+        r = rank[d][sp]
+        left_inner = inner_cnt[d + 1].reshape(-1, 2)[:, 0]
+        cid = np.stack([2 * r + 1, 2 * r + 2], axis=1).reshape(-1)
+        crank = np.stack([r + 1, r + 1 + left_inner], axis=1).reshape(-1)
+        ids.append(cid)
+        rank.append(crank)
+    total = int(sum(len(x) for x in lv_b))
+    lower = np.empty((total, 3))
+    upper = np.empty((total, 3))
+    left = np.full(total, -1, np.int64)
+    right = np.full(total, -1, np.int64)
+    begin = np.empty(total, np.int64)
+    end = np.empty(total, np.int64)
+    for d in range(L):
+        i = ids[d]
+        lower[i] = lv_lo[d]
+        upper[i] = lv_hi[d]
+        begin[i] = lv_b[d]
+        end[i] = lv_e[d]
+        if d + 1 < L and lv_split[d].any():
+            ch = ids[d + 1].reshape(-1, 2)
+            left[i[lv_split[d]]] = ch[:, 0]
+            right[i[lv_split[d]]] = ch[:, 1]
+    return BinaryBVH(lower, upper, left, right, begin, end, order)
+
+
+def thread_octants(tree):
+    """Eight threaded layouts of ``tree`` (one per ray-direction octant, bit a
+    set when direction component a is negative), each in preorder with the
+    near child first along the axis separating the children's centers.
+
+    Returns a list of (row, escape) pairs: ``row[node]`` is the node's index in
+    that layout and ``escape[node]`` the layout index after its subtree (-1 at
+    the end). Vectorized per tree level; the same result as
+    :func:`_thread_octants_reference`.
+    """
+    left = np.asarray(tree.left)
+    right = np.asarray(tree.right)
+    m = len(left)
+    inner = np.flatnonzero(left >= 0)
+    # BFS levels from the root
+    levels = [np.zeros(1, np.int64)]
+    while True:
+        cur = levels[-1]
+        ci = cur[left[cur] >= 0]
+        if not len(ci):
+            break
+        levels.append(np.stack([left[ci], right[ci]], axis=1).reshape(-1))
+    size = np.ones(m, np.int64)
+    for cur in reversed(levels):
+        ci = cur[left[cur] >= 0]
+        if len(ci):
+            size[ci] = 1 + size[left[ci]] + size[right[ci]]
+    center = 0.5 * (tree.lower + tree.upper)
+    sep = center[right[inner]] - center[left[inner]]
+    axis = np.full(m, -1, np.int64)
+    axis[inner] = np.argmax(np.abs(sep), axis=1)
+    right_is_upper = np.zeros(m, bool)
+    right_is_upper[inner] = sep[np.arange(len(inner)), axis[inner]] >= 0.0
+    layouts = []
+    for octant in range(8):
+        row = np.empty(m, np.int64)
+        row[0] = 0
+        for cur in levels:
+            ci = cur[left[cur] >= 0]
+            if not len(ci):
+                continue
+            negative = ((octant >> axis[ci]) & 1).astype(bool)
+            left_first = right_is_upper[ci] != negative
+            first = np.where(left_first, left[ci], right[ci])
+            second = np.where(left_first, right[ci], left[ci])
+            row[first] = row[ci] + 1
+            row[second] = row[ci] + 1 + size[first]
+        escape = row + size
+        escape[escape >= m] = -1
+        layouts.append((row, escape))
+    return layouts

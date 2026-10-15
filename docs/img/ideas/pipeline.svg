@@ -1,0 +1,45 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='760' height='240' viewBox='0 0 760 240'><defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='#6e7781'/></marker><pattern id='hatch' width='6' height='6' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'><line x1='0' y1='0' x2='0' y2='6' stroke='#d0d7de' stroke-width='2'/></pattern></defs><rect width='100%' height='100%' fill='white' rx='8'/><text x='20.0' y='32.0' font-family='Helvetica, Arial, sans-serif' font-size='14' fill='#1f2328' text-anchor='start' font-weight='bold'>One batch at a time, photons made on the host</text>
+<text x='96.0' y='58.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='end' font-weight='normal'>host</text>
+<text x='96.0' y='86.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='end' font-weight='normal'>GPU</text>
+<rect x='110.0' y='44.0' width='60.0' height='20.0' rx='3' fill='#6e7781' stroke='none' stroke-width='1' opacity='1'/>
+<text x='140.0' y='58.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>draw 1</text>
+<rect x='172.0' y='72.0' width='84.0' height='20.0' rx='3' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<text x='214.0' y='86.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 1</text>
+<rect x='258.0' y='44.0' width='50.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='283.0' y='58.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 1</text>
+<rect x='312.0' y='44.0' width='60.0' height='20.0' rx='3' fill='#6e7781' stroke='none' stroke-width='1' opacity='1'/>
+<text x='342.0' y='58.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>draw 2</text>
+<rect x='374.0' y='72.0' width='84.0' height='20.0' rx='3' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<text x='416.0' y='86.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 2</text>
+<rect x='460.0' y='44.0' width='50.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='485.0' y='58.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 2</text>
+<rect x='514.0' y='44.0' width='60.0' height='20.0' rx='3' fill='#6e7781' stroke='none' stroke-width='1' opacity='1'/>
+<text x='544.0' y='58.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>draw 3</text>
+<rect x='576.0' y='72.0' width='84.0' height='20.0' rx='3' fill='#D55E00' stroke='none' stroke-width='1' opacity='1'/>
+<text x='618.0' y='86.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 3</text>
+<rect x='662.0' y='44.0' width='50.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='687.0' y='58.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 3</text>
+<text x='20.0' y='128.0' font-family='Helvetica, Arial, sans-serif' font-size='14' fill='#1f2328' text-anchor='start' font-weight='bold'>Pipelined, photons drawn on the GPU</text>
+<text x='96.0' y='154.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='end' font-weight='normal'>host</text>
+<text x='96.0' y='182.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='end' font-weight='normal'>GPU</text>
+<rect x='110.0' y='168.0' width='90.0' height='20.0' rx='3' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<text x='155.0' y='182.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 1</text>
+<rect x='202.0' y='168.0' width='90.0' height='20.0' rx='3' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<text x='247.0' y='182.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 2</text>
+<rect x='202.0' y='140.0' width='56.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='230.0' y='154.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 1</text>
+<rect x='294.0' y='168.0' width='90.0' height='20.0' rx='3' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<text x='339.0' y='182.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 3</text>
+<rect x='294.0' y='140.0' width='56.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='322.0' y='154.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 2</text>
+<rect x='386.0' y='168.0' width='90.0' height='20.0' rx='3' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<text x='431.0' y='182.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 4</text>
+<rect x='386.0' y='140.0' width='56.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='414.0' y='154.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 3</text>
+<rect x='478.0' y='168.0' width='90.0' height='20.0' rx='3' fill='#0072B2' stroke='none' stroke-width='1' opacity='1'/>
+<text x='523.0' y='182.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>propagate 5</text>
+<rect x='478.0' y='140.0' width='56.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='506.0' y='154.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 4</text>
+<rect x='570.0' y='140.0' width='56.0' height='20.0' rx='3' fill='#8c959f' stroke='none' stroke-width='1' opacity='1'/>
+<text x='598.0' y='154.0' font-family='Helvetica, Arial, sans-serif' font-size='10.5' fill='#ffffff' text-anchor='middle' font-weight='normal'>use 5</text>
+<text x='110.0' y='226.0' font-family='Helvetica, Arial, sans-serif' font-size='12' fill='#6e7781' text-anchor='start' font-weight='normal'>the GPU never waits for the host; batch k+1 runs while the caller reads batch k</text></svg>
