@@ -211,3 +211,17 @@ def test_negative_charge_samples_add_nothing(sources):
     q, hit = ev.channels.q, ev.channels.hit
     assert hit.any()
     assert np.all(q >= 0) and np.all(q[hit] <= 1.0 * len(ev.flat_hits))
+
+
+def test_flat_hits_index_points_at_the_input_photon(detector, sources):
+    from chroma.triton.simulation import Simulation
+
+    spacing = 1e5  # ns between photons' start times, far beyond any travel time
+    events = [Event(photons_beg=Photons(p.pos, p.dir, p.pol, p.wavelengths,
+                                        (np.arange(len(p), dtype=np.float64) + 0.5) * spacing))
+              for p in sources]
+    sim = Simulation(detector, seed=11)
+    for p, ev in zip(sources, sim.simulate(events, keep_flat_hits=True, photons_per_batch=5000, max_steps=1000)):
+        hits = ev.flat_hits
+        assert ((hits.index >= 0) & (hits.index < len(p))).all()
+        assert (np.floor(hits.t / spacing) == hits.index).all()

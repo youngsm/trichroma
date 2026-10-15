@@ -70,7 +70,7 @@ class Vertex(object):
     __repr__ = __str__
 
 class Photons(object):
-    def __init__(self, pos=np.empty((0,3)), dir=np.empty((0,3)), pol=np.empty((0,3)), wavelengths=np.empty((0)), t=None, last_hit_triangles=None, flags=None, weights=None, evidx=None, channel=None):
+    def __init__(self, pos=np.empty((0,3)), dir=np.empty((0,3)), pol=np.empty((0,3)), wavelengths=np.empty((0)), t=None, last_hit_triangles=None, flags=None, weights=None, evidx=None, channel=None, index=None):
         '''Create a new list of n photons.
 
             pos: numpy.ndarray(dtype=numpy.float32, shape=(n,3))
@@ -102,6 +102,10 @@ class Photons(object):
                
            evidx: numpy.ndarray(dtype=numpy.uint32, shape=n)
                Index of the event in a GPU batch
+
+           index: numpy.ndarray(dtype=numpy.int64, shape=n)
+               For hits from the Triton backend, each hit's position in its event's
+               input photons (photons_beg); -1 when unknown.
         '''
         self.pos = np.asarray(pos, dtype=np.float32)
         self.dir = np.asarray(dir, dtype=np.float32)
@@ -139,7 +143,12 @@ class Photons(object):
             self.channel = np.zeros(len(pos), dtype=np.uint32)
         else:
             self.channel = np.asarray(channel, dtype=np.uint32)
-            
+
+        if index is None:
+            self.index = np.full(len(pos), -1, dtype=np.int64)
+        else:
+            self.index = np.asarray(index, dtype=np.int64)
+
     def join(photon_list,concatenate=True):
         '''Concatenates many photon objects together efficiently'''
         if concatenate: #internally lists
@@ -153,8 +162,9 @@ class Photons(object):
             weights = np.concatenate([p.weights for p in photon_list])
             evidx = np.concatenate([p.evidx for p in photon_list])
             channel = np.concatenate([p.channel for p in photon_list])
+            index = np.concatenate([p.index for p in photon_list])
             return Photons(pos, dir, pol, wavelengths, t,
-                           last_hit_triangles, flags, weights, evidx,channel)
+                           last_hit_triangles, flags, weights, evidx, channel, index)
         else: #internally scalars
             pos = np.asarray([p.pos for p in photon_list])
             dir = np.asarray([p.dir for p in photon_list])
@@ -166,8 +176,9 @@ class Photons(object):
             weights = np.asarray([p.weights for p in photon_list])
             evidx = np.asarray([p.evidx for p in photon_list])
             channel = np.asarray([p.channel for p in photon_list])
+            index = np.asarray([p.index for p in photon_list])
             return Photons(pos, dir, pol, wavelengths, t,
-                           last_hit_triangles, flags, weights, evidx, channel)
+                           last_hit_triangles, flags, weights, evidx, channel, index)
 
     def __add__(self, other):
         '''Concatenate two Photons objects into one list of photons.
@@ -187,8 +198,9 @@ class Photons(object):
         weights = np.concatenate((self.weights, other.weights))
         evidx = np.concatenate((self.evidx, other.evidx))
         channel = np.concatenate((self.channel, other.channel))
+        index = np.concatenate((self.index, other.index))
         return Photons(pos, dir, pol, wavelengths, t,
-                       last_hit_triangles, flags, weights, evidx, channel)
+                       last_hit_triangles, flags, weights, evidx, channel, index)
 
     def __len__(self):
         '''Returns the number of photons in self.'''
@@ -214,7 +226,7 @@ class Photons(object):
         return Photons(self.pos[key], self.dir[key], self.pol[key],
                        self.wavelengths[key], self.t[key],
                        self.last_hit_triangles[key], self.flags[key],
-                       self.weights[key],self.evidx[key],self.channel[key])
+                       self.weights[key], self.evidx[key], self.channel[key], self.index[key])
 
     def reduced(self, reduction_factor=1.0):
         '''Return a new Photons object with approximately
