@@ -26,6 +26,9 @@ Select the GPU as usual, with `CUDA_VISIBLE_DEVICES` or
 - Events come back with the same fields and types: `photons_end`, `hits`,
   `flat_hits`, `channels` (from the DAQ) and `photon_tracks`. Triangle, solid
   and channel numbers are Chroma's.
+- TriChroma's hits also carry `index`: each hit's position in its event's
+  input photons (`photons_beg`), for mapping hits back to their sources. It is
+  -1 on the CUDA backend.
 - Any Chroma detector works, including analytic wire planes.
 
 Input photons can be ordinary `chroma.event.Photons`, or arrays already on

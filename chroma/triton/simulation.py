@@ -187,24 +187,36 @@ def _float_words(tensor):
     return flat if flat.dtype == torch.float32 else flat.view(torch.float32)
 
 
-def _photon_words(photons, channel=None):
-    """Field-major float32 words of DevicePhotons (and a channel column)."""
+def _photon_words(photons, channel=None, index=None):
+    """Field-major float32 words of DevicePhotons (and channel and index columns)."""
     words = [_float_words(getattr(photons, name)) for name, _, _ in _PHOTON_FIELDS]
     if channel is not None:
         words.append(_float_words(channel))
+    if index is not None:
+        words.append(_float_words(index))
     return words
 
 
-def _unpack_photons(host, offset, count, channel=False):
+def _unpack_photons(host, offset, count, channel=False, index=False):
     """event.Photons viewing the field-major words at ``host[offset:]``;
     returns (photons, offset after them)."""
     fields = []
-    for _, width, dtype in _PHOTON_FIELDS + ((("channel", 1, np.uint32),) if channel else ()):
+    extra = ((("channel", 1, np.uint32),) if channel else ()) + ((("index", 1, np.int32),) if index else ())
+    for _, width, dtype in _PHOTON_FIELDS + extra:
         words = host[offset:offset + count * width]
         offset += count * width
         words = words if dtype == np.float32 else words.view(dtype)
         fields.append(words.reshape(count, width) if width > 1 else words)
     return event.Photons(*fields), offset
+
+
+def _hit_index(rows, bounds):
+    """Each hit row's position in its own event's input photons (int32);
+    ``bounds`` are the batch's event boundaries in photon rows."""
+    torch = _torch()
+    starts = torch.as_tensor(np.asarray(bounds, dtype=np.int64), device=rows.device)
+    event = torch.searchsorted(starts, rows, right=True) - 1
+    return (rows - starts[event]).to(torch.int32)
 
 
 class _Batch(object):
@@ -295,7 +307,7 @@ class Simulation(object):
         self._next_photon_id += total
         return photons
 
-    def _flat_hits(self, photons):
+    def _flat_hits(self, photons, bounds):
         """Detected photons with channel index, in photon order (numpy Photons)."""
         torch = _torch()
         tri = photons.last_hit_triangles
@@ -306,7 +318,8 @@ class Simulation(object):
         hits = photons.select(rows).to_numpy(skip=("ids",))
         return event.Photons(hits["pos"], hits["dir"], hits["pol"], hits["wavelengths"], hits["t"],
                              hits["last_hit_triangles"], hits["flags"], hits["weights"],
-                             hits["evidx"], channel[rows].cpu().numpy().astype(np.int32))
+                             hits["evidx"], channel[rows].cpu().numpy().astype(np.int32),
+                             _hit_index(rows, bounds).cpu().numpy())
 
     def _simulate_batch(self, batch_events, keep_photons_beg=False, keep_photons_end=False,
                         keep_hits=True, keep_flat_hits=True, run_daq=False, max_steps=100,
@@ -333,7 +346,7 @@ class Simulation(object):
                                               end["t"], end["last_hit_triangles"], end["flags"],
                                               end["weights"], end["evidx"])
         if self.has_channels and (keep_hits or keep_flat_hits):
-            batch_hits = self._flat_hits(photons)
+            batch_hits = self._flat_hits(photons, batch_bounds)
             # Hits are in photon order and events occupy consecutive rows, so
             # evidx is non-decreasing: each event's hits are one slice.
             hit_bounds = None
@@ -411,7 +424,7 @@ class Simulation(object):
             rows = torch.nonzero(((photons.flags & SURFACE_DETECT) != 0) & (tri >= 0)).flatten()
             batch.nhits = int(rows.numel())
             channel = self.engine.solid_id_to_channel_index[self.engine.triangle_solid(tri[rows])]
-            words += _photon_words(photons.select(rows), channel)
+            words += _photon_words(photons.select(rows), channel, _hit_index(rows, batch.bounds))
         if keep_photons_end:
             words += _photon_words(photons)
         if run_daq:
@@ -454,7 +467,7 @@ class Simulation(object):
             host = batch.host.numpy()
         offset = 0
         if want_hits:
-            batch_hits, offset = _unpack_photons(host, offset, batch.nhits, channel=True)
+            batch_hits, offset = _unpack_photons(host, offset, batch.nhits, channel=True, index=True)
             no_channel = batch_hits.channel.view(np.int32) < 0
             if no_channel.any():
                 batch_hits = batch_hits[~no_channel]
